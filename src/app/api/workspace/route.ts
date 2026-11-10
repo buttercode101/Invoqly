@@ -28,7 +28,6 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) return fail("Sign in to access your workspace.",401);
-    const db = getDb();
     const workspace = await getOrCreateWorkspace(user.id);
     return NextResponse.json({ workspace: await loadWorkspace(workspace.id) }, { headers: { "Cache-Control":"private, no-store" } });
   } catch (error) {
@@ -42,7 +41,7 @@ export async function POST(request:Request) {
   if(!origin) return fail("A valid same-origin request is required.",403);
   let originUrl:URL;
   try { originUrl=new URL(origin); } catch { return fail("A valid same-origin request is required.",403); }
-  const allowedOrigin=originUrl.origin==="https://invoqly.xyz"||originUrl.origin==="https://www.invoqly.xyz"||originUrl.origin==="https://invoqly.vercel.app"||originUrl.origin==="http://localhost:3000"||originUrl.origin==="http://127.0.0.1:3000"||/^https:\/\/invoqly(?:-[a-z0-9-]+)*\.vercel\.app$/.test(originUrl.origin);
+  const allowedOrigin=originUrl.origin==="https://invoqly.xyz"||originUrl.origin==="https://www.invoqly.xyz"||originUrl.origin==="https://invoqly.vercel.app"||originUrl.origin==="http://localhost:3000"||originUrl.origin==="http://127.0.0.1:3000"||originUrl.origin==="http://localhost:3001"||originUrl.origin==="http://127.0.0.1:3001"||/^https:\/\/invoqly(?:-[a-z0-9-]+)*\.vercel\.app$/.test(originUrl.origin);
   if(!allowedOrigin) return fail("This origin is not allowed to change workspace data.",403);
   if(!(request.headers.get("content-type")||"").toLowerCase().includes("application/json")) return fail("JSON content is required.",415);
   const length=Number(request.headers.get("content-length")||"0");
