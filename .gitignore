@@ -8,3 +8,6 @@ out
 coverage
 *.tsbuildinfo
 .DS_Store
+.open-next/
+.wrangler/
+cloudflare-dry-run/
