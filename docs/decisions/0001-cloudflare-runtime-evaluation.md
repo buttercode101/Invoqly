@@ -56,3 +56,12 @@ The candidate runtime is Cloudflare Workers with vinext. The original Next.js ru
 ## Guardrails
 
 No DNS changes, custom-domain attachment, production deployment, production database, production secrets or changes to the InvoiceFlow repository are part of this experiment.
+
+## South Africa data-region check
+
+A second provider check found no South African primary region in the current Supabase region list either. Supabase's listed African-market options therefore do not solve local data residency. AWS does offer RDS in Cape Town (`af-south-1`), but this is a different, separately costed infrastructure choice and is not provisioned. For the initial release, choose a managed PostgreSQL region only after comparing South African request latency, monthly cost, operational burden and any customer data-residency requirements. Do not claim South African data residency merely because the product is South Africa-first.
+
+References:
+- [Supabase available regions](https://supabase.com/docs/guides/platform/regions)
+- [AWS RDS regions](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvailabilityZones.html)
+- [Cloudflare Hyperdrive](https://developers.cloudflare.com/hyperdrive/)
