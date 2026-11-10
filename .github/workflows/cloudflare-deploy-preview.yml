@@ -1,0 +1,88 @@
+name: Deploy Cloudflare preview
+
+on:
+  push:
+    branches: [feat/cloudflare-invoqly-production]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: invoqly-cloudflare-preview-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    if: ${{ vars.CLOUDFLARE_HYPERDRIVE_ID != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: 90cefa028781f749f5816c5748f04cd2
+      CLOUDFLARE_HYPERDRIVE_ID: ${{ vars.CLOUDFLARE_HYPERDRIVE_ID }}
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      AUTH_EMAIL_VERIFICATION: "false"
+      BETTER_AUTH_URL: https://invoqly-preview.buttercoder-dev.workers.dev
+      NEXT_PUBLIC_APP_URL: https://invoqly-preview.buttercoder-dev.workers.dev
+      CLOUDFLARE_INCLUDE_PROCESS_ENV: "true"
+      NODE_ENV: production
+    steps:
+      - name: Check deployment credentials
+        id: credentials
+        shell: bash
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$BETTER_AUTH_SECRET" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Add CLOUDFLARE_API_TOKEN and BETTER_AUTH_SECRET repository secrets to enable remote preview deployment."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v5
+        if: steps.credentials.outputs.ready == 'true'
+      - uses: actions/setup-node@v5
+        if: steps.credentials.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - name: Regenerate lockfile for the candidate dependency graph
+        if: steps.credentials.outputs.ready == 'true'
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Install dependencies
+        if: steps.credentials.outputs.ready == 'true'
+        run: npm ci
+      - name: Dependency security audit
+        if: steps.credentials.outputs.ready == 'true'
+        run: npm audit --audit-level=high
+      - name: TypeScript
+        if: steps.credentials.outputs.ready == 'true'
+        run: npm run typecheck
+      - name: Unit tests
+        if: steps.credentials.outputs.ready == 'true'
+        run: npm test
+      - name: Build and deploy the isolated preview Worker
+        if: steps.credentials.outputs.ready == 'true'
+        run: npm run deploy:vinext
+      - name: Install the Better Auth Worker secret
+        if: steps.credentials.outputs.ready == 'true'
+        run: printf '%s' "$BETTER_AUTH_SECRET" | npx wrangler secret put BETTER_AUTH_SECRET --name invoqly-preview
+      - name: Verify the deployed Worker and Hyperdrive database
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          PREVIEW_URL: https://invoqly-preview.buttercoder-dev.workers.dev
+        run: |
+          for attempt in $(seq 1 30); do
+            response=$(curl --fail --silent "$PREVIEW_URL/api/health" || true)
+            if [ -n "$response" ] && echo "$response" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const x=JSON.parse(s);process.exit(x.status==="ok"&&x.database==="ok"?0:1)}catch{process.exit(1)}})'; then
+              echo "Cloudflare preview and Hyperdrive database are healthy."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Cloudflare preview did not become healthy. Inspect Worker logs."
+          exit 1
+      - name: Run authenticated browser acceptance against remote preview
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          PLAYWRIGHT_BASE_URL: https://invoqly-preview.buttercoder-dev.workers.dev
+        run: npm run test:e2e
