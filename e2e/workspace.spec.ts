@@ -40,7 +40,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
 
   let invoiceRow=page.locator("tbody tr").filter({hasText:"Acme Services"});
   await expect(invoiceRow).toContainText("Draft");
-  await invoiceRow.getByTitle("Mark as sent").click();
+  await invoiceRow.getByTitle("Issue invoice").click();
   await expect(invoiceRow).toContainText("Sent");
 
   await page.getByRole("button",{name:"Payments"}).click();
