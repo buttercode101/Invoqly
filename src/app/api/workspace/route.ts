@@ -9,12 +9,12 @@ import { deriveInvoiceStatus, outstandingBalanceMinor } from "@/lib/billing";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const currency = z.string().regex(/^[A-Z]{3}$/);
-const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const currency = z.string().regex(/^[A-Z]{3}$/).refine(value=>{try{new Intl.NumberFormat("en",{style:"currency",currency:value}).format(0);return true}catch{return false}},"Choose a supported ISO currency code.");
+const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>{const [year,month,day]=value.split("-").map(Number);const parsed=new Date(Date.UTC(year,month-1,day));return parsed.getUTCFullYear()===year&&parsed.getUTCMonth()===month-1&&parsed.getUTCDate()===day},"Enter a real calendar date.");
 const payload = z.discriminatedUnion("action", [
   z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20) }),
-  z.object({ action:z.literal("create-client"), name:z.string().trim().min(1).max(120), email:z.string().trim().email().max(254), company:z.string().max(120).default(""), currency }),
-  z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid(), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER), currency, dueDate:date }),
+  z.object({ action:z.literal("create-client"), name:z.string().trim().min(1).max(120), email:z.string().trim().email().max(254).toLowerCase(), company:z.string().max(120).default(""), currency }),
+  z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid(), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, dueDate:date }),
   z.object({ action:z.literal("create-expense"), vendor:z.string().trim().min(1).max(160), category:z.string().trim().min(1).max(80), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, notes:z.string().max(500).default("") }),
   z.object({ action:z.literal("create-payment"), invoiceId:z.string().uuid(), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, method:z.string().min(1).max(40), reference:z.string().max(100).default(""), notes:z.string().max(500).default("") }),
   z.object({ action:z.literal("send-invoice"), invoiceId:z.string().uuid() }),
@@ -71,6 +71,7 @@ export async function POST(request:Request) {
     if (input.action === "create-invoice") {
       const [client] = await db.select().from(clients).where(and(eq(clients.id,input.clientId),eq(clients.workspaceId,workspace.id))).limit(1);
       if (!client) return fail("The selected client does not exist in this workspace.",404);
+      if (!Number.isSafeInteger(input.quantity * input.unitPriceMinor)) return fail("The invoice total exceeds the supported amount range.",422);
       const result = await db.transaction(async tx => {
         const [counter] = await tx.insert(invoiceCounters).values({workspaceId:workspace.id,nextNumber:1})
           .onConflictDoUpdate({target:invoiceCounters.workspaceId,set:{nextNumber:sql`${invoiceCounters.nextNumber} + 1`}})
@@ -98,9 +99,11 @@ export async function POST(request:Request) {
         const existing = await tx.select({amount:sql<string>`coalesce(sum(${payments.amountMinor}),0)::text`}).from(payments).where(and(eq(payments.invoiceId,invoice.id),eq(payments.workspaceId,workspace.id)));
         const paid = Number(existing[0]?.amount ?? "0");
         if (!Number.isSafeInteger(paid)) throw new Error("The existing payment total exceeds the supported amount.");
-        const balance = outstandingBalanceMinor(invoice.quantity * invoice.unitPriceMinor, [paid]);
+        const invoiceTotal = invoice.quantity * invoice.unitPriceMinor;
+        if (!Number.isSafeInteger(invoiceTotal)) throw new Error("The invoice total exceeds the supported amount range.");
+        const balance = outstandingBalanceMinor(invoiceTotal, [paid]);
         if (input.amountMinor > balance) throw new Error("Payment cannot exceed the outstanding invoice balance.");
-        const nextStatus = deriveInvoiceStatus(invoice.quantity * invoice.unitPriceMinor, paid + input.amountMinor, invoice.dueDate, today());
+        const nextStatus = deriveInvoiceStatus(invoiceTotal, paid + input.amountMinor, invoice.dueDate, today());
         const [payment] = await tx.insert(payments).values({workspaceId:workspace.id,invoiceId:invoice.id,clientId:invoice.clientId,date:input.date,amountMinor:input.amountMinor,currency:input.currency,method:input.method,reference:input.reference,notes:input.notes}).returning();
         await tx.update(invoices).set({status:nextStatus,updatedAt:new Date()}).where(and(eq(invoices.id,invoice.id),eq(invoices.workspaceId,workspace.id)));
         await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"payment.recorded",entityType:"payment",entityId:payment.id,metadata:{invoiceId:invoice.id,amountMinor:input.amountMinor,currency:input.currency}});
