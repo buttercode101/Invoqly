@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 test("client, invoice, payment status and expense survive a reload", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("No sample customer or financial records have been inserted.")).toBeVisible();
+  await expect(page.getByText("Saved locally in this browser")).toBeVisible();
 
   await page.getByRole("button", { name: /Add a client/ }).click();
   await page.getByLabel("Client or contact name").fill("Acme Services");
