@@ -39,7 +39,10 @@ export const auth = betterAuth({
     "https://invoqly.vercel.app",
     "https://invoqly-*.vercel.app",
     "https://invoqly-preview.buttercoder-dev.workers.dev",
-    ...(process.env.NODE_ENV === "development" || process.env.CI === "true" ? ["http://localhost:3000","http://127.0.0.1:3000","http://localhost:3001","http://127.0.0.1:3001"] : []),
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
   ],
   advanced: {
     cookiePrefix: "invoqly",
