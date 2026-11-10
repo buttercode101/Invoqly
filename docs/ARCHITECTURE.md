@@ -3,7 +3,8 @@
 ## Current foundation
 - Next.js App Router + React + TypeScript
 - CSS design tokens and responsive component styling
-- Zod for boundary validation
+- Explicit domain validation in the money and workflow boundaries
+- Playwright browser acceptance tests against the production build
 - Lucide icons
 - Vercel-compatible deployment target
 
@@ -30,7 +31,7 @@ The current functional preview persists records in browser local storage only. T
 - markets: country, locale, tax and payment capabilities
 
 ## Money representation
-Represent a monetary amount as an integer minor-unit amount plus an ISO 4217 currency code. Persist integer minor units in PostgreSQL using BIGINT and persist the currency code separately. Currency exponent is resolved from a maintained currency registry. Do not store formatted strings as financial values.
+Represent a monetary amount as an integer minor-unit amount plus an ISO 4217 currency code. Persist integer minor units in PostgreSQL using BIGINT and persist the currency code separately. Currency exponent is derived from the runtime's ISO currency metadata through Intl.NumberFormat. Market configuration must still validate which currencies a workspace may select. Do not store formatted strings as financial values.
 
 ## Tenant isolation
 Every business-owned table carries workspace_id. Enforce membership and role checks in server-side operations and PostgreSQL RLS. Never trust a client-supplied workspace ID without verifying membership. Tests must prove cross-tenant reads and writes are denied.

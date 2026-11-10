@@ -21,6 +21,6 @@ This is an early functional preview, not a production-ready financial applicatio
 Requires Node.js 22. Run `npm install`, then `npm run dev`.
 
 ## Quality checks
-`npm run typecheck`, `npm test`, and `npm run build`.
+`npm run typecheck`, `npm test`, `npm run build`, and `npm run test:e2e`. Install Chromium for local browser tests with `npx playwright install chromium`.
 
 See `docs/PRODUCT_BLUEPRINT.md` and `docs/ARCHITECTURE.md`.
