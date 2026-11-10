@@ -8,3 +8,6 @@ out
 coverage
 *.tsbuildinfo
 .DS_Store
+/dist/
+.vinext/
+.cloudflare/
