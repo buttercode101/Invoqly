@@ -1,7 +1,7 @@
 name: Cloudflare compatibility
 on:
   pull_request:
-    branches: [main]
+    branches: [feat/invoqly-production, main]
   push:
     branches: [feat/cloudflare-invoqly-production]
 concurrency:
