@@ -43,3 +43,13 @@
 .auth-switch a{font-weight:700;color:#285c48;text-decoration:none}
 .auth-legal{margin-top:32px;padding-top:18px;border-top:1px solid #e5e9e4;color:#9aa29b;font-size:10px;line-height:1.6;text-align:center}
 @media(max-width:760px){.auth-shell{grid-template-columns:1fr}.auth-brand{min-height:auto;padding:24px 24px 28px}.auth-brand-copy{margin:46px 0 22px}.auth-brand-copy h1{font-size:42px;margin:16px 0 12px}.auth-brand-copy p{font-size:14px}.auth-brand-foot{font-size:9px}.auth-main{padding:42px 24px 56px}.auth-card h2{font-size:30px}}
+
+
+.workspace-loading{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:32px;background:#f6f7f4;color:#26352c;text-align:center;font-size:14px}
+.workspace-loading p{color:#78847c;max-width:420px;line-height:1.6}
+.workspace-alert{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 15px;margin:0 0 18px;background:#fff1ee;border:1px solid #f0d2cc;border-radius:8px;color:#9b443b;font-size:12px}
+.workspace-alert button{border:0;background:transparent;color:inherit;font-weight:700;cursor:pointer}
+.signout-button{width:34px;height:34px;border:1px solid #e0e5df;border-radius:8px;background:#fff;color:#718078;display:grid;place-items:center;cursor:pointer;flex:none}
+.signout-button:hover{color:#a64b41;border-color:#e8c8c2}
+.cloud-banner{background:#edf4ef;border-color:#d9e7dc}
+.form-error{margin:0;color:#a64036;background:#fff1ee;border:1px solid #f0d2cc;border-radius:7px;padding:10px 12px;font-size:12px;line-height:1.5}
