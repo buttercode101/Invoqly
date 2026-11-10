@@ -39,6 +39,18 @@ jobs:
         run: npm run typecheck
       - name: Build the Cloudflare-targeted application
         run: npm run build:vinext
+      - name: Preserve the generated Cloudflare migration candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: invoqly-cloudflare-migration-candidate
+          path: |
+            package.json
+            package-lock.json
+            vite.config.ts
+            cloudflare.config.ts
+            .gitignore
+          if-no-files-found: error
+          retention-days: 7
       - name: Run unit tests
         run: npm test
       - name: Install Chromium for the workerd browser suite
