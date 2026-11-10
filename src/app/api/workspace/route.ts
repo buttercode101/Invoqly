@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, workspaces } from "@/lib/db/schema";
 import { getCurrentUser, getOrCreateWorkspace, loadWorkspace } from "@/lib/workspace";
 import { deriveInvoiceStatus, outstandingBalanceMinor } from "@/lib/billing";
@@ -53,6 +53,7 @@ export async function POST(request:Request) {
     if (!parsed.success) return fail("Check the submitted details and try again.",422);
     const input = parsed.data;
     const workspace = await getOrCreateWorkspace(user.id);
+    const db = getDb();
 
     if (input.action === "update-settings") {
       await db.transaction(async tx=>{

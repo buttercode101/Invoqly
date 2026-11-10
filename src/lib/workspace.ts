@@ -1,16 +1,17 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt } from "drizzle-orm";
 import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, workspaceMembers, workspaces } from "@/lib/db/schema";
+import { getAuth } from "@/lib/auth";
+import { getDb } from "@/lib/db";
+import { auditEvents, clients, expenses, invoices, payments, workspaceMembers, workspaces } from "@/lib/db/schema";
 
 export async function getCurrentUser() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getAuth().api.getSession({ headers: await headers() });
   return session?.user ?? null;
 }
 
 export async function getOrCreateWorkspace(userId: string) {
+  const db = getDb();
   const [membership] = await db.select({ workspace: workspaces }).from(workspaceMembers)
     .innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
     .where(eq(workspaceMembers.userId, userId)).orderBy(asc(workspaceMembers.createdAt)).limit(1);
@@ -24,10 +25,12 @@ export async function getOrCreateWorkspace(userId: string) {
 }
 
 export async function writeAudit(workspaceId: string, actorUserId: string, action: string, entityType: string, entityId: string | null, metadata: Record<string, unknown> = {}) {
+  const db = getDb();
   await db.insert(auditEvents).values({ workspaceId, actorUserId, action, entityType, entityId, metadata });
 }
 
 export async function loadWorkspace(workspaceId: string) {
+  const db = getDb();
   const today = new Date().toISOString().slice(0, 10);
   await db.update(invoices).set({ status: "Overdue", updatedAt: new Date() })
     .where(and(eq(invoices.workspaceId, workspaceId), lt(invoices.dueDate, today), inArray(invoices.status, ["Sent", "Partially paid"])));
