@@ -30,6 +30,7 @@ jobs:
       BETTER_AUTH_SECRET: 5b8d2b7a43f1b0e4f5d8c7a6b9e2d1f0c4a8e6b2d7f9a1c3e5b7d0f2a4c6e8b1
       BETTER_AUTH_URL: http://127.0.0.1:3000
       NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      AUTH_EMAIL_VERIFICATION: "false"
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
