@@ -8,7 +8,11 @@ if (!secret || secret.length < 32) throw new Error("BETTER_AUTH_SECRET must cont
 
 export const auth = betterAuth({
   appName: "Invoqly",
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  baseURL: {
+    allowedHosts: ["invoqly.xyz","www.invoqly.xyz","invoqly.vercel.app","invoqly-*.vercel.app","localhost:3000","127.0.0.1:3000"],
+    protocol: "auto",
+    fallback: "https://invoqly.xyz",
+  },
   secret,
   database: drizzleAdapter(db, { provider: "pg", schema }),
   emailAndPassword: {
@@ -22,8 +26,8 @@ export const auth = betterAuth({
     "https://invoqly.xyz",
     "https://www.invoqly.xyz",
     "https://invoqly.vercel.app",
-    "https://*.vercel.app",
-    "http://localhost:3000",
+    "https://invoqly-*.vercel.app",
+    ...(process.env.NODE_ENV === "development" || process.env.CI === "true" ? ["http://localhost:3000","http://127.0.0.1:3000"] : []),
   ],
   advanced: {
     cookiePrefix: "invoqly",
