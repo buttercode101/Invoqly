@@ -37,6 +37,15 @@ export async function GET() {
 }
 
 export async function POST(request:Request) {
+  const origin=request.headers.get("origin");
+  if(!origin) return fail("A valid same-origin request is required.",403);
+  let originUrl:URL;
+  try { originUrl=new URL(origin); } catch { return fail("A valid same-origin request is required.",403); }
+  const allowedOrigin=originUrl.origin==="https://invoqly.xyz"||originUrl.origin==="https://www.invoqly.xyz"||originUrl.origin==="https://invoqly.vercel.app"||originUrl.origin==="http://localhost:3000"||/^https:\/\/invoqly(?:-[a-z0-9-]+)*\.vercel\.app$/.test(originUrl.origin);
+  if(!allowedOrigin) return fail("This origin is not allowed to change workspace data.",403);
+  if(!(request.headers.get("content-type")||"").toLowerCase().includes("application/json")) return fail("JSON content is required.",415);
+  const length=Number(request.headers.get("content-length")||"0");
+  if(length>16384) return fail("The submitted data is too large.",413);
   try {
     const user = await getCurrentUser();
     if (!user) return fail("Sign in to make changes.",401);
