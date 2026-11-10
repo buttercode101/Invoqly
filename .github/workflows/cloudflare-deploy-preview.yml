@@ -26,6 +26,7 @@ jobs:
       CLOUDFLARE_INCLUDE_PROCESS_ENV: "true"
       NODE_ENV: production
     steps:
+      # Repository secrets are injected at job runtime; this gate prevents accidental unauthenticated deploys.
       - name: Check deployment credentials
         id: credentials
         shell: bash
