@@ -53,6 +53,9 @@ jobs:
       - name: Dependency security audit
         if: steps.credentials.outputs.ready == 'true'
         run: npm audit --audit-level=high
+      - name: Generate Cloudflare binding types
+        run: npx cf workers types
+
       - name: TypeScript
         if: steps.credentials.outputs.ready == 'true'
         run: npm run typecheck
