@@ -53,6 +53,7 @@ jobs:
             package-lock.json
             vite.config.ts
             cloudflare.config.ts
+            .cloudflare/output/v0/workers/default/**
           if-no-files-found: error
           retention-days: 7
       - name: Run unit tests
