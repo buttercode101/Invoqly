@@ -17,10 +17,10 @@
     "react": "19.1.10",
     "react-dom": "19.1.10",
     "@better-auth/drizzle-adapter": "1.7.18",
-    "@neondatabase/serverless": "1.2.0",
     "better-auth": "1.7.18",
     "drizzle-orm": "0.45.4",
-    "zod": "4.6.7"
+    "zod": "4.6.7",
+    "postgres": "3.4.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
