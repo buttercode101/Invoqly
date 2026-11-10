@@ -37,6 +37,14 @@ jobs:
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
+      - name: Verify Cloudflare account token access
+        if: steps.credentials.outputs.ready == 'true'
+        shell: bash
+        run: |
+          verify=$(curl --silent --show-error --fail-with-body -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" https://api.cloudflare.com/client/v4/user/tokens/verify)
+          echo "$verify" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const x=JSON.parse(s);if(!x.success||x.result?.status!=="active"){console.error("Cloudflare API token is not active.");process.exit(1)}console.log("Cloudflare API token is active.")})'
+          account=$(curl --silent --show-error --fail-with-body -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts")
+          echo "$account" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const x=JSON.parse(s);if(!x.success){console.error("Token cannot access Workers scripts in the configured account.");process.exit(1)}console.log("Cloudflare account and Workers scripts read access verified.")})'
       - uses: actions/checkout@v5
         if: steps.credentials.outputs.ready == 'true'
       - uses: actions/setup-node@v5
