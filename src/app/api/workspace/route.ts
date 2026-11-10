@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, workspaces } from "@/lib/db/schema";
 import { getCurrentUser, getOrCreateWorkspace, loadWorkspace } from "@/lib/workspace";
 import { deriveInvoiceStatus, outstandingBalanceMinor } from "@/lib/billing";
@@ -28,6 +28,7 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) return fail("Sign in to access your workspace.",401);
+    const db = getDb();
     const workspace = await getOrCreateWorkspace(user.id);
     return NextResponse.json({ workspace: await loadWorkspace(workspace.id) }, { headers: { "Cache-Control":"private, no-store" } });
   } catch (error) {
@@ -49,6 +50,7 @@ export async function POST(request:Request) {
   try {
     const user = await getCurrentUser();
     if (!user) return fail("Sign in to make changes.",401);
+    const db = getDb();
     const parsed = payload.safeParse(await request.json());
     if (!parsed.success) return fail("Check the submitted details and try again.",422);
     const input = parsed.data;

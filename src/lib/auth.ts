@@ -1,14 +1,15 @@
 import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
-import { db, schema } from "@/lib/db";
+import { getDb, schema } from "@/lib/db";
 import { sendTransactionalEmail } from "@/lib/email";
 
-const secret = process.env.BETTER_AUTH_SECRET;
-const emailVerificationRequired = process.env.AUTH_EMAIL_VERIFICATION === "true";
-if (!secret || secret.length < 32) throw new Error("BETTER_AUTH_SECRET must contain at least 32 characters.");
+function createAuth() {
+  const secret = process.env.BETTER_AUTH_SECRET;
+  const emailVerificationRequired = process.env.AUTH_EMAIL_VERIFICATION === "true";
+  if (!secret || secret.length < 32) throw new Error("BETTER_AUTH_SECRET must contain at least 32 characters.");
 
-export const auth = betterAuth({
+  return betterAuth({
   appName: "Invoqly",
   baseURL: {
     allowedHosts: ["invoqly.xyz","www.invoqly.xyz","invoqly.vercel.app","invoqly-*.vercel.app","invoqly-preview.buttercoder-dev.workers.dev","localhost:3000","127.0.0.1:3000","localhost:3001","127.0.0.1:3001"],
@@ -16,7 +17,7 @@ export const auth = betterAuth({
     fallback: "https://invoqly.xyz",
   },
   secret,
-  database: drizzleAdapter(db, { provider: "pg", schema }),
+  database: drizzleAdapter(getDb(), { provider: "pg", schema }),
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
@@ -57,4 +58,13 @@ export const auth = betterAuth({
     window: 60,
     max: process.env.CI === "true" ? 30 : 10,
   },
-});
+  });
+}
+
+type AuthInstance = ReturnType<typeof createAuth>;
+const globalForAuth = globalThis as typeof globalThis & { invoqlyAuth?: AuthInstance };
+
+export function getAuth(): AuthInstance {
+  // Initialize Better Auth only after entering a request handler.
+  return globalForAuth.invoqlyAuth ?? (globalForAuth.invoqlyAuth = createAuth());
+}
