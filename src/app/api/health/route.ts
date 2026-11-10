@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
-import { getDb } from "@/lib/db";
+import { withDb } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const db = getDb();
-    await db.execute(sql`select 1`);
-    return NextResponse.json({
-      status: "ok",
-      database: "ok",
-      commit: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
-    }, { headers: { "Cache-Control": "no-store" } });
+    return await withDb(async db => {
+      await db.execute(sql`select 1`);
+      return NextResponse.json({
+        status: "ok",
+        database: "ok",
+        commit: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+      }, { headers: { "Cache-Control": "no-store" } });
+    });
   } catch (error) {
     console.error("health.database", error);
     return NextResponse.json({

@@ -7,22 +7,26 @@ import { getDatabaseUrl } from "@/lib/db/connection";
 function createDatabase() {
   const connectionString = getDatabaseUrl();
   if (!connectionString) throw new Error("A database connection is required.");
-  const sql = postgres(connectionString, {
-    max: 5,
-    idle_timeout: 20,
+  const client = postgres(connectionString, {
+    max: 1,
+    idle_timeout: 0,
     connect_timeout: 10,
     prepare: false,
   });
-  return drizzle(sql, { schema });
+  return { db: drizzle(client, { schema }), client };
 }
 
-type Database = ReturnType<typeof createDatabase>;
-const globalForDb = globalThis as typeof globalThis & { invoqlyDb?: Database };
+export type Database = ReturnType<typeof createDatabase>["db"];
 
-export function getDb(): Database {
-  // Construct the Postgres client lazily inside the first request handler.
-  // Cloudflare Workers prohibit timers, sockets and other async I/O at module scope.
-  return globalForDb.invoqlyDb ?? (globalForDb.invoqlyDb = createDatabase());
+export async function withDb<T>(operation: (db: Database) => Promise<T>): Promise<T> {
+  const connection = createDatabase();
+  try {
+    return await operation(connection.db);
+  } finally {
+    // Hyperdrive pools the upstream connection. Do not share postgres.js I/O
+    // streams between Worker requests; each request owns and closes its client.
+    await connection.client.end({ timeout: 0 });
+  }
 }
 
 export { schema };

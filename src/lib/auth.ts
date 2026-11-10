@@ -1,10 +1,11 @@
 import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
-import { getDb, schema } from "@/lib/db";
+import type { Database } from "@/lib/db";
+import { schema } from "@/lib/db";
 import { sendTransactionalEmail } from "@/lib/email";
 
-function createAuth() {
+export function createAuth(db: Database) {
   const secret = process.env.BETTER_AUTH_SECRET;
   const emailVerificationRequired = process.env.AUTH_EMAIL_VERIFICATION === "true";
   if (!secret || secret.length < 32) throw new Error("BETTER_AUTH_SECRET must contain at least 32 characters.");
@@ -17,7 +18,7 @@ function createAuth() {
     fallback: "https://invoqly.xyz",
   },
   secret,
-  database: drizzleAdapter(getDb(), { provider: "pg", schema }),
+  database: drizzleAdapter(db, { provider: "pg", schema }),
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
@@ -59,12 +60,4 @@ function createAuth() {
     max: 10,
   },
   });
-}
-
-type AuthInstance = ReturnType<typeof createAuth>;
-const globalForAuth = globalThis as typeof globalThis & { invoqlyAuth?: AuthInstance };
-
-export function getAuth(): AuthInstance {
-  // Initialize Better Auth only after entering a request handler.
-  return globalForAuth.invoqlyAuth ?? (globalForAuth.invoqlyAuth = createAuth());
 }

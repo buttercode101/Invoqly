@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getDb } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, workspaces } from "@/lib/db/schema";
 import { getCurrentUser, getOrCreateWorkspace, loadWorkspace } from "@/lib/workspace";
 import { deriveInvoiceStatus, outstandingBalanceMinor } from "@/lib/billing";
@@ -26,10 +26,12 @@ function today(){return new Date().toISOString().slice(0,10);}
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-    if (!user) return fail("Sign in to access your workspace.",401);
-    const workspace = await getOrCreateWorkspace(user.id);
-    return NextResponse.json({ workspace: await loadWorkspace(workspace.id) }, { headers: { "Cache-Control":"private, no-store" } });
+    return await withDb(async db => {
+      const user = await getCurrentUser(db);
+      if (!user) return fail("Sign in to access your workspace.",401);
+      const workspace = await getOrCreateWorkspace(db,user.id);
+      return NextResponse.json({ workspace: await loadWorkspace(db,workspace.id) }, { headers: { "Cache-Control":"private, no-store" } });
+    });
   } catch (error) {
     console.error("workspace.get",error);
     return fail("Your workspace could not be loaded. Please try again.",500);
@@ -47,13 +49,13 @@ export async function POST(request:Request) {
   const length=Number(request.headers.get("content-length")||"0");
   if(length>16384) return fail("The submitted data is too large.",413);
   try {
-    const user = await getCurrentUser();
+    return await withDb(async db => {
+    const user = await getCurrentUser(db);
     if (!user) return fail("Sign in to make changes.",401);
-    const db = getDb();
     const parsed = payload.safeParse(await request.json());
     if (!parsed.success) return fail("Check the submitted details and try again.",422);
     const input = parsed.data;
-    const workspace = await getOrCreateWorkspace(user.id);
+    const workspace = await getOrCreateWorkspace(db,user.id);
 
     if (input.action === "update-settings") {
       await db.transaction(async tx=>{
@@ -136,7 +138,8 @@ export async function POST(request:Request) {
       if ("error" in deleteResult) return deleteResult.error==="not-found"?fail("Invoice not found.",404):fail("Issued invoices are retained as financial records.",409);
     }
 
-    return NextResponse.json({ ok:true, workspace:await loadWorkspace(workspace.id) }, { headers: { "Cache-Control":"private, no-store" } });
+    return NextResponse.json({ ok:true, workspace:await loadWorkspace(db,workspace.id) }, { headers: { "Cache-Control":"private, no-store" } });
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "The change could not be saved.";
     if (/Choose an issued invoice|currency must match|cannot exceed|exceeds the supported/i.test(message)) return fail(message,409);
