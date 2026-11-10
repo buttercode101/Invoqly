@@ -23,8 +23,24 @@ test("client, invoice, payment status and expense survive a reload", async ({ pa
   await expect(invoiceRow).toContainText("Draft");
   await invoiceRow.getByTitle("Mark as sent").click();
   await expect(invoiceRow).toContainText("Sent");
-  await invoiceRow.getByTitle("Mark as paid").click();
-  await expect(invoiceRow).toContainText("Paid");
+
+  await page.getByRole("button", { name: "Payments" }).click();
+  await page.getByRole("button", { name: "Record payment" }).click();
+  await page.getByLabel("Invoice").selectOption({ index: 0 });
+  await page.getByLabel("Amount received").fill("1000.00");
+  await page.getByLabel("Date received").fill("2026-11-10");
+  await page.getByRole("button", { name: "Save payment" }).click();
+  await page.getByRole("button", { name: "Invoices" }).click();
+  await expect(page.locator("tbody tr").filter({ hasText: "Acme Services" })).toContainText("Partially paid");
+
+  await page.getByRole("button", { name: "Payments" }).click();
+  await page.getByRole("button", { name: "Record payment" }).click();
+  await page.getByLabel("Invoice").selectOption({ index: 0 });
+  await page.getByLabel("Amount received").fill("1501.00");
+  await page.getByLabel("Date received").fill("2026-11-10");
+  await page.getByRole("button", { name: "Save payment" }).click();
+  await page.getByRole("button", { name: "Invoices" }).click();
+  await expect(page.locator("tbody tr").filter({ hasText: "Acme Services" })).toContainText("Paid");
 
   await page.getByRole("button", { name: "Expenses" }).click();
   await page.getByRole("button", { name: "Record expense" }).click();
@@ -40,6 +56,8 @@ test("client, invoice, payment status and expense survive a reload", async ({ pa
   await expect(page.getByRole("heading", { name: "Acme Services" })).toBeVisible();
   await page.getByRole("button", { name: "Invoices" }).click();
   await expect(page.locator("tbody tr").filter({ hasText: "Acme Services" })).toContainText("Paid");
+  await page.getByRole("button", { name: "Payments" }).click();
+  await expect(page.locator("tbody tr")).toHaveCount(2);
   await page.getByRole("button", { name: "Expenses" }).click();
   await expect(page.getByText("Cloud hosting")).toBeVisible();
 });
@@ -57,7 +75,7 @@ test("legacy browser data migrates to the current storage key", async ({ page })
   });
   await page.goto("/");
   await expect(page.getByText("Legacy Studio")).toBeVisible();
-  await expect.poll(() => page.evaluate(() => localStorage.getItem("invoqly.workspace.v2"))).not.toBeNull();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("invoqly.workspace.v3"))).not.toBeNull();
   expect(await page.evaluate(() => localStorage.getItem("invoqly.workspace.v1"))).toBeNull();
 });
 
