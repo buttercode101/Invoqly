@@ -1,32 +1,20 @@
 # Invoqly
 
+**Business, in good order.**
+
 A global business finance workspace for independent professionals and small businesses.
 
-## Product principles
-
+## Principles
 - Global by design; South Africa is the first supported market, not a hardcoded boundary.
-- Accurate money handling: integer minor units, explicit currency codes, no implicit currency conversion.
-- Clear separation between presentation, domain logic, and persistence.
-- Secure, tenant-aware data access before production customer onboarding.
+- Accurate money handling: integer minor units, explicit ISO currency codes, no implicit conversion.
+- Clear separation between presentation, domain logic and persistence.
+- Secure, tenant-aware data access before customer onboarding.
 - Accessible, responsive, premium interface without decorative complexity.
 
-## Development status
+## Development
+Requires Node.js 22. Run npm install, then npm run dev.
 
-Initial application foundation is being established. No production customer data or InvoiceFlow infrastructure is connected to this project.
+## Current status
+The initial foundation is under active development. The dashboard currently uses clearly labelled illustrative sample records. No customer data, payment credentials, authentication provider or production database is connected.
 
-## Planned foundation
-
-- Next.js App Router, TypeScript, React
-- Tailwind CSS and a documented design system
-- Zod validation at input boundaries
-- Vitest for domain and component tests
-- Supabase for planned authentication and PostgreSQL persistence (not enabled until configured)
-
-## Local development
-
-```bash
-npm install
-npm run dev
-```
-
-See `docs/PRODUCT_BLUEPRINT.md` and `docs/ARCHITECTURE.md` for the current product and engineering direction.
+See the product blueprint and architecture documents in docs/.
