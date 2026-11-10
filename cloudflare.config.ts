@@ -20,7 +20,10 @@ export default defineConfig({
     },
     env: {
       ASSETS: bindings.assets(),
-      HYPERDRIVE: bindings.hyperdrive({ id: hyperdriveId })
+      HYPERDRIVE: bindings.hyperdrive({
+        id: hyperdriveId,
+        dev: { connectionString: localHyperdriveConnection }
+      })
     }
   })
 });
