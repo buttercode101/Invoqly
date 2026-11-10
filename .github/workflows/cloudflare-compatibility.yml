@@ -15,9 +15,9 @@ concurrency:
 
 jobs:
   compatibility:
-    name: Inspect Next.js compatibility with vinext
+    name: Inspect and build Invoqly with vinext
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -27,3 +27,11 @@ jobs:
         run: npm ci
       - name: Run Cloudflare's recommended compatibility scan
         run: npx --yes vinext check
+      - name: Initialise a non-destructive Cloudflare Workers test setup
+        run: npx --yes vinext init --platform=cloudflare --name=invoqly --cdn-cache=none --data-cache=none --image-optimization=none
+      - name: Type-check the migrated test workspace
+        run: npm run typecheck
+      - name: Build the Cloudflare-targeted application
+        run: npm run build:vinext
+      - name: Run unit tests
+        run: npm test
