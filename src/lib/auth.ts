@@ -56,7 +56,7 @@ function createAuth() {
   rateLimit: {
     enabled: true,
     window: 60,
-    max: process.env.CI === "true" ? 30 : 10,
+    max: 10,
   },
   });
 }
