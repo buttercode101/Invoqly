@@ -38,6 +38,7 @@ jobs:
           node-version: 22
       - run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
       - run: npm ci
+      - run: npx cf workers types
       - run: npm audit --audit-level=high
       - run: npm run db:migrate
       - run: npm run typecheck
