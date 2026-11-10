@@ -1,4 +1,4 @@
-import { boolean, bigint, char, date, index, jsonb, numeric, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core";
+import { boolean, bigint, char, date, foreignKey, index, jsonb, numeric, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -90,7 +90,7 @@ export const invoices = pgTable("invoices", {
   status: varchar("status", { length: 24 }).notNull().default("Draft"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, (t) => [unique("invoices_workspace_number_uq").on(t.workspaceId, t.number), unique("invoices_id_workspace_uq").on(t.id, t.workspaceId), index("invoices_workspace_status_due_idx").on(t.workspaceId, t.status, t.dueDate), index("invoices_workspace_created_idx").on(t.workspaceId, t.createdAt)]);
+}, (t) => [unique("invoices_workspace_number_uq").on(t.workspaceId, t.number), unique("invoices_id_workspace_uq").on(t.id, t.workspaceId), index("invoices_workspace_status_due_idx").on(t.workspaceId, t.status, t.dueDate), index("invoices_workspace_created_idx").on(t.workspaceId, t.createdAt), foreignKey({columns:[t.clientId,t.workspaceId],foreignColumns:[clients.id,clients.workspaceId]}).onDelete("restrict")]);
 
 export const invoiceCounters = pgTable("invoice_counters", {
   workspaceId: uuid("workspace_id").primaryKey().references(() => workspaces.id, { onDelete: "cascade" }),
@@ -109,7 +109,7 @@ export const payments = pgTable("payments", {
   reference: varchar("reference", { length: 100 }).notNull().default(""),
   notes: varchar("notes", { length: 500 }).notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}, (t) => [index("payments_workspace_date_idx").on(t.workspaceId, t.date), index("payments_invoice_idx").on(t.invoiceId)]);
+}, (t) => [index("payments_workspace_date_idx").on(t.workspaceId, t.date), index("payments_invoice_idx").on(t.invoiceId), foreignKey({columns:[t.invoiceId,t.workspaceId],foreignColumns:[invoices.id,invoices.workspaceId]}).onDelete("restrict"), foreignKey({columns:[t.clientId,t.workspaceId],foreignColumns:[clients.id,clients.workspaceId]}).onDelete("restrict")]);
 
 export const expenses = pgTable("expenses", {
   id: uuid("id").defaultRandom().primaryKey(),
