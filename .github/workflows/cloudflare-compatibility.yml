@@ -1,0 +1,85 @@
+name: Cloudflare compatibility check
+
+on:
+  push:
+    branches:
+      - experiment/cloudflare-workers-payments
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: invoqly-cloudflare-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compatibility:
+    name: Inspect, build and verify both runtimes
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Reinstall the committed Cloudflare candidate from its lockfile
+        run: npm ci
+      - name: Run Cloudflare's recommended compatibility scan
+        run: npx vinext check
+      - name: Initialise a non-destructive Cloudflare Workers test setup when needed
+        run: |
+          if [ ! -f cloudflare.config.ts ] || [ ! -f vite.config.ts ]; then
+            npx vinext init --platform=cloudflare --name=invoqly --cdn-cache=none --data-cache=none --image-optimization=none
+          fi
+      - name: Apply narrowly scoped patches for the reported dependency ranges
+        run: |
+          npm pkg set 'devDependencies.vite=^8.3.3' 'overrides.fflate=^0.7.5'
+          npm install
+      - name: Require a clean audit after the targeted patches
+        run: npm audit --audit-level=moderate
+      - name: Type-check the migrated test workspace
+        run: npm run typecheck
+      - name: Build the Cloudflare-targeted application
+        run: npm run build:vinext
+      - name: Build the preserved Next.js application
+        run: npm run build
+      - name: Preserve the generated Cloudflare migration candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: invoqly-cloudflare-migration-candidate
+          path: |
+            package.json
+            package-lock.json
+            vite.config.ts
+            cloudflare.config.ts
+            .cloudflare/output/v0/workers/default/**
+          if-no-files-found: error
+          retention-days: 7
+      - name: Run unit tests
+        run: npm test
+      - name: Install Chromium for both browser suites
+        run: npx playwright install --with-deps chromium
+      - name: Verify the preserved Next.js production runtime
+        run: npm run test:e2e
+      - name: Exercise the app in Cloudflare's local workerd runtime
+        run: npx playwright test --config=playwright.vinext.config.ts
+      - name: Preserve browser failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invoqly-cloudflare-browser-evidence
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Commit the tested Cloudflare candidate to this isolated branch
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json vite.config.ts cloudflare.config.ts next.config.ts
+          git add -f .gitignore
+          if ! git diff --cached --quiet; then
+            git commit -m "[skip ci] chore: add verified Cloudflare Workers candidate"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
