@@ -55,13 +55,17 @@ export async function POST(request:Request) {
     const workspace = await getOrCreateWorkspace(user.id);
 
     if (input.action === "update-settings") {
-      await db.update(workspaces).set({ businessName:input.businessName, defaultCurrency:input.currency, locale:input.locale, updatedAt:new Date() }).where(eq(workspaces.id,workspace.id));
-      await db.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"workspace.updated",entityType:"workspace",entityId:workspace.id,metadata:{currency:input.currency}});
+      await db.transaction(async tx=>{
+        await tx.update(workspaces).set({ businessName:input.businessName, defaultCurrency:input.currency, locale:input.locale, updatedAt:new Date() }).where(eq(workspaces.id,workspace.id));
+        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"workspace.updated",entityType:"workspace",entityId:workspace.id,metadata:{currency:input.currency}});
+      });
     }
 
     if (input.action === "create-client") {
-      const [created] = await db.insert(clients).values({workspaceId:workspace.id,name:input.name,email:input.email,company:input.company,currency:input.currency}).returning();
-      await db.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"client.created",entityType:"client",entityId:created.id,metadata:{currency:created.currency}});
+      await db.transaction(async tx=>{
+        const [created] = await tx.insert(clients).values({workspaceId:workspace.id,name:input.name,email:input.email,company:input.company,currency:input.currency}).returning();
+        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"client.created",entityType:"client",entityId:created.id,metadata:{currency:created.currency}});
+      });
     }
 
     if (input.action === "create-invoice") {
@@ -80,8 +84,10 @@ export async function POST(request:Request) {
     }
 
     if (input.action === "create-expense") {
-      const [created] = await db.insert(expenses).values({workspaceId:workspace.id,vendor:input.vendor,category:input.category,date:input.date,amountMinor:input.amountMinor,currency:input.currency,notes:input.notes}).returning();
-      await db.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"expense.created",entityType:"expense",entityId:created.id,metadata:{amountMinor:created.amountMinor,currency:created.currency}});
+      await db.transaction(async tx=>{
+        const [created] = await tx.insert(expenses).values({workspaceId:workspace.id,vendor:input.vendor,category:input.category,date:input.date,amountMinor:input.amountMinor,currency:input.currency,notes:input.notes}).returning();
+        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"expense.created",entityType:"expense",entityId:created.id,metadata:{amountMinor:created.amountMinor,currency:created.currency}});
+      });
     }
 
     if (input.action === "create-payment") {
@@ -102,20 +108,28 @@ export async function POST(request:Request) {
     }
 
     if (input.action === "send-invoice") {
-      const [invoice] = await db.select().from(invoices).where(and(eq(invoices.id,input.invoiceId),eq(invoices.workspaceId,workspace.id))).limit(1);
-      if (!invoice) return fail("Invoice not found.",404);
-      if (invoice.status !== "Draft") return fail("Only draft invoices can be issued.",409);
-      const status = invoice.dueDate < today() ? "Overdue" : "Sent";
-      await db.update(invoices).set({status,updatedAt:new Date()}).where(and(eq(invoices.id,invoice.id),eq(invoices.workspaceId,workspace.id)));
-      await db.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"invoice.issued",entityType:"invoice",entityId:invoice.id,metadata:{number:invoice.number}});
+      const issueResult = await db.transaction(async tx=>{
+        const [invoice] = await tx.select().from(invoices).where(and(eq(invoices.id,input.invoiceId),eq(invoices.workspaceId,workspace.id))).for("update").limit(1);
+        if (!invoice) return {error:"not-found" as const};
+        if (invoice.status !== "Draft") return {error:"not-draft" as const};
+        const status = invoice.dueDate < today() ? "Overdue" : "Sent";
+        await tx.update(invoices).set({status,updatedAt:new Date()}).where(and(eq(invoices.id,invoice.id),eq(invoices.workspaceId,workspace.id)));
+        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"invoice.issued",entityType:"invoice",entityId:invoice.id,metadata:{number:invoice.number}});
+        return {ok:true as const};
+      });
+      if ("error" in issueResult) return issueResult.error==="not-found"?fail("Invoice not found.",404):fail("Only draft invoices can be issued.",409);
     }
 
     if (input.action === "delete-draft-invoice") {
-      const [invoice] = await db.select().from(invoices).where(and(eq(invoices.id,input.invoiceId),eq(invoices.workspaceId,workspace.id))).limit(1);
-      if (!invoice) return fail("Invoice not found.",404);
-      if (invoice.status !== "Draft") return fail("Issued invoices are retained as financial records.",409);
-      await db.delete(invoices).where(and(eq(invoices.id,invoice.id),eq(invoices.workspaceId,workspace.id)));
-      await db.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"invoice.draft_deleted",entityType:"invoice",entityId:invoice.id,metadata:{number:invoice.number}});
+      const deleteResult = await db.transaction(async tx=>{
+        const [invoice] = await tx.select().from(invoices).where(and(eq(invoices.id,input.invoiceId),eq(invoices.workspaceId,workspace.id))).for("update").limit(1);
+        if (!invoice) return {error:"not-found" as const};
+        if (invoice.status !== "Draft") return {error:"not-draft" as const};
+        await tx.delete(invoices).where(and(eq(invoices.id,invoice.id),eq(invoices.workspaceId,workspace.id)));
+        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"invoice.draft_deleted",entityType:"invoice",entityId:invoice.id,metadata:{number:invoice.number}});
+        return {ok:true as const};
+      });
+      if ("error" in deleteResult) return deleteResult.error==="not-found"?fail("Invoice not found.",404):fail("Issued invoices are retained as financial records.",409);
     }
 
     return NextResponse.json({ ok:true, workspace:await loadWorkspace(workspace.id) }, { headers: { "Cache-Control":"private, no-store" } });
