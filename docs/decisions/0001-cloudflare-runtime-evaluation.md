@@ -23,9 +23,13 @@ The isolated candidate uses Cloudflare's documented vinext setup alongside the p
 9. Existing Playwright workspace tests against the Next.js production runtime
 10. The same browser workflow against vinext's local Cloudflare/workerd runtime
 
-Latest full verification: [GitHub Actions run 42781669302](https://github.com/buttercode101/Invoqly/actions/runs/42781669302), successful on candidate commit `137aa455602419477667acb210e25569d423f4db`.
+Latest full verification: [GitHub Actions run 42786649543](https://github.com/buttercode101/Invoqly/actions/runs/42786649543), successful on candidate commit `c78a67e2216baad3e240f877089ac6a13631dffa`.
 
-This verifies local build and browser behaviour in workerd. It is not a deployed Cloudflare Worker test and does not prove database, authentication, object storage, email or payment integrations.
+The same six Playwright acceptance tests passed against both the preserved Next.js production runtime and the built vinext production preview running locally through Cloudflare's workerd integration. Coverage includes client creation, invoice creation, sent status, partial payment, overpayment rejection, full settlement, payment persistence after reload, legacy storage migration and responsive widths at 320, 375, 768 and 1120 pixels.
+
+The first attempt used vinext's development server and failed because React's development runtime requested `eval()`, which is not supported in workerd. The test harness was corrected to run the built production preview instead; the production-runtime suite then passed. Development-mode failure is not being presented as a production-runtime failure.
+
+This is local workerd production-preview evidence, not a remote Cloudflare Worker deployment. It does not prove database, authentication, object storage, email or payment-provider integrations.
 
 ## Decision
 
