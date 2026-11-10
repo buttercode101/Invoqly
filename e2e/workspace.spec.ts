@@ -23,7 +23,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
   const account=identity("Owner");
   await createAccount(page,account);
 
-  await page.getByRole("button",{name:"Add client"}).click();
+  await page.getByRole("button",{name:"Add a client"}).click();
   await page.getByLabel("Client or contact name").fill("Acme Services");
   await page.getByLabel("Business name").fill("Acme Services Ltd");
   await page.getByLabel("Email address").fill("accounts@acme.example");
@@ -89,7 +89,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
 test("workspace data is isolated between separate accounts",async({page})=>{
   const first=identity("First");
   await createAccount(page,first);
-  await page.getByRole("button",{name:"Add client"}).click();
+  await page.getByRole("button",{name:"Add a client"}).click();
   await page.getByLabel("Client or contact name").fill("Private Client One");
   await page.getByLabel("Business name").fill("Private Client One Ltd");
   await page.getByLabel("Email address").fill("private-one@example.com");
