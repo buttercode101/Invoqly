@@ -29,10 +29,12 @@ jobs:
         run: npx --yes vinext check
       - name: Initialise a non-destructive Cloudflare Workers test setup
         run: npx --yes vinext init --platform=cloudflare --name=invoqly --cdn-cache=none --data-cache=none --image-optimization=none
-      - name: Report dependency advisories introduced by vinext init
+      - name: Apply narrowly scoped patches for the reported dependency ranges
         run: |
-          npm audit --json > /tmp/invoqly-vinext-audit.json || true
-          node -e 'const a=require("/tmp/invoqly-vinext-audit.json"); console.log(JSON.stringify({metadata:a.metadata?.vulnerabilities, vulnerabilities:Object.entries(a.vulnerabilities||{}).map(([name,v])=>({name,severity:v.severity,isDirect:v.isDirect,via:v.via,range:v.range,fixAvailable:v.fixAvailable}))},null,2))'
+          npm pkg set 'overrides.vite=^8.3.3' 'overrides.fflate=^0.7.5'
+          npm install
+      - name: Require a clean audit after the targeted patches
+        run: npm audit --audit-level=moderate
       - name: Type-check the migrated test workspace
         run: npm run typecheck
       - name: Build the Cloudflare-targeted application
