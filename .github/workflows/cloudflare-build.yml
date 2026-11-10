@@ -2,7 +2,7 @@ name: Cloudflare compatibility build
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feat/invoqly-production]
   push:
     branches: [cloudflare/production-migration]
 
