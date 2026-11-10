@@ -1,12 +1,10 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Eye, EyeOff, LockKeyhole } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 export function AuthPanel({mode}:{mode:"sign-in"|"sign-up"}) {
-  const router=useRouter();
   const [name,setName]=useState("");
   const [email,setEmail]=useState("");
   const [password,setPassword]=useState("");
@@ -21,13 +19,11 @@ export function AuthPanel({mode}:{mode:"sign-in"|"sign-up"}) {
       if(mode==="sign-up"){
         const result=await authClient.signUp.email({name,email,password});
         if(result.error) throw new Error(result.error.message||"Account creation failed.");
-        router.replace("/sign-in?created=1");
-        router.refresh();
+        window.location.assign("/sign-in?created=1");
       } else {
         const result=await authClient.signIn.email({email,password,rememberMe:true});
         if(result.error) throw new Error(result.error.message||"Sign in failed.");
-        router.replace("/");
-        router.refresh();
+        window.location.assign("/");
       }
     } catch(e) {setError(e instanceof Error?e.message:"Something went wrong. Please try again.");}
     finally {setBusy(false);}
