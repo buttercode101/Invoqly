@@ -6,6 +6,10 @@ function identity(label:string) {
 }
 
 async function createAccount(page:Page,account:ReturnType<typeof identity>) {
+  page.on("close",()=>console.log("[e2e] browser page closed"));
+  page.on("crash",()=>console.log("[e2e] browser page crashed"));
+  page.on("pageerror",error=>console.log("[e2e] browser page error",error.message));
+  page.on("console",message=>{if(message.type()==="error")console.log("[e2e] browser console error",message.text())});
   await page.goto("/sign-up");
   await page.getByLabel("Your name").fill(account.name);
   await page.getByLabel("Email address").fill(account.email);
@@ -13,7 +17,9 @@ async function createAccount(page:Page,account:ReturnType<typeof identity>) {
   const signupResponsePromise=page.waitForResponse(response=>response.url().includes("/api/auth/sign-up/email")&&response.request().method()==="POST");
   await page.getByRole("button",{name:"Create account"}).click();
   const signupResponse=await signupResponsePromise;
-  console.log("[e2e] signup API status",signupResponse.status());
+  console.log("[e2e] signup API status",signupResponse.status(),"url",signupResponse.url());
+  try { console.log("[e2e] signup API body",JSON.stringify(await signupResponse.json()).slice(0,1600)); } catch(error) { console.log("[e2e] signup API body unavailable",String(error)); }
+  console.log("[e2e] URL immediately after signup",page.url());
   const signupAlert=await page.locator('[role="alert"]').textContent().catch(()=>null);
   if(signupAlert) console.log("[e2e] signup alert",signupAlert);
   await expect(page).toHaveURL(/\/sign-in/);
