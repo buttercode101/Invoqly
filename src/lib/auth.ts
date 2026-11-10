@@ -51,6 +51,6 @@ export const auth = betterAuth({
   rateLimit: {
     enabled: true,
     window: 60,
-    max: 10,
+    max: process.env.CI === "true" ? 30 : 10,
   },
 });
