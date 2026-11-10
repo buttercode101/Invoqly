@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run src",
     "test:e2e": "playwright test",
-    "db:migrate": "node scripts/migrate.mjs"
+    "db:migrate": "node scripts/migrate.mjs",
+    "test:e2e:remote": "playwright test"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
