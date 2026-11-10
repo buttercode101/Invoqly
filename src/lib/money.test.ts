@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addMoney, currencyExponent, formatMoney, makeMoney } from "./money";
+import { addMoney, currencyExponent, decimalToMinor, formatMinor, formatMoney, makeMoney } from "./money";
 
 describe("money domain", () => {
   it("adds only amounts in the same currency", () => {
@@ -20,5 +20,22 @@ describe("money domain", () => {
   it("rejects malformed currency codes and unsafe amounts", () => {
     expect(() => makeMoney(1n,"US")).toThrow(/ISO code/);
     expect(() => formatMoney(makeMoney(BigInt(Number.MAX_SAFE_INTEGER)+1n,"USD"),"en-US")).toThrow(/safe formatting/);
+  });
+});
+
+describe("minor-unit input and formatting", () => {
+  it("converts decimal strings to integer minor units", () => {
+    expect(decimalToMinor("1234.56","ZAR")).toBe(123456);
+    expect(decimalToMinor("1200","JPY")).toBe(1200);
+    expect(decimalToMinor("1.234","KWD")).toBe(1234);
+  });
+  it("rejects excessive decimal precision and unsafe amounts", () => {
+    expect(() => decimalToMinor("1.234","USD")).toThrow(/decimal places/);
+    expect(() => decimalToMinor("9007199254740992.00","USD")).toThrow(/too large/);
+    expect(() => decimalToMinor("-1.00","USD")).toThrow(/valid/);
+  });
+  it("formats integer minor units in the requested currency", () => {
+    expect(formatMinor(123456,"USD","en-US")).toBe("$1,234.56");
+    expect(formatMinor(123456,"ZAR","en-ZA")).toContain("1 234,56");
   });
 });
