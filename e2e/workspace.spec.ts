@@ -119,5 +119,9 @@ for(const width of [320,375,768,1120]){
     await page.goto("/sign-up");
     const signup=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
     expect(signup.document).toBeLessThanOrEqual(signup.viewport);
+    await page.goto("/forgot-password");
+    await expect(page.getByRole("heading",{name:"Reset your password"})).toBeVisible();
+    await page.goto("/reset-password");
+    await expect(page.getByRole("heading",{name:"Choose a new password"})).toBeVisible();
   });
 }
