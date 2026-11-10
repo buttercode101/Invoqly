@@ -2,9 +2,10 @@ import "server-only";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
+import { getDatabaseUrl } from "@/lib/db/connection";
 
-const connectionString=process.env.DATABASE_URL;
-if(!connectionString) throw new Error("DATABASE_URL is required.");
+const connectionString = getDatabaseUrl();
+if (!connectionString) throw new Error("A database connection is required.");
 
 const globalForDb=globalThis as typeof globalThis & { invoqlySql?: ReturnType<typeof postgres> };
 const sql=globalForDb.invoqlySql??postgres(connectionString,{max:5,idle_timeout:20,connect_timeout:10,prepare:false});
