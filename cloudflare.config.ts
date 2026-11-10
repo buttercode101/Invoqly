@@ -8,7 +8,6 @@ if (!configuredHyperdriveId && !localHyperdriveConnection) {
 const hyperdriveId = configuredHyperdriveId || "00000000-0000-0000-0000-000000000000";
 
 export default defineConfig({
-  accountId: "90cefa028781f749f5816c5748f04cd2",
   worker: defineWorker({
     name: "invoqly-preview",
     entrypoint: "vinext/server/fetch-handler",
