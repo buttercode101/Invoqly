@@ -14,7 +14,7 @@ export function AuthPanel({mode}:{mode:"sign-in"|"sign-up"}) {
   const [error,setError]=useState("");
   const [notice,setNotice]=useState("");
   const [busy,setBusy]=useState(false);
-  useEffect(()=>{if(mode==="sign-in"&&new URLSearchParams(window.location.search).get("created")==="1")setNotice("Account created. Check your inbox if email verification is required.");},[mode]);
+  useEffect(()=>{if(mode!=="sign-in")return;const params=new URLSearchParams(window.location.search);if(params.get("created")==="1")setNotice("Account created. Check your inbox if email verification is required.");if(params.get("reset")==="1")setNotice("Your password has been updated. Sign in with your new password.");},[mode]);
   const submit=async(event:FormEvent<HTMLFormElement>)=>{
     event.preventDefault();setError("");setBusy(true);
     try {
