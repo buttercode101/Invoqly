@@ -1,5 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
+process.env.PLAYWRIGHT_BASE_URL = "http://127.0.0.1:3001";
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
@@ -16,6 +18,10 @@ export default defineConfig({
     url: "http://127.0.0.1:3001",
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
-    env: { PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3001" }
+    env: {
+      PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3001",
+      BETTER_AUTH_URL: "http://127.0.0.1:3001",
+      NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3001"
+    }
   }
 });
