@@ -13,5 +13,10 @@
   "observability": {
     "enabled": true
   },
-  "workers_dev": true
+  "workers_dev": true,
+  "vars": {
+    "BETTER_AUTH_URL": "https://invoqly-preview.buttercoder-dev.workers.dev",
+    "NEXT_PUBLIC_APP_URL": "https://invoqly-preview.buttercoder-dev.workers.dev",
+    "AUTH_EMAIL_VERIFICATION": "false"
+  }
 }
