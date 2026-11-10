@@ -2,8 +2,6 @@ name: Cloudflare compatibility
 on:
   pull_request:
     branches: [feat/invoqly-production, main]
-  push:
-    branches: [feat/cloudflare-invoqly-production]
 concurrency:
   group: invoqly-cloudflare-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
