@@ -5,7 +5,7 @@ on:
   push:
     branches: [feat/cloudflare-invoqly-production]
 concurrency:
-  group: invoqly-cloudflare-${{ github.event.pull_request.number || github.ref }}
+  group: invoqly-cloudflare-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 permissions:
   contents: write
