@@ -31,7 +31,7 @@ jobs:
         run: npx --yes vinext init --platform=cloudflare --name=invoqly --cdn-cache=none --data-cache=none --image-optimization=none
       - name: Apply narrowly scoped patches for the reported dependency ranges
         run: |
-          npm pkg set 'overrides.vite=^8.3.3' 'overrides.fflate=^0.7.5'
+          npm pkg set 'devDependencies.vite=^8.3.3' 'overrides.fflate=^0.7.5'
           npm install
       - name: Require a clean audit after the targeted patches
         run: npm audit --audit-level=moderate
