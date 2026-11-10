@@ -44,7 +44,7 @@ jobs:
       - name: Regenerate lockfile for merged dependency graph
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
       - name: Install generated dependency graph
-        run: npm ci
+        run: npm ci --include=dev
       - name: Scan Next.js compatibility
         run: npx vinext check
       - name: Apply production schema to isolated CI PostgreSQL
