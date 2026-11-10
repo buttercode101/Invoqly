@@ -24,8 +24,8 @@ export default function HomePage(){
  const filteredInvoices=useMemo(()=>store.invoices.filter(i=>{const c=store.clients.find(x=>x.id===i.clientId);return (i.number+" "+(c?.name??"")+" "+i.status).toLowerCase().includes(query.toLowerCase())}),[store,query]);
  const invoiced=store.invoices.filter(i=>i.status!=="Draft").reduce((s,i)=>s+i.quantity*i.unitPriceMinor,0);
  const collected=store.invoices.filter(i=>i.status==="Paid").reduce((s,i)=>s+i.quantity*i.unitPriceMinor,0);
- const awaiting=store.invoices.filter(i=>i.status==="Sent").reduce((s,i)=>s+i.quantity*i.unitPrice,0);
- const overdue=store.invoices.filter(i=>i.status==="Overdue").reduce((s,i)=>s+i.quantity*i.unitPrice,0);
+ const awaiting=store.invoices.filter(i=>i.status==="Sent").reduce((s,i)=>s+i.quantity*i.unitPriceMinor,0);
+ const overdue=store.invoices.filter(i=>i.status==="Overdue").reduce((s,i)=>s+i.quantity*i.unitPriceMinor,0);
  const exportData=()=>{const blob=new Blob([JSON.stringify(store,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="invoqly-workspace-backup.json";a.click();URL.revokeObjectURL(url)};
  const createInvoice=(data:{clientId:string;description:string;quantity:number;unitPriceMinor:number;currency:string;dueDate:string})=>{const number="INV-"+String(149+store.invoices.length).padStart(4,"0");const invoice:Invoice={...data,id:crypto.randomUUID(),number,issueDate:today(),status:"Draft",createdAt:today()};setStore(s=>({...s,invoices:[invoice,...s.invoices]}));setActive("Invoices");setCreate("")};
  const createClient=(data:Omit<Client,"id"|"createdAt">)=>{setStore(s=>({...s,clients:[{...data,id:crypto.randomUUID(),createdAt:today()},...s.clients]}));setActive("Clients");setCreate("")};
