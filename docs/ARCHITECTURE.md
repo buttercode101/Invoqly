@@ -15,7 +15,7 @@
 - Background job provider for reminders, recurring documents and email
 - Provider adapters for payment gateways and FX rates
 
-No external service is considered configured until credentials, migrations, access policies and live integration tests are present. Never commit secrets.
+The current functional preview persists records in browser local storage only. This is not suitable for real customer or financial data. No external service is considered configured until credentials, migrations, access policies and live integration tests are present. Never commit secrets.
 
 ## Domain boundaries
 - identity: users, sessions, invitations
