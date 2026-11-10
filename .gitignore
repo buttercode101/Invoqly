@@ -11,3 +11,4 @@ coverage
 .open-next/
 .wrangler/
 cloudflare-dry-run/
+wrangler.deploy.jsonc

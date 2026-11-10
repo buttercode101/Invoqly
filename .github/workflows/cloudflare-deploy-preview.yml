@@ -1,0 +1,76 @@
+name: Deploy Cloudflare preview
+
+on:
+  push:
+    branches: [cloudflare/production-migration]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: invoqly-cloudflare-preview-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    if: ${{ vars.CLOUDFLARE_HYPERDRIVE_ID != '' && secrets.CLOUDFLARE_API_TOKEN != '' && secrets.BETTER_AUTH_SECRET != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: invoqly
+          POSTGRES_PASSWORD: invoqly_test
+          POSTGRES_DB: invoqly_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U invoqly -d invoqly_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_HYPERDRIVE_ID: ${{ vars.CLOUDFLARE_HYPERDRIVE_ID }}
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      DATABASE_URL: postgres://invoqly:invoqly_test@127.0.0.1:5432/invoqly_test
+      BETTER_AUTH_URL: https://invoqly-preview.buttercoder-dev.workers.dev
+      NEXT_PUBLIC_APP_URL: https://invoqly-preview.buttercoder-dev.workers.dev
+      AUTH_EMAIL_VERIFICATION: "false"
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run build:cloudflare
+      - name: Render the preview-only Hyperdrive binding
+        run: node scripts/render-cloudflare-config.mjs
+      - name: Deploy isolated Cloudflare preview
+        run: npx wrangler deploy --config wrangler.deploy.jsonc
+      - name: Set Better Auth secret without printing it
+        run: printf '%s' "$BETTER_AUTH_SECRET" | npx wrangler secret put BETTER_AUTH_SECRET --config wrangler.deploy.jsonc
+      - name: Verify deployed Worker and database
+        env:
+          PREVIEW_URL: https://invoqly-preview.buttercoder-dev.workers.dev
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          for attempt in $(seq 1 30); do
+            response=$(curl --fail --silent "$PREVIEW_URL/api/health" || true)
+            if [ -n "$response" ] && echo "$response" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const x=JSON.parse(s);process.exit(x.status==="ok"&&x.database==="ok"?0:1)}catch{process.exit(1)}})'; then
+              echo "Cloudflare preview and Hyperdrive database are healthy."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Cloudflare preview did not become healthy. Inspect Worker logs."
+          exit 1

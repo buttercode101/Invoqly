@@ -18,5 +18,6 @@
     "BETTER_AUTH_URL": "https://invoqly-preview.buttercoder-dev.workers.dev",
     "NEXT_PUBLIC_APP_URL": "https://invoqly-preview.buttercoder-dev.workers.dev",
     "AUTH_EMAIL_VERIFICATION": "false"
-  }
+  },
+  "account_id": "90cefa028781f749f5816c5748f04cd2"
 }
