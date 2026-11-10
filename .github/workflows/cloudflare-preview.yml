@@ -63,6 +63,10 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Test preserved Next.js runtime
         run: npm run test:e2e
+      - name: Configure local Worker secrets
+        run: |
+          printf 'BETTER_AUTH_SECRET=%s\n' "$BETTER_AUTH_SECRET" > .dev.vars
+          printf 'AUTH_EMAIL_VERIFICATION=false\n' >> .dev.vars
       - name: Test Cloudflare workerd production runtime
         run: npm run test:e2e:vinext
       - name: Commit verified dependency lockfile
