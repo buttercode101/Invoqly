@@ -2,8 +2,10 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { db, schema } from "@/lib/db";
+import { sendTransactionalEmail } from "@/lib/email";
 
 const secret = process.env.BETTER_AUTH_SECRET;
+const emailVerificationRequired = process.env.AUTH_EMAIL_VERIFICATION === "true";
 if (!secret || secret.length < 32) throw new Error("BETTER_AUTH_SECRET must contain at least 32 characters.");
 
 export const auth = betterAuth({
@@ -18,9 +20,18 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
+    requireEmailVerification: emailVerificationRequired,
+    sendResetPassword: async ({ user, url }) => { await sendTransactionalEmail({to:user.email,subject:"Reset your Invoqly password",text:`Use this secure link to reset your password: ${url}\n\nIf you did not request this, you can ignore this email.`}); },
     minPasswordLength: 12,
     maxPasswordLength: 128,
     revokeSessionsOnPasswordReset: true,
+  },
+  emailVerification: {
+    sendOnSignUp: emailVerificationRequired,
+    sendOnSignIn: emailVerificationRequired,
+    autoSignInAfterVerification: true,
+    expiresIn: 3600,
+    sendVerificationEmail: async ({ user, url }) => { if(emailVerificationRequired) await sendTransactionalEmail({to:user.email,subject:"Verify your Invoqly email",text:`Confirm your email address to secure your Invoqly account: ${url}\n\nThis link expires in one hour.`}); },
   },
   trustedOrigins: [
     "https://invoqly.xyz",
