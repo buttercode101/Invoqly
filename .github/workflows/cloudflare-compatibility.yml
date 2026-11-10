@@ -1,0 +1,29 @@
+name: Cloudflare compatibility check
+
+on:
+  push:
+    branches:
+      - experiment/cloudflare-vinext-check
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: invoqly-cloudflare-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compatibility:
+    name: Inspect Next.js compatibility with vinext
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Install the exact committed dependency graph
+        run: npm ci
+      - name: Run Cloudflare's recommended compatibility scan
+        run: npx --yes vinext check
