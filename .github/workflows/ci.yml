@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
     branches: [main, "feat/**"]
-permissions:
+concurrency:\n  group: invoqly-ci-${{ github.ref }}\n  cancel-in-progress: true\npermissions:
   contents: read
 jobs:
   verify:
