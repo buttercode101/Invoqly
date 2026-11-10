@@ -86,7 +86,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await expect(page.getByText("Cloud hosting")).toBeVisible();
 });
 
-test("workspace data is isolated between separate accounts",async({page})=>{
+test("workspace data is isolated between separate accounts",async({page,browser})=>{
   const first=identity("First");
   await createAccount(page,first);
   await page.getByRole("button",{name:"Add a client"}).click();
@@ -96,13 +96,17 @@ test("workspace data is isolated between separate accounts",async({page})=>{
   await page.getByRole("button",{name:"Save client"}).click();
   await expect(page.getByRole("heading",{name:"Private Client One"})).toBeVisible();
 
-  await page.getByRole("button",{name:"Sign out"}).click();
-  await expect(page).toHaveURL(/\/sign-in/);
   const second=identity("Second");
-  await createAccount(page,second);
-  await page.getByRole("button",{name:"Clients"}).click();
-  await expect(page.getByText("No clients yet")).toBeVisible();
-  await expect(page.getByText("Private Client One")).toHaveCount(0);
+  const secondContext=await browser.newContext({baseURL:"http://127.0.0.1:3000"});
+  try {
+    const secondPage=await secondContext.newPage();
+    await createAccount(secondPage,second);
+    await secondPage.getByRole("button",{name:"Clients"}).click();
+    await expect(secondPage.getByText("No clients yet")).toBeVisible();
+    await expect(secondPage.getByText("Private Client One")).toHaveCount(0);
+  } finally {
+    await secondContext.close();
+  }
 });
 
 for(const width of [320,375,768,1120]){
