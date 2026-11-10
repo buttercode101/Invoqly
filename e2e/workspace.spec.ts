@@ -36,8 +36,12 @@ test("client, invoice, payment status and expense survive a reload", async ({ pa
   await page.getByRole("button", { name: "Payments" }).click();
   await page.getByRole("button", { name: "Record payment" }).click();
   await page.getByLabel("Invoice").selectOption({ index: 0 });
-  await page.getByLabel("Amount received").fill("1501.00");
+  await page.getByLabel("Amount received").fill("1502.00");
   await page.getByLabel("Date received").fill("2026-11-10");
+  await page.getByRole("button", { name: "Save payment" }).click();
+  await expect(page.getByRole("alert")).toContainText("cannot exceed the outstanding invoice balance");
+
+  await page.getByLabel("Amount received").fill("1501.00");
   await page.getByRole("button", { name: "Save payment" }).click();
   await page.getByRole("button", { name: "Invoices" }).click();
   await expect(page.locator("tbody tr").filter({ hasText: "Acme Services" })).toContainText("Paid");
