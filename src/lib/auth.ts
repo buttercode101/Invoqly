@@ -16,7 +16,7 @@ export function getAuth() {
   cachedAuth = betterAuth({
     appName: "Invoqly",
     baseURL: {
-      allowedHosts: ["invoqly.xyz","www.invoqly.xyz","invoqly.vercel.app","invoqly-*.vercel.app","localhost:3000","127.0.0.1:3000","invoqly-preview.*.workers.dev"],
+      allowedHosts: ["invoqly.xyz","www.invoqly.xyz","invoqly.vercel.app","invoqly-*.vercel.app","localhost:3000","127.0.0.1:3000","invoqly-preview.buttercoder-dev.workers.dev"],
       protocol: "auto",
       fallback: "https://invoqly.xyz",
     },
@@ -43,7 +43,7 @@ export function getAuth() {
       "https://www.invoqly.xyz",
       "https://invoqly.vercel.app",
       "https://invoqly-*.vercel.app",
-      "https://invoqly-preview.*.workers.dev",
+      "https://invoqly-preview.buttercoder-dev.workers.dev",
       ...(process.env.NODE_ENV === "development" || process.env.CI === "true" ? ["http://localhost:3000","http://127.0.0.1:3000"] : []),
     ],
     advanced: {
