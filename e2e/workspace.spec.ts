@@ -10,7 +10,12 @@ async function createAccount(page:Page,account:ReturnType<typeof identity>) {
   await page.getByLabel("Your name").fill(account.name);
   await page.getByLabel("Email address").fill(account.email);
   await page.locator('input[type="password"]').fill(account.password);
+  const signupResponsePromise=page.waitForResponse(response=>response.url().includes("/api/auth/sign-up/email")&&response.request().method()==="POST");
   await page.getByRole("button",{name:"Create account"}).click();
+  const signupResponse=await signupResponsePromise;
+  console.log("[e2e] signup API",signupResponse.status(),(await signupResponse.text()).slice(0,1200));
+  const signupAlert=await page.locator('[role="alert"]').textContent().catch(()=>null);
+  if(signupAlert) console.log("[e2e] signup alert",signupAlert);
   await expect(page).toHaveURL(/\/sign-in/);
   await page.getByLabel("Email address").fill(account.email);
   await page.locator('input[type="password"]').fill(account.password);
