@@ -20,6 +20,8 @@ export default defineConfig({
     },
     env: {
       ASSETS: bindings.assets(),
+      BETTER_AUTH_SECRET: bindings.secret(),
+      AUTH_EMAIL_VERIFICATION: bindings.text(process.env.AUTH_EMAIL_VERIFICATION || "false"),
       HYPERDRIVE: bindings.hyperdrive({
         id: hyperdriveId,
         dev: { connectionString: localHyperdriveConnection }
