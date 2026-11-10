@@ -16,7 +16,7 @@ async function createAccount(page:Page,account:ReturnType<typeof identity>) {
   await page.locator('input[type="password"]').fill(account.password);
   await page.getByRole("button",{name:"Sign in"}).click();
   await expect(page.locator("main.shell")).toBeVisible();
-  await expect(page.getByText("Secure cloud workspace")).toBeVisible();
+  await expect(page.locator(".cloud-banner")).toContainText("Secure cloud workspace");
 }
 
 test("real account, client, invoice, partial payments, expense and reload",async({page})=>{
