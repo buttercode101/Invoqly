@@ -14,13 +14,11 @@ concurrency:
 
 jobs:
   deploy-preview:
-    if: ${{ vars.CLOUDFLARE_HYPERDRIVE_ID != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: 90cefa028781f749f5816c5748f04cd2
-      CLOUDFLARE_HYPERDRIVE_ID: ${{ vars.CLOUDFLARE_HYPERDRIVE_ID }}
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
       AUTH_EMAIL_VERIFICATION: "false"
       BETTER_AUTH_URL: https://invoqly-preview.buttercoder-dev.workers.dev

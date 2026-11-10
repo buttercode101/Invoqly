@@ -1,7 +1,7 @@
 import { bindings, defineConfig, defineWorker } from "cf/config";
 
 const localHyperdriveConnection = process.env.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE;
-const configuredHyperdriveId = process.env.CLOUDFLARE_HYPERDRIVE_ID;
+const configuredHyperdriveId = process.env.CLOUDFLARE_HYPERDRIVE_ID || "77c8a66ec1b64e1ca0b821f92a8ff235";
 if (!configuredHyperdriveId && !localHyperdriveConnection) {
   throw new Error("Set CLOUDFLARE_HYPERDRIVE_ID before deploying Invoqly to Cloudflare.");
 }
