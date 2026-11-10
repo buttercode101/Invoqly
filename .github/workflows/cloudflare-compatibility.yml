@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - name: Install the exact committed dependency graph
+      - name: Reinstall the committed Cloudflare candidate from its lockfile
         run: npm ci
       - name: Run Cloudflare's recommended compatibility scan
         run: npx vinext check
