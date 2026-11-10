@@ -1,14 +1,14 @@
 import "server-only";
-import { Pool } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-serverless";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) throw new Error("DATABASE_URL is required.");
+const connectionString=process.env.DATABASE_URL;
+if(!connectionString) throw new Error("DATABASE_URL is required.");
 
-const globalForDb = globalThis as typeof globalThis & { invoqlyPool?: Pool };
-const pool = globalForDb.invoqlyPool ?? new Pool({ connectionString, max: 5, idleTimeoutMillis: 10_000, connectionTimeoutMillis: 10_000 });
-if (process.env.NODE_ENV !== "production") globalForDb.invoqlyPool = pool;
+const globalForDb=globalThis as typeof globalThis & { invoqlySql?: ReturnType<typeof postgres> };
+const sql=globalForDb.invoqlySql??postgres(connectionString,{max:5,idle_timeout:20,connect_timeout:10,prepare:false});
+if(process.env.NODE_ENV!=="production") globalForDb.invoqlySql=sql;
 
-export const db = drizzle(pool, { schema });
+export const db=drizzle(sql,{schema});
 export { schema };
