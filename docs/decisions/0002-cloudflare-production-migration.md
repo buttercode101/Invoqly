@@ -26,3 +26,9 @@ A passing local workerd suite is not a remote deployment. Production traffic and
 - Never reuse another application's database or Cloudflare resources.
 - Never commit credentials. Hyperdrive credentials are configured in Cloudflare and referenced by ID in the Worker configuration.
 - Preserve the existing Vercel deployment as a rollback target until Cloudflare production acceptance passes.
+
+## Neon preview endpoint for Hyperdrive
+
+The isolated preview branch is in Neon project `polished-boat-47264206`, branch `br-snowy-moon-ban4ss6c`, database `invoqly`, role `invoqly_owner`. Use the direct read/write host `ep-bold-mode-bajcikj0.c-8.eu-central-1.aws.neon.tech` on port `5432`, not the pooled hostname. Require TLS. Do not require PostgreSQL channel binding: Cloudflare Workers TCP sockets do not expose the server certificate needed for channel binding.
+
+Hyperdrive query caching must be disabled. Never put the Neon password or a full connection URI in this repository; enter it directly into the Cloudflare Hyperdrive configuration UI.
