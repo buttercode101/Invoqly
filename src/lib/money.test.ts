@@ -12,6 +12,8 @@ describe("money domain", () => {
     expect(currencyExponent("JPY")).toBe(0);
     expect(currencyExponent("ZAR")).toBe(2);
     expect(currencyExponent("KWD")).toBe(3);
+    expect(currencyExponent("CLF")).toBe(4);
+    expect(() => currencyExponent("ZZZ")).toThrow(/Unsupported ISO 4217/);
   });
   it("formats using the requested locale and currency", () => {
     expect(formatMoney(makeMoney(123456n,"USD"),"en-US")).toBe("$1,234.56");
