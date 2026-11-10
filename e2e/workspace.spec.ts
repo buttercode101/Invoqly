@@ -97,7 +97,7 @@ test("workspace data is isolated between separate accounts",async({page,browser}
   await expect(page.getByRole("heading",{name:"Private Client One"})).toBeVisible();
 
   const second=identity("Second");
-  const secondContext=await browser.newContext({baseURL:"http://127.0.0.1:3000"});
+  const secondContext=await browser.newContext({baseURL:process.env.PLAYWRIGHT_BASE_URL||"http://127.0.0.1:3000"});
   try {
     const secondPage=await secondContext.newPage();
     await createAccount(secondPage,second);
