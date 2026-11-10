@@ -11,7 +11,7 @@ if (!secret || secret.length < 32) throw new Error("BETTER_AUTH_SECRET must cont
 export const auth = betterAuth({
   appName: "Invoqly",
   baseURL: {
-    allowedHosts: ["invoqly.xyz","www.invoqly.xyz","invoqly.vercel.app","invoqly-*.vercel.app","localhost:3000","127.0.0.1:3000"],
+    allowedHosts: ["invoqly.xyz","www.invoqly.xyz","invoqly.vercel.app","invoqly-*.vercel.app","invoqly-preview.buttercoder-dev.workers.dev","localhost:3000","127.0.0.1:3000"],
     protocol: "auto",
     fallback: "https://invoqly.xyz",
   },
@@ -38,6 +38,7 @@ export const auth = betterAuth({
     "https://www.invoqly.xyz",
     "https://invoqly.vercel.app",
     "https://invoqly-*.vercel.app",
+    "https://invoqly-preview.buttercoder-dev.workers.dev",
     ...(process.env.NODE_ENV === "development" || process.env.CI === "true" ? ["http://localhost:3000","http://127.0.0.1:3000"] : []),
   ],
   advanced: {
