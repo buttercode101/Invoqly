@@ -8,13 +8,19 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run src",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:check": "drizzle-kit check"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
     "next": "15.5.29",
     "react": "19.1.10",
-    "react-dom": "19.1.10"
+    "react-dom": "19.1.10",
+    "@better-auth/drizzle-adapter": "1.7.18",
+    "@neondatabase/serverless": "1.2.0",
+    "better-auth": "1.7.18",
+    "drizzle-orm": "0.45.4",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
@@ -22,7 +28,8 @@
     "@types/react-dom": "^19.0.3",
     "typescript": "^5.7.3",
     "vitest": "5.1.0",
-    "@playwright/test": "^1.56.1"
+    "@playwright/test": "^1.56.1",
+    "drizzle-kit": "0.31.5"
   },
   "overrides": {
     "postcss": "8.5.32"
