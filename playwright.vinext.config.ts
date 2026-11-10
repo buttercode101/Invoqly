@@ -19,6 +19,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
     env: {
+      ...process.env,
       PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3001",
       BETTER_AUTH_URL: "http://127.0.0.1:3001",
       NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3001"
