@@ -32,7 +32,7 @@ Creating an account is optional for guest core functionality. No subscription or
 - Email delivery and automated reminders are not yet enabled.
 - Tax calculations and jurisdiction-specific invoice compliance are not yet implemented.
 - Guest data is device-local until imported. Cloud data requires authentication and is tenant-scoped.
-- This is a release candidate under verification, not yet an advertised production accounting or tax-compliance service. Do not rely on it as a substitute for professional tax or accounting advice.
+- The Cloudflare preview has passed the release-candidate verification suite. Production deployment remains gated on a production Hyperdrive configuration and release workflow. Invoqly is not a tax-compliance service; do not rely on it as a substitute for professional tax or accounting advice.
 
 ## Architecture
 
