@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 test("remote preview supports real guest invoicing without creating an account or writing to cloud storage",async({page})=>{
+  let workspaceApiRequests=0;
+  page.on("request",request=>{if(request.url().includes("/api/workspace"))workspaceApiRequests++});
   await page.goto("/");
   await page.getByRole("link",{name:"Try Invoqly free — no account"}).click();
   await expect(page).toHaveURL(/\/guest$/);
@@ -49,4 +51,5 @@ test("remote preview supports real guest invoicing without creating an account o
   await expect(page.getByRole("link",{name:"Sign in"})).toBeVisible();
   const guestData=await page.evaluate(()=>localStorage.getItem("invoqly.guest.workspace.v1"));
   expect(guestData).not.toBeNull();
+  expect(workspaceApiRequests).toBe(0);
 });
