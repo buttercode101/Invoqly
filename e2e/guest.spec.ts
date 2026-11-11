@@ -89,7 +89,7 @@ test("guest can work without signup, then import their local records after creat
   await page.locator(".nav-item").filter({hasText:"Invoices"}).click();
   await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Guest project");
   await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Paid");
-  await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Draft");
+  await expect(page.locator("tbody tr").filter({hasText:"Guest Second Customer"})).toContainText("Draft");
   await page.locator(".nav-item").filter({hasText:"Expenses"}).click();
   await expect(page.getByText("Guest cloud hosting")).toBeVisible();
   await page.reload();
