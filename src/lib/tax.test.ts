@@ -53,6 +53,18 @@ describe("deterministic tax engine", () => {
     expect(full.errors).toContain("Supplier VAT registration number is required.");
   });
 
+  it("requires a full tax invoice for zero-rated supplies even below the abridged threshold", () => {
+    const result = validateSouthAfricanTaxInvoice({
+      currency: "ZAR",
+      considerationZarMinor: 1_000,
+      supplierVatRegistered: true,
+      zeroRatedSupply: true
+    });
+    expect(result.requiredDocument).toBe("full");
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("Recipient name is required.");
+  });
+
   it("rejects invalid VAT rates and unsafe amounts", () => {
     expect(() => calculateTaxLine(100, 15_001, "exclusive")).toThrow(/between 0% and 100%/);
     expect(() => calculateTaxLine(Number.MAX_SAFE_INTEGER, 10_000, "exclusive")).toThrow(/supported range/);

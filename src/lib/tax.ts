@@ -182,6 +182,7 @@ export type ZaTaxInvoiceFields = {
   currency: string;
   considerationZarMinor: number;
   supplierVatRegistered: boolean;
+  zeroRatedSupply?: boolean;
   supplierName?: string;
   supplierAddress?: string;
   supplierVatNumber?: string;
@@ -210,7 +211,7 @@ export type ZaTaxInvoiceValidation = {
 /** Conservative checklist based on SARS's published tax-invoice requirements. */
 export function validateSouthAfricanTaxInvoice(fields: ZaTaxInvoiceFields): ZaTaxInvoiceValidation {
   assertMoney(fields.considerationZarMinor, "Rand consideration");
-  const requiredDocument = fields.considerationZarMinor <= 5_000 ? "not_required" : fields.considerationZarMinor <= 500_000 ? "abridged" : "full";
+  const requiredDocument = fields.zeroRatedSupply ? "full" : fields.considerationZarMinor <= 5_000 ? "not_required" : fields.considerationZarMinor <= 500_000 ? "abridged" : "full";
   const errors: string[] = [];
   const warnings: string[] = [];
   if (!/^[A-Z]{3}$/.test(fields.currency)) errors.push("Currency must be a three-letter ISO code.");
@@ -256,6 +257,6 @@ export function validateSouthAfricanTaxInvoice(fields: ZaTaxInvoiceFields): ZaTa
     const days = Math.floor((validDate(fields.issueDate, "Issue date") - validDate(fields.supplyDate, "Supply date")) / DAY_MS);
     if (days > 21) warnings.push("The issue date is more than 21 days after the supply date; check the statutory time-of-issue rules and any exceptions.");
   }
-  if (fields.currency !== "ZAR") warnings.push("Rand consideration was supplied separately for the SARS document threshold; retain the exchange-rate source used.");
+  if (fields.currency !== "ZAR") warnings.push(fields.zeroRatedSupply ? "Zero-rated supplies may qualify for the foreign-currency exception; retain the supporting export evidence and exchange-rate source." : "Rand consideration was supplied separately for the SARS document threshold; retain the exchange-rate source used.");
   return { requiredDocument, valid: errors.length === 0, errors, warnings };
 }
