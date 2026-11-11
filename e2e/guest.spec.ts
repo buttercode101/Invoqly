@@ -5,6 +5,9 @@ test("guest can work without signup, then import their local records after creat
   await page.getByRole("link",{name:"Try Invoqly free — no account"}).click();
   await expect(page).toHaveURL(/\/guest$/);
   await expect(page.getByRole("heading",{name:"Your business, in good order."})).toBeVisible();
+  await page.getByRole("button",{name:"Settings"}).click();
+  await page.getByLabel("Business or trading name").fill("Guest Studio");
+  await page.getByRole("button",{name:"Overview"}).click();
   await page.getByRole("button",{name:"＋ Add a client"}).click();
   await page.getByLabel("Client name").fill("Guest Import Client");
   await page.getByLabel("Email address").fill("guest-import@example.com");
@@ -16,6 +19,11 @@ test("guest can work without signup, then import their local records after creat
   await page.getByLabel("Unit price (ZAR)").fill("845.00");
   await page.getByRole("button",{name:"Create invoice"}).click();
   await expect(page.getByRole("button",{name:"Print / PDF"})).toBeVisible();
+  const printPopupPromise=page.waitForEvent("popup");
+  await page.getByRole("button",{name:"Print / PDF"}).click();
+  const printPopup=await printPopupPromise;
+  await expect(printPopup.locator("h1").first()).toHaveText("Guest Studio");
+  await printPopup.close();
   await page.getByRole("button",{name:"Issue"}).click();
   await page.getByRole("button",{name:"Mark paid"}).click();
   await page.getByRole("button",{name:"Expenses"}).click();
