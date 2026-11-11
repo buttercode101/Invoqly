@@ -54,7 +54,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history: messages.slice(-8) })
+        body: JSON.stringify({ message: text, history: messages.slice(-8).map(item => ({ ...item, content: item.content.slice(-800) })) })
       });
       const payload = await response.json() as AssistantResult;
       if (!response.ok) throw new Error(payload.error || "The co-pilot couldn't complete that request.");
