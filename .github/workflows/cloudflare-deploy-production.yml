@@ -27,6 +27,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: 90cefa028781f749f5816c5748f04cd2
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      DATABASE_URL: ${{ secrets.INVOQLY_PRODUCTION_MIGRATION_DATABASE_URL }}
       CLOUDFLARE_HYPERDRIVE_ID: ${{ vars.CLOUDFLARE_PRODUCTION_HYPERDRIVE_ID }}
       INVOQLY_WORKER_NAME: invoqly-production
       AUTH_EMAIL_VERIFICATION: "false"
@@ -41,6 +42,7 @@ jobs:
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN"; exit 1; }
           test -n "$BETTER_AUTH_SECRET" || { echo "::error::Missing BETTER_AUTH_SECRET"; exit 1; }
+          test -n "$DATABASE_URL" || { echo "::error::Missing INVOQLY_PRODUCTION_MIGRATION_DATABASE_URL; add the dedicated production migration connection before releasing."; exit 1; }
           test -n "$CLOUDFLARE_HYPERDRIVE_ID" || { echo "::error::Missing CLOUDFLARE_PRODUCTION_HYPERDRIVE_ID repository variable"; exit 1; }
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -56,6 +58,8 @@ jobs:
           npm run typecheck
           npm test
           npm run build:vinext
+      - name: Apply production database migrations after explicit release confirmation
+        run: npm run db:migrate
       - name: Deploy production Worker with first-version secret
         shell: bash
         run: |
