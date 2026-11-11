@@ -30,6 +30,16 @@ test("guest can work without signup, then import their local records after creat
   const printPopup=await printPopupPromise;
   await expect(printPopup.locator("h1").first()).toHaveText("Guest Studio");
   await printPopup.close();
+  await page.getByRole("button",{name:"Quotes"}).click();
+  await page.getByRole("button",{name:"New quote"}).click();
+  await page.getByLabel("Customer name").fill("Guest Quote Customer");
+  await page.getByLabel("Email address").fill("guest-quote@example.com");
+  await page.getByLabel("Description").fill("Brand identity package");
+  await page.getByLabel("Unit price (ZAR)").fill("3200.00");
+  await page.getByRole("button",{name:"Create quotation"}).click();
+  await page.getByRole("button",{name:"Send quote"}).click();
+  await page.getByRole("button",{name:"Accept"}).click();
+  await page.getByRole("button",{name:"Convert to invoice"}).click();
   await page.getByRole("button",{name:"Issue"}).click();
   await page.getByRole("button",{name:"Mark paid"}).click();
   await page.getByRole("button",{name:"Expenses"}).click();
