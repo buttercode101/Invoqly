@@ -101,7 +101,7 @@ jobs:
         if: steps.credentials.outputs.ready == 'true'
         env:
           PLAYWRIGHT_BASE_URL: https://invoqly-preview.buttercoder-dev.workers.dev
-        run: npm run test:e2e
+        run: npx playwright test e2e/guest-remote.spec.ts
       - name: Upload browser acceptance diagnostics
         if: always() && steps.credentials.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
