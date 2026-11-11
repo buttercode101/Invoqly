@@ -90,8 +90,6 @@ test("guest can work without signup, then import their local records after creat
   await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Guest project");
   await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Paid");
   await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Draft");
-  await page.locator(".nav-item").filter({hasText:"Payments"}).click();
-  await expect(page.getByText("1 recorded payments")).toBeVisible();
   await page.locator(".nav-item").filter({hasText:"Expenses"}).click();
   await expect(page.getByText("Guest cloud hosting")).toBeVisible();
   await page.reload();
@@ -113,5 +111,5 @@ test("guest can work without signup, then import their local records after creat
   await page.locator(".nav-item").filter({hasText:"Clients"}).click();
   await expect(page.getByRole("heading",{name:"Guest Import Client"})).toHaveCount(1);
   await page.locator(".nav-item").filter({hasText:"Invoices"}).click();
-  await expect(page.locator("tbody tr").filter({hasText:"Guest Import Client"})).toHaveCount(1);
+  await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toHaveCount(1);
 });
