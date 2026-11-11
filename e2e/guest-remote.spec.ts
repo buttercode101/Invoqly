@@ -32,6 +32,15 @@ test("remote preview supports real guest invoicing without creating an account o
   await expect(popup.locator("h1").first()).toHaveText("Preview Guest Studio");
   await popup.close();
 
+  await page.getByRole("button",{name:"Quotes"}).click();
+  await page.getByRole("button",{name:"New quote"}).click();
+  await page.getByLabel("Customer name").fill("Preview Quote Customer");
+  await page.getByLabel("Description").fill("Consulting package");
+  await page.getByLabel("Unit price (ZAR)").fill("1200.00");
+  await page.getByRole("button",{name:"Create quotation"}).click();
+  await page.getByRole("button",{name:"Send quote"}).click();
+  await page.getByRole("button",{name:"Accept"}).click();
+  await page.getByRole("button",{name:"Convert to invoice"}).click();
   await page.getByRole("button",{name:"Issue"}).click();
   await page.getByRole("button",{name:"Mark paid"}).click();
   await page.getByRole("button",{name:"Expenses"}).click();
@@ -41,9 +50,13 @@ test("remote preview supports real guest invoicing without creating an account o
   await page.getByRole("button",{name:"Save expense"}).click();
   await page.reload();
   await page.locator("nav").getByRole("button",{name:"Clients"}).click();
-  await expect(page.getByText("Preview Guest Client")).toBeVisible();
+  await expect(page.getByText("No clients yet")).toBeVisible();
+  await expect(page.getByText("Preview Guest Client")).toHaveCount(0);
   await page.locator("nav").getByRole("button",{name:"Invoices"}).click();
   await expect(page.getByText(/INV-0001 · Preview Guest Client/)).toBeVisible();
+  await expect(page.getByText(/Preview Quote Customer/)).toBeVisible();
+  await page.locator("nav").getByRole("button",{name:"Quotes"}).click();
+  await expect(page.getByText(/QUO-0001 · Preview Quote Customer/)).toBeVisible();
   await page.locator("nav").getByRole("button",{name:"Expenses"}).click();
   await expect(page.getByText("Preview Guest Hosting")).toBeVisible();
   await expect(page.getByRole("link",{name:"Sign in"})).toBeVisible();
