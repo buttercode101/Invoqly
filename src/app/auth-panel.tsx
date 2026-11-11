@@ -19,11 +19,11 @@ export function AuthPanel({mode}:{mode:"sign-in"|"sign-up"}) {
       if(mode==="sign-up"){
         const result=await authClient.signUp.email({name,email,password});
         if(result.error) throw new Error(result.error.message||"Account creation failed.");
-        window.location.assign("/sign-in?created=1");
+        window.location.assign("/app");
       } else {
         const result=await authClient.signIn.email({email,password,rememberMe:true});
         if(result.error) throw new Error(result.error.message||"Sign in failed.");
-        window.location.assign("/");
+        window.location.assign("/app");
       }
     } catch(e) {setError(e instanceof Error?e.message:"Something went wrong. Please try again.");}
     finally {setBusy(false);}
