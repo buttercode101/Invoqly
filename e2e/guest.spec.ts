@@ -30,6 +30,12 @@ test("guest can work without signup, then import their local records after creat
   const printPopup=await printPopupPromise;
   await expect(printPopup.locator("h1").first()).toHaveText("Guest Studio");
   await printPopup.close();
+  await page.getByRole("button",{name:"New invoice"}).click();
+  await page.getByLabel("Customer name").fill("Guest One-off Customer");
+  await page.getByLabel("Email address").fill("oneoff@example.com");
+  await page.getByLabel("Description").fill("One-off project");
+  await page.getByLabel("Unit price (ZAR)").fill("425.00");
+  await page.getByRole("button",{name:"Create invoice"}).click();
   await page.getByRole("button",{name:"Quotes"}).click();
   await page.getByRole("button",{name:"New quote"}).click();
   await page.getByLabel("Customer name").fill("Guest Quote Customer");
@@ -78,9 +84,11 @@ test("guest can work without signup, then import their local records after creat
   await expect(page.getByRole("heading",{name:"Workspace settings"})).toBeVisible();
   await page.locator(".nav-item").filter({hasText:"Clients"}).click();
   await expect(page.getByRole("heading",{name:"Guest Import Client"})).toBeVisible();
+  await expect(page.getByText("Guest One-off Customer")).toHaveCount(0);
   await page.locator(".nav-item").filter({hasText:"Invoices"}).click();
   await expect(page.locator("tbody tr").filter({hasText:"Guest Import Client"})).toContainText("Guest project");
   await expect(page.locator("tbody tr").filter({hasText:"Guest Import Client"})).toContainText("Paid");
+  await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Draft");
   await page.locator(".nav-item").filter({hasText:"Payments"}).click();
   await expect(page.getByText("1 recorded payments")).toBeVisible();
   await page.locator(".nav-item").filter({hasText:"Expenses"}).click();
