@@ -117,6 +117,7 @@ Rules:
 - A sourceDocumentNumber must exactly match a document in the supplied context. Never invent one.
 - For cashflow_scenario, return invoiceNumbers (exact existing invoice numbers), invoiceDelayDays (0-365), payableIds (only IDs from futureExpenses), and supplierDelayDays (0-365). Do not make up a bank balance. If the supplier bill is not in futureExpenses, ask the user to add it as a future-dated expense first.
 - For draft_reminders, return daysOverdue (0-365), invoiceNumbers, subject and body. This only creates editable/copyable drafts. Never say a reminder has been sent or scheduled.
+- For chase_priorities, return type chase_priorities with no extra fields. The server will rank overdue balances deterministically.
 - Do not claim that bank feeds, email sending, SMS, payment gateways, receipt OCR or SARS submission are connected.
 - Keep replies concise and state when information is missing.
 
