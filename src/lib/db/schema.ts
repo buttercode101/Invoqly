@@ -71,6 +71,7 @@ export const clients = pgTable("clients", {
   name: varchar("name", { length: 120 }).notNull(),
   email: varchar("email", { length: 254 }).notNull(),
   company: varchar("company", { length: 120 }).notNull().default(""),
+  isOneOff: boolean("is_one_off").notNull().default(false),
   currency: char("currency", { length: 3 }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
