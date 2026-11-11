@@ -44,7 +44,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
 
   const submit = async (value = prompt) => {
     const text = value.trim();
-    if (!text || busy) return;
+    if (!text || busy || !consent) return;
     setPrompt("");
     setError("");
     setResult(null);
@@ -122,7 +122,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       <div className="assistant-main panel">
         <div className="assistant-topline">
           <div><b>Business assistant</b><small>{workspace.businessName} · {workspace.currency}</small></div>
-          <div className="assistant-top-actions"><span className="assistant-status"><i className={consent ? "is-enabled" : "is-idle"}/>{consent ? "Enabled" : "Consent required"}</span>{consent && <button type="button" className="assistant-disable" onClick={() => void setAiConsent(false)}>Turn off</button>}</div>
+          <div className="assistant-top-actions"><span className="assistant-status"><i className={consent ? "is-enabled" : "is-idle"}/>{consent ? "Enabled" : "Consent required"}</span>{consent && <button type="button" className="assistant-disable" onClick={() => void setAiConsent(false)} disabled={busy}>Turn off</button>}</div>
         </div>
         <div className="assistant-conversation" aria-live="polite">
           {!consent && <div className="assistant-consent">
