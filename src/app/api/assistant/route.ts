@@ -12,7 +12,7 @@ import { runBusinessAssistant } from "@/lib/ai";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const requestSchema = z.object({ message: z.string().trim().min(1).max(2_000), history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(2_000) })).max(8).default([]) });
+const requestSchema = z.object({ message: z.string().trim().min(1).max(2_000), history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(800) })).max(8).default([]) });
 const modelSchema = z.object({
   reply: z.string().trim().min(1).max(1_500),
   action: z.object({ type: z.string().max(40) }).passthrough()
@@ -103,10 +103,9 @@ export async function POST(request: Request) {
       businessName: snapshot.businessName,
       defaultCurrency: snapshot.currency,
       clients: snapshot.clients.slice(0, 30).map(c => ({ id: c.id, name: c.name, company: c.company, currency: c.currency })),
-      invoices: snapshot.invoices.slice(0, 40).map(i => ({ id: i.id, number: i.number, customerName: i.customerName, description: i.description, quantity: i.quantity, unitPriceMinor: i.unitPriceMinor, currency: i.currency, dueDate: i.dueDate, status: i.status })),
-      quotes: snapshot.quotes.slice(0, 30).map(q => ({ id: q.id, number: q.number, customerName: q.customerName, description: q.description, quantity: q.quantity, unitPriceMinor: q.unitPriceMinor, currency: q.currency, issueDate: q.issueDate, status: q.status })),
-      payments: snapshot.payments.slice(0, 80).map(p => ({ invoiceId: p.invoiceId, amountMinor: p.amountMinor, currency: p.currency, date: p.date })),
-      futureExpenses: snapshot.expenses.filter(e => e.date >= today()).slice(0, 30).map(e => ({ id: e.id, vendor: e.vendor, category: e.category, date: e.date, amountMinor: e.amountMinor, currency: e.currency }))
+      invoices: snapshot.invoices.slice(0, 30).map(i => ({ id: i.id, number: i.number, customerName: i.customerName, description: i.description.slice(0, 180), quantity: i.quantity, unitPriceMinor: i.unitPriceMinor, paidMinor: sum(snapshot.payments.filter(p => p.invoiceId === i.id).map(p => p.amountMinor)), currency: i.currency, dueDate: i.dueDate, status: i.status })),
+      quotes: snapshot.quotes.slice(0, 20).map(q => ({ id: q.id, number: q.number, customerName: q.customerName, description: q.description.slice(0, 180), quantity: q.quantity, unitPriceMinor: q.unitPriceMinor, currency: q.currency, issueDate: q.issueDate, status: q.status })),
+      futureExpenses: snapshot.expenses.filter(e => e.date >= today()).slice(0, 20).map(e => ({ id: e.id, vendor: e.vendor, category: e.category, date: e.date, amountMinor: e.amountMinor, currency: e.currency }))
     };
 
     const system = `You are Invoqly's in-app business co-pilot. Interpret the user's request and propose work; never execute it. Return exactly one JSON object with shape {"reply":"short useful response","action":{"type":"none"}}. Supported action types: none, create_quote, create_invoice, cashflow_scenario, draft_reminders, chase_priorities.
