@@ -1,9 +1,15 @@
 name: Deploy Invoqly production Worker
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      confirm_production:
+        description: Type DEPLOY to confirm the production release after database migration approval.
+        required: true
+        type: choice
+        options:
+          - NO
+          - DEPLOY
 
 permissions:
   contents: read
@@ -14,7 +20,7 @@ concurrency:
 
 jobs:
   deploy-production:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && inputs.confirm_production == 'DEPLOY'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
