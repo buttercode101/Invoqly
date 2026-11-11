@@ -94,6 +94,9 @@ jobs:
           done
           echo "Cloudflare preview did not become healthy. Inspect Worker logs."
           exit 1
+      - name: Install Playwright Chromium
+        if: steps.credentials.outputs.ready == 'true'
+        run: npx playwright install --with-deps chromium
       - name: Run authenticated browser acceptance against remote preview
         if: steps.credentials.outputs.ready == 'true'
         env:
