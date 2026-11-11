@@ -36,9 +36,7 @@ test("guest can work without signup, then import their local records after creat
     const data=JSON.parse(localStorage.getItem(key)||"{}");
     data.importId=crypto.randomUUID();
     localStorage.setItem(key,JSON.stringify(data));
-    const backup=localStorage.getItem(key);
-    localStorage.removeItem(key);
-    return backup;
+    return localStorage.getItem(key);
   });
 
   await page.goto("/sign-up");
@@ -67,17 +65,19 @@ test("guest can work without signup, then import their local records after creat
   await page.reload();
   await page.locator(".nav-item").filter({hasText:"Clients"}).click();
   await expect(page.getByRole("heading",{name:"Guest Import Client"})).toBeVisible();
-  const guestBackup=await page.evaluate(()=>localStorage.getItem("invoqly.guest.workspace.v1"));
-  expect(guestBackup).toBeNull();
+  const retainedLocalBackup=await page.evaluate(()=>localStorage.getItem("invoqly.guest.workspace.v1"));
+  expect(retainedLocalBackup).not.toBeNull();
 
-  // Simulate a retry after a lost response: the same import ID must not duplicate records.
-  await page.evaluate(value=>localStorage.setItem("invoqly.guest.workspace.v1",value!),savedGuestBackup);
+  // Importing the same device backup again simulates a retry after a lost response.
+  // The server must treat the stable import ID as idempotent.
   await page.reload();
   await page.locator(".nav-item").filter({hasText:"Settings"}).click();
   await expect(page.getByText("Guest workspace found on this device")).toBeVisible();
   page.once("dialog",dialog=>dialog.accept());
   await page.getByRole("button",{name:"Import guest work"}).click();
   await expect(page.getByText("Guest workspace found on this device")).toHaveCount(0);
+  const clearedLocalBackup=await page.evaluate(()=>localStorage.getItem("invoqly.guest.workspace.v1"));
+  expect(clearedLocalBackup).toBeNull();
   await page.locator(".nav-item").filter({hasText:"Clients"}).click();
   await expect(page.getByRole("heading",{name:"Guest Import Client"})).toHaveCount(1);
   await page.locator(".nav-item").filter({hasText:"Invoices"}).click();
