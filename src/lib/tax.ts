@@ -79,8 +79,6 @@ export type VatTransaction = {
   amountMinor: number;
   currency: string;
   priceMode: PriceMode;
-  /** Optional override for a documented special/historic tax treatment. */
-  taxRateBasisPoints?: number;
   /** Required for input-tax claims. This must be reviewed, not inferred by AI. */
   inputTaxClaimed?: boolean;
   supportingDocumentVerified?: boolean;
@@ -139,9 +137,7 @@ export function prepareSouthAfricanVat201(periodStart: string, periodEnd: string
     if (transaction.currency !== "ZAR") throw new Error("VAT201 preparation currently requires ZAR transactions. Convert foreign-currency transactions using a documented exchange rate before inclusion.");
     assertMoney(transaction.amountMinor, "Transaction " + transaction.id);
     const defaultRate = transaction.treatment === "standard" ? southAfricanVatRateBasisPoints(transaction.date) : 0;
-    const rate = transaction.taxRateBasisPoints ?? defaultRate;
-    assertRate(rate);
-    if (transaction.treatment !== "standard" && rate !== 0) throw new Error("Only standard-rated transactions may carry a VAT rate in this summary.");
+    const rate = defaultRate;
     const line = calculateTaxLine(transaction.amountMinor, rate, transaction.priceMode);
     summary.transactionCount++;
 
@@ -217,13 +213,14 @@ export function validateSouthAfricanTaxInvoice(fields: ZaTaxInvoiceFields): ZaTa
   const requiredDocument = fields.considerationZarMinor <= 5_000 ? "not_required" : fields.considerationZarMinor <= 500_000 ? "abridged" : "full";
   const errors: string[] = [];
   const warnings: string[] = [];
-  if (!fields.supplierVatRegistered) errors.push("The supplier has not confirmed VAT-vendor registration; do not label this document a VAT tax invoice.");
+  if (!/^[A-Z]{3}$/.test(fields.currency)) errors.push("Currency must be a three-letter ISO code.");
   if (requiredDocument === "not_required") {
     warnings.push("At this consideration amount, SARS does not require a tax invoice. Retain appropriate supporting evidence if input tax is to be considered.");
     return { requiredDocument, valid: errors.length === 0, errors, warnings };
   }
 
   const required = (value: string | undefined, label: string) => { if (!value?.trim()) errors.push(label + " is required."); };
+  if (!fields.supplierVatRegistered) errors.push("The supplier has not confirmed VAT-vendor registration; do not label this document a VAT tax invoice.");
   required(fields.supplierName, "Supplier name");
   required(fields.supplierAddress, "Supplier address");
   required(fields.supplierVatNumber, "Supplier VAT registration number");
@@ -254,6 +251,7 @@ export function validateSouthAfricanTaxInvoice(fields: ZaTaxInvoiceFields): ZaTa
     const calculatedTotal = fields.valueExVatMinor + fields.vatMinor;
     if (!Number.isSafeInteger(calculatedTotal) || calculatedTotal !== fields.totalInclVatMinor) errors.push("Value excluding VAT plus VAT must equal the total consideration.");
   }
+  if (fields.currency === "ZAR" && fields.totalInclVatMinor !== undefined && fields.totalInclVatMinor !== fields.considerationZarMinor) errors.push("The displayed total must match the rand consideration used for the SARS threshold.");
   if (fields.supplyDate && fields.issueDate) {
     const days = Math.floor((validDate(fields.issueDate, "Issue date") - validDate(fields.supplyDate, "Supply date")) / DAY_MS);
     if (days > 21) warnings.push("The issue date is more than 21 days after the supply date; check the statutory time-of-issue rules and any exceptions.");
