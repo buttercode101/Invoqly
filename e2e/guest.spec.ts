@@ -20,7 +20,8 @@ test("guest can work without signup, then import their local records after creat
   await page.getByRole("button",{name:"Save client"}).click();
   await page.getByRole("button",{name:"Invoices"}).click();
   await page.getByRole("button",{name:"New invoice"}).click();
-  await page.getByLabel("Bill to").selectOption({label:"Guest Import Client"});
+  await page.getByLabel("Customer name").fill("Guest One-off Customer");
+  await page.getByLabel("Email address").fill("oneoff@example.com");
   await page.getByLabel("Description").fill("Guest project");
   await page.getByLabel("Unit price (ZAR)").fill("845.00");
   await page.getByRole("button",{name:"Create invoice"}).click();
