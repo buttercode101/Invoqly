@@ -20,6 +20,7 @@ export default defineConfig({
     },
     env: {
       ASSETS: bindings.assets(),
+      AI: bindings.ai(),
       BETTER_AUTH_SECRET: bindings.secret(),
       AUTH_EMAIL_VERIFICATION: bindings.text(process.env.AUTH_EMAIL_VERIFICATION || "false"),
       BETTER_AUTH_URL: bindings.text(process.env.BETTER_AUTH_URL || "https://invoqly-preview.buttercoder-dev.workers.dev"),
