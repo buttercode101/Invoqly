@@ -272,10 +272,19 @@ export function calculateCashflow(input: CashflowInput, scenario: CashflowScenar
   const months = periods(input, events, "month");
   let lowest: number | null = input.openingBalanceMinor;
   let lowestDate: string | null = input.openingBalanceMinor === null ? null : input.asOfDate;
-  for (const period of weeks) {
-    if (period.closingBalanceMinor !== null && (lowest === null || period.closingBalanceMinor < lowest)) {
-      lowest = period.closingBalanceMinor;
-      lowestDate = period.endDate;
+  if (input.openingBalanceMinor !== null) {
+    const dailyNet = new Map<string, number>();
+    for (const event of events) {
+      const signed = event.direction === "inflow" ? event.amountMinor : -event.amountMinor;
+      dailyNet.set(event.date, addSafe(dailyNet.get(event.date) ?? 0, signed));
+    }
+    let runningBalance = input.openingBalanceMinor;
+    for (const [date, net] of [...dailyNet.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+      runningBalance = addSafe(runningBalance, net);
+      if (lowest === null || runningBalance < lowest) {
+        lowest = runningBalance;
+        lowestDate = date;
+      }
     }
   }
   const safeToSpend = lowest === null ? null : Math.max(0, lowest - reserve);
