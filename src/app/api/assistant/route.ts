@@ -11,7 +11,7 @@ import { runBusinessAssistant } from "@/lib/ai";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const requestSchema = z.object({ message: z.string().trim().min(1).max(2_000) });
+const requestSchema = z.object({ message: z.string().trim().min(1).max(2_000), history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(2_000) })).max(8).default([]) });
 const modelSchema = z.object({
   reply: z.string().trim().min(1).max(1_500),
   action: z.object({ type: z.string().max(40) }).passthrough()
@@ -129,6 +129,7 @@ ${message}`;
 
     const raw = await runBusinessAssistant([
       { role: "system", content: system },
+      ...body.data.history.slice(-8),
       { role: "user", content: message }
     ]);
     const clean = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
