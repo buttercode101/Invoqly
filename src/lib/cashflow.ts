@@ -96,7 +96,7 @@ const DAY_MS = 86_400_000;
 const MAX_SAFE = Number.MAX_SAFE_INTEGER;
 
 function parseDate(value: string, field: string): number {
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) throw new Error(field + " must be an ISO date (YYYY-MM-DD).");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(field + " must be an ISO date (YYYY-MM-DD).");
   const time = Date.parse(value + "T00:00:00.000Z");
   if (!Number.isFinite(time) || new Date(time).toISOString().slice(0, 10) !== value) throw new Error(field + " is not a valid calendar date.");
   return time;
