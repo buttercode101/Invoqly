@@ -70,12 +70,15 @@ jobs:
       - name: Unit tests
         if: steps.credentials.outputs.ready == 'true'
         run: npm test
-      - name: Build and deploy the isolated preview Worker
+      - name: Build and deploy the isolated preview Worker with its first-version secret
         if: steps.credentials.outputs.ready == 'true'
-        run: env -u BETTER_AUTH_SECRET npm run deploy:vinext
-      - name: Install the Better Auth Worker secret
-        if: steps.credentials.outputs.ready == 'true'
-        run: printf '%s' "$BETTER_AUTH_SECRET" | npx wrangler secret put BETTER_AUTH_SECRET --name invoqly-preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build:vinext
+          node --input-type=module -e 'import { writeFileSync } from "node:fs"; writeFileSync(".worker-secrets.json", JSON.stringify({ BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET }), { mode: 0o600 });'
+          npx cf deploy --prebuilt --mode production --secrets-file .worker-secrets.json
+          rm -f .worker-secrets.json
       - name: Verify the deployed Worker and Hyperdrive database
         if: steps.credentials.outputs.ready == 'true'
         env:
