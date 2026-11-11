@@ -152,16 +152,19 @@ function recurringEvents(items: RecurringCashflowItem[], asOf: string, end: stri
       throw new Error("Recurring dayOfMonth must be between 1 and 31.");
     }
     if (item.frequency === "weekly") {
+      let guard = 0;
       for (let cursor = itemStart; cursor <= endTime && cursor <= itemEnd; cursor += 7 * DAY_MS) {
         if (cursor >= startTime) events.push({ id: item.id + ":" + iso(cursor), label: item.label, date: iso(cursor), direction: item.direction, amountMinor: item.amountMinor, source: "recurring" });
+        if (++guard > 1100) throw new Error("Recurring schedule exceeds the supported 20-year forecast range.");
       }
     } else {
+      const anchorDay = item.dayOfMonth ?? Number(item.startDate.slice(-2));
       let cursor = item.startDate;
       let guard = 0;
       while (parseDate(cursor, "Recurring date") <= endTime && parseDate(cursor, "Recurring date") <= itemEnd) {
         const cursorTime = parseDate(cursor, "Recurring date");
         if (cursorTime >= startTime) events.push({ id: item.id + ":" + cursor, label: item.label, date: cursor, direction: item.direction, amountMinor: item.amountMinor, source: "recurring" });
-        cursor = addMonths(cursor, intervalMonths, item.dayOfMonth);
+        cursor = addMonths(cursor, intervalMonths, anchorDay);
         if (++guard > 240) throw new Error("Recurring schedule exceeds the supported 20-year forecast range.");
       }
     }
