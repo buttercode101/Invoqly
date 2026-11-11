@@ -129,7 +129,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
             <div className="assistant-consent-icon"><Sparkles size={19}/></div>
             <h2>{consentLoading ? "Checking your privacy preference…" : "Enable your AI co-pilot"}</h2>
             <p>When you use the co-pilot, your message, recent conversation turns and selected workspace records are processed by Cloudflare Workers AI. Invoqly records usage metadata, not your prompt text. No invoice or payment record is changed and no reminder is sent without your approval.</p>
-            <p>Review the <Link href="/privacy" target="_blank">privacy notice</Link> before enabling this optional feature.</p>
+            <p>Review the <Link href="/privacy" target="_blank" rel="noreferrer">privacy notice</Link> before enabling this optional feature.</p>
             <button className="btn btn-primary" onClick={() => void setAiConsent(true)} disabled={consentLoading}>I understand — enable AI</button>
           </div>}
           {consent && messages.length === 0 && <div className="assistant-welcome">
