@@ -40,6 +40,7 @@ export function createAuth(db: Database) {
     "https://invoqly.vercel.app",
     "https://invoqly-*.vercel.app",
     "https://invoqly-preview.buttercoder-dev.workers.dev",
+    "https://invoqly-production.buttercoder-dev.workers.dev",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",
