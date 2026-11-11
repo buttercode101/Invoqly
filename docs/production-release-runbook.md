@@ -32,7 +32,7 @@ Repository → Settings → Secrets and variables → Actions → Variables:
 - Name: `CLOUDFLARE_PRODUCTION_HYPERDRIVE_ID`
 - Value: the new production Hyperdrive ID
 
-The existing GitHub Actions secrets `CLOUDFLARE_API_TOKEN` and `BETTER_AUTH_SECRET` are required by the production workflow.
+The GitHub Actions secrets `CLOUDFLARE_API_TOKEN`, `BETTER_AUTH_SECRET`, and `INVOQLY_PRODUCTION_MIGRATION_DATABASE_URL` are required by the production workflow. The migration secret must point to the production Neon `main` branch and database `invoqly`; never use the preview branch or a pooled application connection. The migration step applies only the checked-in additive migrations before Worker deployment.
 
 ## Deployment
 
