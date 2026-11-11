@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("anonymous visitor can invoice without contacts and complete a quotation", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: "Try Invoqly free — no account" }).click();
-  await expect(page).toHaveURL(/\\/guest$/);
+  await expect(page).toHaveURL(/guest$/);
 
   await page.getByRole("button", { name: "Invoices" }).click();
   await page.getByRole("button", { name: "New invoice" }).click();
