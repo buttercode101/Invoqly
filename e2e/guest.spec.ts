@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 test("guest can work without signup, then import their local records after creating an account",async({page})=>{
-  await page.goto("/guest");
+  await page.goto("/");
+  await page.getByRole("link",{name:"Try Invoqly free — no account"}).click();
+  await expect(page).toHaveURL(/\/guest$/);
   await expect(page.getByRole("heading",{name:"Your business, in good order."})).toBeVisible();
   await page.getByRole("button",{name:"＋ Add a client"}).click();
   await page.getByLabel("Client name").fill("Guest Import Client");
@@ -22,7 +24,7 @@ test("guest can work without signup, then import their local records after creat
 
   await page.goto("/sign-up");
   await page.getByLabel("Your name").fill("Guest Import Owner");
-  await page.getByLabel("Email address").fill("guest-import-owner@example.com");
+  await page.getByLabel("Email address").fill("guest-import-owner-"+Date.now()+"@example.com");
   await page.locator('input[type="password"]').fill("InvoqlySecurePassphrase!2026");
   const signupResponsePromise=page.waitForResponse(response=>response.url().includes("/api/auth/sign-up/email")&&response.request().method()==="POST");
   await page.getByRole("button",{name:"Create account"}).click();
