@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   try {
     const context = await withDb(async db => {
       const user = await getCurrentUser(db);
-      if (!user) return { error: "Sign in to use the AI co-pilot.", status: 401 as const };
+      if (!user) return { ok: false as const, error: "Sign in to use the AI co-pilot.", status: 401 as const };
       const workspace = await getOrCreateWorkspace(db, user.id);
       const snapshot = await loadWorkspace(db, workspace.id);
       const admitted = await db.transaction(async tx => {
@@ -90,10 +90,10 @@ export async function POST(request: Request) {
         });
         return true;
       });
-      if (!admitted) return { error: "You've reached today's AI co-pilot limit of 20 requests. Your free core tools remain available.", status: 429 as const };
-      return { snapshot };
+      if (!admitted) return { ok: false as const, error: "You've reached today's AI co-pilot limit of 20 requests. Your free core tools remain available.", status: 429 as const };
+      return { ok: true as const, snapshot };
     });
-    if ("error" in context) return errorResponse(context.error, context.status);
+    if (!context.ok) return errorResponse(context.error, context.status);
 
     const snapshot = context.snapshot;
     const modelContext = {
