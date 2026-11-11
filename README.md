@@ -20,7 +20,7 @@ Guest records are stored locally in the current browser on the current device. T
 
 ## Create an account when you need cloud features
 
-An account unlocks a private PostgreSQL-backed workspace, server-side persistence and multi-device access. If a guest workspace is present in the same browser, the signed-in user can explicitly import its clients, invoices and expenses. Import keeps existing cloud records, records paid guest invoices in the payment ledger and uses a stable import ID to avoid duplicates if the request is retried.
+An account unlocks a private PostgreSQL-backed workspace, server-side persistence and multi-device access. If a guest workspace is present in the same browser, the signed-in user can import it directly; a JSON backup from another device can also be uploaded in workspace settings. Import keeps existing cloud records, records paid guest invoices in the payment ledger and uses a stable import ID to avoid duplicates if the request is retried. File imports use separate temporary storage so they never overwrite a different local guest workspace.
 
 Creating an account is optional for guest core functionality. No subscription or payment details are required to use the free core tools.
 
