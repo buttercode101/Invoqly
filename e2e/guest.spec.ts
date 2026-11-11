@@ -46,7 +46,7 @@ test("guest can work without signup, then import their local records after creat
   await page.getByRole("button",{name:"Send quote"}).click();
   await page.getByRole("button",{name:"Accept"}).click();
   await page.getByRole("button",{name:"Convert to invoice"}).click();
-  await page.getByRole("button",{name:"Issue"}).click();
+  await page.getByRole("button",{name:"Issue"}).last().click();
   await page.getByRole("button",{name:"Mark paid"}).click();
   await page.getByRole("button",{name:"Expenses"}).click();
   await page.getByRole("button",{name:"Add expense"}).click();
