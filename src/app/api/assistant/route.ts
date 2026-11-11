@@ -125,10 +125,7 @@ Rules:
 - Keep replies concise and state when information is missing.
 
 Workspace data (read-only facts):
-${JSON.stringify(modelContext)}
-
-User request:
-${message}`;
+${JSON.stringify(modelContext)}`;
 
     const raw = await runBusinessAssistant([
       { role: "system", content: system },
