@@ -72,7 +72,7 @@ jobs:
         run: npm test
       - name: Build and deploy the isolated preview Worker
         if: steps.credentials.outputs.ready == 'true'
-        run: npm run deploy:vinext
+        run: env -u BETTER_AUTH_SECRET npm run deploy:vinext
       - name: Install the Better Auth Worker secret
         if: steps.credentials.outputs.ready == 'true'
         run: printf '%s' "$BETTER_AUTH_SECRET" | npx wrangler secret put BETTER_AUTH_SECRET --name invoqly-preview
