@@ -2,7 +2,6 @@ import { bindings, defineConfig, defineWorker } from "cf/config";
 
 const localHyperdriveConnection = process.env.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE;
 const configuredHyperdriveId = process.env.CLOUDFLARE_HYPERDRIVE_ID || "77c8a66ec1b64e1ca0b821f92a8ff235";
-const workerName = process.env.INVOQLY_WORKER_NAME || "invoqly-preview";
 if (!configuredHyperdriveId && !localHyperdriveConnection) {
   throw new Error("Set CLOUDFLARE_HYPERDRIVE_ID before deploying Invoqly to Cloudflare.");
 }
@@ -10,7 +9,7 @@ const hyperdriveId = configuredHyperdriveId || "00000000-0000-0000-0000-00000000
 
 export default defineConfig({
   worker: defineWorker({
-    name: workerName,
+    name: process.env.INVOQLY_WORKER_NAME || "invoqly-preview",
     entrypoint: "vinext/server/fetch-handler",
     compatibilityDate: "2026-11-10",
     compatibilityFlags: ["nodejs_compat"],
