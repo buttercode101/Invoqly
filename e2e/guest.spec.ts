@@ -15,12 +15,21 @@ test("guest can work without signup, then import their local records after creat
   await page.getByLabel("Description").fill("Guest project");
   await page.getByLabel("Unit price (ZAR)").fill("845.00");
   await page.getByRole("button",{name:"Create invoice"}).click();
+  await expect(page.getByRole("button",{name:"Print / PDF"})).toBeVisible();
   await page.getByRole("button",{name:"Issue"}).click();
+  await page.getByRole("button",{name:"Mark paid"}).click();
   await page.getByRole("button",{name:"Expenses"}).click();
   await page.getByRole("button",{name:"Add expense"}).click();
   await page.getByLabel("Vendor or supplier").fill("Guest cloud hosting");
   await page.getByLabel("Amount (ZAR)").fill("45.00");
   await page.getByRole("button",{name:"Save expense"}).click();
+  const savedGuestBackup=await page.evaluate(()=>{
+    const key="invoqly.guest.workspace.v1";
+    const data=JSON.parse(localStorage.getItem(key)||"{}");
+    data.importId=crypto.randomUUID();
+    localStorage.setItem(key,JSON.stringify(data));
+    return localStorage.getItem(key);
+  });
 
   await page.goto("/sign-up");
   await page.getByLabel("Your name").fill("Guest Import Owner");
@@ -39,6 +48,7 @@ test("guest can work without signup, then import their local records after creat
   await expect(page.getByRole("heading",{name:"Guest Import Client"})).toBeVisible();
   await page.locator(".nav-item").filter({hasText:"Invoices"}).click();
   await expect(page.locator("tbody tr").filter({hasText:"Guest Import Client"})).toContainText("Guest project");
+  await expect(page.locator("tbody tr").filter({hasText:"Guest Import Client"})).toContainText("Paid");
   await page.locator(".nav-item").filter({hasText:"Expenses"}).click();
   await expect(page.getByText("Guest cloud hosting")).toBeVisible();
   await page.reload();
@@ -46,4 +56,17 @@ test("guest can work without signup, then import their local records after creat
   await expect(page.getByRole("heading",{name:"Guest Import Client"})).toBeVisible();
   const guestBackup=await page.evaluate(()=>localStorage.getItem("invoqly.guest.workspace.v1"));
   expect(guestBackup).toBeNull();
+
+  // Simulate a retry after a lost response: the same import ID must not duplicate records.
+  await page.evaluate(value=>localStorage.setItem("invoqly.guest.workspace.v1",value!),savedGuestBackup);
+  await page.reload();
+  await page.locator(".nav-item").filter({hasText:"Settings"}).click();
+  await expect(page.getByText("Guest workspace found on this device")).toBeVisible();
+  page.once("dialog",dialog=>dialog.accept());
+  await page.getByRole("button",{name:"Import guest work"}).click();
+  await expect(page.getByText("Guest workspace found on this device")).toHaveCount(0);
+  await page.locator(".nav-item").filter({hasText:"Clients"}).click();
+  await expect(page.getByRole("heading",{name:"Guest Import Client"})).toHaveCount(1);
+  await page.locator(".nav-item").filter({hasText:"Invoices"}).click();
+  await expect(page.locator("tbody tr").filter({hasText:"Guest Import Client"})).toHaveCount(1);
 });
