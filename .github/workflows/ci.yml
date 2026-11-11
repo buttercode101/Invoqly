@@ -31,13 +31,17 @@ jobs:
       BETTER_AUTH_URL: http://127.0.0.1:3000
       NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
       AUTH_EMAIL_VERIFICATION: "false"
+      CLOUDFLARE_HYPERDRIVE_ID: 00000000-0000-0000-0000-000000000000
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://invoqly:invoqly_test@127.0.0.1:5432/invoqly_test
+      CLOUDFLARE_INCLUDE_PROCESS_ENV: "true"
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 22
       - run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - run: npm ci
+      - run: npm ci --include=dev
+      - run: npx cf workers types
       - run: npm audit --audit-level=high
       - run: npm run db:migrate
       - run: npm run typecheck

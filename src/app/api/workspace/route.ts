@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, workspaces } from "@/lib/db/schema";
 import { getCurrentUser, getOrCreateWorkspace, loadWorkspace } from "@/lib/workspace";
 import { deriveInvoiceStatus, outstandingBalanceMinor } from "@/lib/billing";
@@ -14,7 +14,7 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>{const [year,
 const payload = z.discriminatedUnion("action", [
   z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20) }),
   z.object({ action:z.literal("create-client"), name:z.string().trim().min(1).max(120), email:z.string().trim().email().max(254).toLowerCase(), company:z.string().max(120).default(""), currency }),
-  z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid(), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, dueDate:date }),
+  z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid().optional(), customerName:z.string().trim().min(1).max(120).optional(), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, dueDate:date }),
   z.object({ action:z.literal("create-expense"), vendor:z.string().trim().min(1).max(160), category:z.string().trim().min(1).max(80), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, notes:z.string().max(500).default("") }),
   z.object({ action:z.literal("create-payment"), invoiceId:z.string().uuid(), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, method:z.string().min(1).max(40), reference:z.string().max(100).default(""), notes:z.string().max(500).default("") }),
   z.object({ action:z.literal("send-invoice"), invoiceId:z.string().uuid() }),
@@ -26,10 +26,12 @@ function today(){return new Date().toISOString().slice(0,10);}
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-    if (!user) return fail("Sign in to access your workspace.",401);
-    const workspace = await getOrCreateWorkspace(user.id);
-    return NextResponse.json({ workspace: await loadWorkspace(workspace.id) }, { headers: { "Cache-Control":"private, no-store" } });
+    return await withDb(async db => {
+      const user = await getCurrentUser(db);
+      if (!user) return fail("Sign in to access your workspace.",401);
+      const workspace = await getOrCreateWorkspace(db,user.id);
+      return NextResponse.json({ workspace: await loadWorkspace(db,workspace.id) }, { headers: { "Cache-Control":"private, no-store" } });
+    });
   } catch (error) {
     console.error("workspace.get",error);
     return fail("Your workspace could not be loaded. Please try again.",500);
@@ -41,18 +43,19 @@ export async function POST(request:Request) {
   if(!origin) return fail("A valid same-origin request is required.",403);
   let originUrl:URL;
   try { originUrl=new URL(origin); } catch { return fail("A valid same-origin request is required.",403); }
-  const allowedOrigin=originUrl.origin==="https://invoqly.xyz"||originUrl.origin==="https://www.invoqly.xyz"||originUrl.origin==="https://invoqly.vercel.app"||originUrl.origin==="http://localhost:3000"||originUrl.origin==="http://127.0.0.1:3000"||/^https:\/\/invoqly(?:-[a-z0-9-]+)*\.vercel\.app$/.test(originUrl.origin);
+  const allowedOrigin=originUrl.origin==="https://invoqly.xyz"||originUrl.origin==="https://www.invoqly.xyz"||originUrl.origin==="https://invoqly.vercel.app"||originUrl.origin==="https://invoqly-preview.buttercoder-dev.workers.dev"||originUrl.origin==="http://localhost:3000"||originUrl.origin==="http://127.0.0.1:3000"||originUrl.origin==="http://localhost:3001"||originUrl.origin==="http://127.0.0.1:3001"||/^https:\/\/invoqly(?:-[a-z0-9-]+)*\.vercel\.app$/.test(originUrl.origin);
   if(!allowedOrigin) return fail("This origin is not allowed to change workspace data.",403);
   if(!(request.headers.get("content-type")||"").toLowerCase().includes("application/json")) return fail("JSON content is required.",415);
   const length=Number(request.headers.get("content-length")||"0");
   if(length>16384) return fail("The submitted data is too large.",413);
   try {
-    const user = await getCurrentUser();
+    return await withDb(async db => {
+    const user = await getCurrentUser(db);
     if (!user) return fail("Sign in to make changes.",401);
     const parsed = payload.safeParse(await request.json());
     if (!parsed.success) return fail("Check the submitted details and try again.",422);
     const input = parsed.data;
-    const workspace = await getOrCreateWorkspace(user.id);
+    const workspace = await getOrCreateWorkspace(db,user.id);
 
     if (input.action === "update-settings") {
       await db.transaction(async tx=>{
@@ -69,15 +72,22 @@ export async function POST(request:Request) {
     }
 
     if (input.action === "create-invoice") {
-      const [client] = await db.select().from(clients).where(and(eq(clients.id,input.clientId),eq(clients.workspaceId,workspace.id))).limit(1);
-      if (!client) return fail("The selected client does not exist in this workspace.",404);
       if (!Number.isSafeInteger(input.quantity * input.unitPriceMinor)) return fail("The invoice total exceeds the supported amount range.",422);
+      if (!input.clientId && !input.customerName) return fail("Enter a customer name or choose a saved customer.",422);
       const result = await db.transaction(async tx => {
+        let clientId = input.clientId;
+        if (clientId) {
+          const [client] = await tx.select().from(clients).where(and(eq(clients.id,clientId),eq(clients.workspaceId,workspace.id))).limit(1);
+          if (!client) throw new Error("The selected client does not exist in this workspace.");
+        } else {
+          const [createdClient] = await tx.insert(clients).values({workspaceId:workspace.id,name:input.customerName!,email:input.customerEmail||"",company:"",currency:input.currency}).returning({id:clients.id});
+          clientId = createdClient.id;
+        }
         const [counter] = await tx.insert(invoiceCounters).values({workspaceId:workspace.id,nextNumber:1})
           .onConflictDoUpdate({target:invoiceCounters.workspaceId,set:{nextNumber:sql`${invoiceCounters.nextNumber} + 1`}})
           .returning({nextNumber:invoiceCounters.nextNumber});
         const number = "INV-" + String(counter.nextNumber).padStart(4,"0");
-        const [created] = await tx.insert(invoices).values({workspaceId:workspace.id,clientId:client.id,number,issueDate:today(),dueDate:input.dueDate,description:input.description,quantity:input.quantity,unitPriceMinor:input.unitPriceMinor,currency:input.currency,status:"Draft"}).returning();
+        const [created] = await tx.insert(invoices).values({workspaceId:workspace.id,clientId,number,issueDate:today(),dueDate:input.dueDate,description:input.description,quantity:input.quantity,unitPriceMinor:input.unitPriceMinor,currency:input.currency,status:"Draft"}).returning();
         await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"invoice.created",entityType:"invoice",entityId:created.id,metadata:{number,currency:input.currency}});
         return created;
       });
@@ -135,7 +145,8 @@ export async function POST(request:Request) {
       if ("error" in deleteResult) return deleteResult.error==="not-found"?fail("Invoice not found.",404):fail("Issued invoices are retained as financial records.",409);
     }
 
-    return NextResponse.json({ ok:true, workspace:await loadWorkspace(workspace.id) }, { headers: { "Cache-Control":"private, no-store" } });
+    return NextResponse.json({ ok:true, workspace:await loadWorkspace(db,workspace.id) }, { headers: { "Cache-Control":"private, no-store" } });
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "The change could not be saved.";
     if (/Choose an issued invoice|currency must match|cannot exceed|exceeds the supported/i.test(message)) return fail(message,409);

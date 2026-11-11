@@ -1,0 +1,93 @@
+name: Cloudflare compatibility
+on:
+  push:
+    branches: [feat/cloudflare-invoqly-production]
+  pull_request:
+    branches: [feat/invoqly-production, main]
+concurrency:
+  group: invoqly-cloudflare-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: invoqly
+          POSTGRES_PASSWORD: invoqly_test
+          POSTGRES_DB: invoqly_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U invoqly -d invoqly_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://invoqly:invoqly_test@127.0.0.1:5432/invoqly_test
+      BETTER_AUTH_SECRET: 5b8d2b7a43f1b0e4f5d8c7a6b9e2d1f0c4a8e6b2d7f9a1c3e5b7d0f2a4c6e8b1
+      BETTER_AUTH_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      AUTH_EMAIL_VERIFICATION: "false"
+      CLOUDFLARE_HYPERDRIVE_ID: 00000000-0000-0000-0000-000000000000
+      CLOUDFLARE_ACCOUNT_ID: 90cefa028781f749f5816c5748f04cd2
+      CLOUDFLARE_INCLUDE_PROCESS_ENV: "true"
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://invoqly:invoqly_test@127.0.0.1:5432/invoqly_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Regenerate lockfile for merged dependency graph
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Install generated dependency graph
+        run: npm ci --include=dev
+      - name: Scan Next.js compatibility
+        run: npx vinext check
+      - name: Apply production schema to isolated CI PostgreSQL
+        run: npm run db:migrate
+      - name: Generate Cloudflare binding types
+        run: npx cf workers types
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Preserve Next.js production build
+        run: npm run build
+      - name: Build Cloudflare Workers production bundle
+        run: npm run build:vinext
+      - name: Install browser runtime
+        run: npx playwright install --with-deps chromium
+      - name: Test preserved Next.js runtime
+        run: npm run test:e2e
+      - name: Configure local Worker secrets
+        run: |
+          printf 'BETTER_AUTH_SECRET=%s\n' "$BETTER_AUTH_SECRET" > .dev.vars
+          printf 'AUTH_EMAIL_VERIFICATION=false\n' >> .dev.vars
+      - name: Test Cloudflare workerd production runtime
+        run: npm run test:e2e:vinext
+      - name: Upload browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invoqly-cloudflare-browser-diagnostics
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Commit verified dependency lockfile
+        if: success() && github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: lock Cloudflare-compatible dependency graph"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi

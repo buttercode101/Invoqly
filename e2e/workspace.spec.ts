@@ -5,16 +5,18 @@ function identity(label:string) {
   return { name:label, email:`${label.toLowerCase()}-${suffix}@example.com`, password:"InvoqlySecurePassphrase!2026" };
 }
 
+async function goTo(page:Page,section:string) { await page.locator(".nav-item").filter({hasText:section}).first().click(); }
+
 async function createAccount(page:Page,account:ReturnType<typeof identity>) {
   await page.goto("/sign-up");
   await page.getByLabel("Your name").fill(account.name);
   await page.getByLabel("Email address").fill(account.email);
   await page.locator('input[type="password"]').fill(account.password);
+  const signupResponsePromise=page.waitForResponse(response=>response.url().includes("/api/auth/sign-up/email")&&response.request().method()==="POST");
   await page.getByRole("button",{name:"Create account"}).click();
-  await expect(page).toHaveURL(/\/sign-in/);
-  await page.getByLabel("Email address").fill(account.email);
-  await page.locator('input[type="password"]').fill(account.password);
-  await page.getByRole("button",{name:"Sign in"}).click();
+  const signupResponse=await signupResponsePromise;
+  expect(signupResponse.status()).toBe(200);
+  await expect(page).toHaveURL(/\/app$/);
   await expect(page.locator("main.shell")).toBeVisible();
   await expect(page.locator(".cloud-banner")).toContainText("Secure cloud workspace");
 }
@@ -23,37 +25,35 @@ test("real account, client, invoice, partial payments, expense and reload",async
   const account=identity("Owner");
   await createAccount(page,account);
 
-  await page.getByRole("button",{name:"Add a client"}).click();
-  await page.getByLabel("Client or contact name").fill("Acme Services");
-  await page.getByLabel("Business name").fill("Acme Services Ltd");
-  await page.getByLabel("Email address").fill("accounts@acme.example");
-  await page.getByRole("button",{name:"Save client"}).click();
-  await expect(page.getByRole("heading",{name:"Acme Services"})).toBeVisible();
-
-  await page.getByRole("button",{name:"Invoices"}).click();
+  await goTo(page,"Invoices");
   await page.getByRole("button",{name:"New invoice"}).click();
-  await page.getByLabel("Bill to").selectOption({label:"Acme Services"});
+  await page.getByLabel("Bill to").selectOption({label:"One-off customer / enter details"});
+  await page.getByLabel("Customer name").fill("Acme Services");
+  await page.getByLabel("Email address").fill("accounts@acme.example");
   await page.getByLabel("Description").fill("Product design");
   await page.getByLabel("Quantity").fill("2");
   await page.getByLabel("Unit price").fill("1250.50");
   await page.getByRole("button",{name:"Create invoice"}).click();
 
+  await goTo(page,"Clients");
+  await expect(page.getByRole("heading",{name:"Acme Services"})).toBeVisible();
+  await goTo(page,"Invoices");
   let invoiceRow=page.locator("tbody tr").filter({hasText:"Acme Services"});
   await expect(invoiceRow).toContainText("Draft");
   await invoiceRow.getByTitle("Issue invoice").click();
   await expect(invoiceRow).toContainText("Sent");
 
-  await page.getByRole("button",{name:"Payments"}).click();
+  await goTo(page,"Payments");
   await page.getByRole("button",{name:"Record payment"}).click();
   await page.getByLabel("Invoice").selectOption({index:0});
   await page.getByLabel("Amount received").fill("1000.00");
   await page.getByLabel("Date received").fill("2026-11-10");
   await page.getByRole("button",{name:"Save payment"}).click();
-  await page.getByRole("button",{name:"Invoices"}).click();
+  await goTo(page,"Invoices");
   invoiceRow=page.locator("tbody tr").filter({hasText:"Acme Services"});
   await expect(invoiceRow).toContainText("Partially paid");
 
-  await page.getByRole("button",{name:"Payments"}).click();
+  await goTo(page,"Payments");
   await page.getByRole("button",{name:"Record payment"}).click();
   await page.getByLabel("Invoice").selectOption({index:0});
   await page.getByLabel("Amount received").fill("1502.00");
@@ -62,11 +62,11 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await expect(page.locator(".form-error")).toContainText("Payment cannot exceed the outstanding invoice balance");
   await page.getByLabel("Amount received").fill("1501.00");
   await page.getByRole("button",{name:"Save payment"}).click();
-  await page.getByRole("button",{name:"Invoices"}).click();
+  await goTo(page,"Invoices");
   invoiceRow=page.locator("tbody tr").filter({hasText:"Acme Services"});
   await expect(invoiceRow).toContainText("Paid");
 
-  await page.getByRole("button",{name:"Expenses"}).click();
+  await goTo(page,"Expenses");
   await page.getByRole("button",{name:"Record expense"}).click();
   await page.getByLabel("Vendor or supplier").fill("Cloud hosting");
   await page.getByLabel("Amount").fill("350.75");
@@ -76,14 +76,20 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await expect(page.getByText("Cloud hosting")).toBeVisible();
 
   await page.reload();
-  await page.getByRole("button",{name:"Clients"}).click();
+  await goTo(page,"Clients");
   await expect(page.getByRole("heading",{name:"Acme Services"})).toBeVisible();
-  await page.getByRole("button",{name:"Invoices"}).click();
+  await goTo(page,"Invoices");
   await expect(page.locator("tbody tr").filter({hasText:"Acme Services"})).toContainText("Paid");
-  await page.getByRole("button",{name:"Payments"}).click();
+  await goTo(page,"Payments");
   await expect(page.locator("tbody tr")).toHaveCount(2);
-  await page.getByRole("button",{name:"Expenses"}).click();
+  await goTo(page,"Expenses");
   await expect(page.getByText("Cloud hosting")).toBeVisible();
+  for (const width of [320,375,768,1120]) {
+    await page.setViewportSize({width,height:900});
+    const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
+    expect(dimensions.document,`workspace overflows at ${width}px`).toBeLessThanOrEqual(dimensions.viewport);
+    await expect(page.locator("main.shell")).toBeVisible();
+  }
 });
 
 test("workspace data is isolated between separate accounts",async({page,browser})=>{
@@ -101,7 +107,7 @@ test("workspace data is isolated between separate accounts",async({page,browser}
   try {
     const secondPage=await secondContext.newPage();
     await createAccount(secondPage,second);
-    await secondPage.getByRole("button",{name:"Clients"}).click();
+    await goTo(secondPage,"Clients");
     await expect(secondPage.getByText("No clients yet")).toBeVisible();
     await expect(secondPage.getByText("Private Client One")).toHaveCount(0);
   } finally {
@@ -112,6 +118,10 @@ test("workspace data is isolated between separate accounts",async({page,browser}
 for(const width of [320,375,768,1120]){
   test(`account screens have no horizontal overflow at ${width}px`,async({page})=>{
     await page.setViewportSize({width,height:900});
+    await page.goto("/");
+    await expect(page.getByRole("heading",{name:/Spend less time/})).toBeVisible();
+    const publicDimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
+    expect(publicDimensions.document).toBeLessThanOrEqual(publicDimensions.viewport);
     await page.goto("/sign-in");
     await expect(page.locator(".auth-shell")).toBeVisible();
     const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
