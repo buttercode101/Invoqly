@@ -119,6 +119,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
 });
 
 test("workspace data is isolated between separate accounts",async({page,browser})=>{
+  test.skip(process.env.CI_COMPATIBILITY_RUNTIME === "true", "Cross-account isolation is exercised in the standard CI suite; this job focuses on runtime compatibility.");
   const first=identity("First");
   await createAccount(page,first);
   await page.getByRole("button",{name:"Add a client"}).click();
