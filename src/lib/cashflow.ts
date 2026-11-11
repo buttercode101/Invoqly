@@ -174,7 +174,8 @@ function recurringEvents(items: RecurringCashflowItem[], asOf: string, end: stri
 
 function buildEvents(input: CashflowInput, scenario: CashflowScenario = {}): CashflowEvent[] {
   const asOfTime = parseDate(input.asOfDate, "asOfDate");
-  const horizonEnd = addMonths(input.asOfDate, 12, 1);
+  const anchorDay = Number(input.asOfDate.slice(-2));
+  const horizonEnd = addMonths(input.asOfDate, 12, anchorDay);
   const endTime = parseDate(horizonEnd, "Forecast end date");
   const events: CashflowEvent[] = [];
   const delayedInvoices = new Set(scenario.delayedInvoiceIds ?? []);
@@ -234,9 +235,10 @@ function periods(input: CashflowInput, events: CashflowEvent[], mode: "week" | "
       buckets.push({ start, end: addDays(start, 6) });
     }
   } else {
+    const anchorDay = Number(input.asOfDate.slice(-2));
     let start = input.asOfDate;
     for (let i = 0; i < 12; i++) {
-      const nextMonth = addMonths(start.slice(0, 7) + "-01", 1, 1);
+      const nextMonth = addMonths(start, 1, anchorDay);
       buckets.push({ start, end: addDays(nextMonth, -1) });
       start = nextMonth;
     }
