@@ -49,6 +49,21 @@ describe("deterministic cash-flow engine", () => {
     expect(result.events.slice(0, 3).map(event => event.date)).toEqual(["2027-01-31", "2027-02-28", "2027-03-31"]);
   });
 
+  it("uses the lowest daily balance, not only the weekly closing balance, for safe-to-spend", () => {
+    const result = calculateCashflow({
+      ...base,
+      openingBalanceMinor: 1_000_000,
+      reserveMinor: 0,
+      invoices: [{ id: "late", number: "INV-LATE", customerName: "Late payer", dueDate: "2026-11-17", amountMinor: 1_000, status: "Sent", currency: "ZAR" }],
+      outflows: [{ id: "large-bill", label: "Large bill", date: "2026-11-12", amountMinor: 950_000, currency: "ZAR" }],
+      payables: [],
+      recurring: []
+    });
+    expect(result.weeks[0]?.closingBalanceMinor).toBe(51_000);
+    expect(result.lowestProjectedBalanceMinor).toBe(50_000);
+    expect(result.lowestProjectedBalanceDate).toBe("2026-11-12");
+  });
+
   it("does not invent safe-to-spend when opening cash is unknown", () => {
     const result = calculateCashflow({ ...base, openingBalanceMinor: null });
     expect(result.safeToSpendMinor).toBeNull();
