@@ -10,7 +10,7 @@ The tax engine is deliberately separate from AI. AI may extract or suggest trans
 - VAT201 preparation is a working summary, not a return submission or tax opinion.
 - Input tax is included only when the transaction is explicitly marked as claimed and its supporting document has been verified. Business-use apportionment is explicit.
 - Foreign-currency transactions are not silently converted into ZAR. A documented exchange rate and converted amount must be supplied before VAT201 inclusion.
-- The tax-invoice checklist applies the SARS R50 and R5,000 consideration thresholds and requires the published supplier/recipient and transaction details.
+- The tax-invoice checklist applies the SARS R50 and R5,000 consideration thresholds. Zero-rated supplies require a full tax invoice even below the ordinary abridged-invoice threshold; zero-rated exports may also qualify for the foreign-currency exception.
 
 ## Boundaries still required before production tax use
 
