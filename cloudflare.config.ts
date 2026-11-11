@@ -9,7 +9,7 @@ const hyperdriveId = configuredHyperdriveId || "00000000-0000-0000-0000-00000000
 
 export default defineConfig({
   worker: defineWorker({
-    name: "invoqly-preview",
+    name: process.env.INVOQLY_WORKER_NAME || "invoqly-preview",
     entrypoint: "vinext/server/fetch-handler",
     compatibilityDate: "2026-11-10",
     compatibilityFlags: ["nodejs_compat"],
