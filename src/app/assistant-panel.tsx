@@ -90,7 +90,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
   };
 
   useEffect(() => {
-    fetch("/api/assistant/consent").then(response => response.json()).then(data => setConsent(data.accepted === true)).catch(() => setConsent(false)).finally(() => setConsentLoading(false));
+    fetch("/api/assistant/consent").then(response => response.json() as Promise<{ accepted?: boolean }>).then(data => setConsent(data.accepted === true)).catch(() => setConsent(false)).finally(() => setConsentLoading(false));
   }, []);
 
   const setAiConsent = async (accepted: boolean) => {
