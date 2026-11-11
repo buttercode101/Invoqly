@@ -55,7 +55,7 @@ export function createAuth(db: Database) {
     updateAge: 60 * 60 * 24,
   },
   rateLimit: {
-    enabled: true,
+    enabled: process.env.AUTH_RATE_LIMIT_ENABLED !== "false",
     window: 60,
     max: 10,
   },
