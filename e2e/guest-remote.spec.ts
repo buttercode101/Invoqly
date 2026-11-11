@@ -44,7 +44,7 @@ test("remote preview supports real guest invoicing without creating an account o
   await expect(quotePopup.locator("body")).toContainText("Preview Quote Customer");
   await expect(quotePopup.locator("body")).toContainText("QUO-0001");
   await quotePopup.close();
-  await page.getByRole("button",{name:"Send quote"}).click();
+  await page.getByRole("button",{name:"Mark as sent"}).click();
   await page.getByRole("button",{name:"Accept"}).click();
   await page.getByRole("button",{name:"Convert to invoice"}).click();
   await page.getByRole("button",{name:"Issue"}).last().click();
