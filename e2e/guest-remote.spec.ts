@@ -38,6 +38,12 @@ test("remote preview supports real guest invoicing without creating an account o
   await page.getByLabel("Description").fill("Consulting package");
   await page.getByLabel("Unit price (ZAR)").fill("1200.00");
   await page.getByRole("button",{name:"Create quotation"}).click();
+  const quotePopupPromise=page.waitForEvent("popup");
+  await page.getByRole("button",{name:"Print / PDF"}).last().click();
+  const quotePopup=await quotePopupPromise;
+  await expect(quotePopup.locator("body")).toContainText("Preview Quote Customer");
+  await expect(quotePopup.locator("body")).toContainText("QUO-0001");
+  await quotePopup.close();
   await page.getByRole("button",{name:"Send quote"}).click();
   await page.getByRole("button",{name:"Accept"}).click();
   await page.getByRole("button",{name:"Convert to invoice"}).click();
