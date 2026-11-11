@@ -2,7 +2,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, feat/guest-first-workspace-pr5, feat/invoqly-production]
 concurrency:
   group: invoqly-ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true

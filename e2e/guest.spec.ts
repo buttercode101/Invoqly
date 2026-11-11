@@ -1,0 +1,98 @@
+import { expect, test } from "@playwright/test";
+
+test("guest can work without signup, then import their local records after creating an account",async({page})=>{
+  await page.goto("/");
+  await page.getByRole("link",{name:"Try Invoqly free — no account"}).click();
+  await expect(page).toHaveURL(/\/guest$/);
+  await expect(page.getByRole("heading",{name:"Your business, in good order."})).toBeVisible();
+  await page.getByRole("button",{name:"Settings"}).click();
+  await page.getByLabel("Business or trading name").fill("Guest Studio");
+  for(const width of [320,375,768,1120]){
+    await page.setViewportSize({width,height:900});
+    const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
+    expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport);
+  }
+  await page.setViewportSize({width:1280,height:900});
+  await page.getByRole("button",{name:"Overview"}).click();
+  await page.getByRole("button",{name:"＋ Add a client"}).click();
+  await page.getByLabel("Client name").fill("Guest Import Client");
+  await page.getByLabel("Email address").fill("guest-import@example.com");
+  await page.getByRole("button",{name:"Save client"}).click();
+  await page.getByRole("button",{name:"Invoices"}).click();
+  await page.getByRole("button",{name:"New invoice"}).click();
+  await page.getByLabel("Bill to").selectOption({label:"Guest Import Client"});
+  await page.getByLabel("Description").fill("Guest project");
+  await page.getByLabel("Unit price (ZAR)").fill("845.00");
+  await page.getByRole("button",{name:"Create invoice"}).click();
+  await expect(page.getByRole("button",{name:"Print / PDF"})).toBeVisible();
+  const printPopupPromise=page.waitForEvent("popup");
+  await page.getByRole("button",{name:"Print / PDF"}).click();
+  const printPopup=await printPopupPromise;
+  await expect(printPopup.locator("h1").first()).toHaveText("Guest Studio");
+  await printPopup.close();
+  await page.getByRole("button",{name:"Issue"}).click();
+  await page.getByRole("button",{name:"Mark paid"}).click();
+  await page.getByRole("button",{name:"Expenses"}).click();
+  await page.getByRole("button",{name:"Add expense"}).click();
+  await page.getByLabel("Vendor or supplier").fill("Guest cloud hosting");
+  await page.getByLabel("Amount (ZAR)").fill("45.00");
+  await page.getByRole("button",{name:"Save expense"}).click();
+  await page.reload();
+  await page.locator("nav").getByRole("button",{name:"Clients"}).click();
+  await expect(page.getByText("Guest Import Client")).toBeVisible();
+  await page.locator("nav").getByRole("button",{name:"Invoices"}).click();
+  await expect(page.getByText(/INV-0001 · Guest Import Client/)).toBeVisible();
+  await page.locator("nav").getByRole("button",{name:"Expenses"}).click();
+  await expect(page.getByText("Guest cloud hosting")).toBeVisible();
+  await expect(page.getByRole("link",{name:"Sign in"})).toBeVisible();
+  const savedGuestBackup=await page.evaluate(()=>{
+    const key="invoqly.guest.workspace.v1";
+    const data=JSON.parse(localStorage.getItem(key)||"{}");
+    localStorage.setItem(key,JSON.stringify(data));
+    return localStorage.getItem(key);
+  });
+
+  await page.goto("/sign-up");
+  await page.getByLabel("Your name").fill("Guest Import Owner");
+  await page.getByLabel("Email address").fill("guest-import-owner-"+Date.now()+"@example.com");
+  await page.locator('input[type="password"]').fill("InvoqlySecurePassphrase!2026");
+  const signupResponsePromise=page.waitForResponse(response=>response.url().includes("/api/auth/sign-up/email")&&response.request().method()==="POST");
+  await page.getByRole("button",{name:"Create account"}).click();
+  expect((await signupResponsePromise).status()).toBe(200);
+  await expect(page).toHaveURL(/\/app$/);
+  await page.locator(".nav-item").filter({hasText:"Settings"}).click();
+  await page.getByLabel("Import a guest backup from another device").setInputFiles({name:"invoqly-guest-backup.json",mimeType:"application/json",buffer:Buffer.from(savedGuestBackup!)});
+  await expect(page.getByText("Guest workspace found on this device")).toBeVisible();
+  page.once("dialog",dialog=>dialog.accept());
+  await page.getByRole("button",{name:"Import guest work"}).click();
+  await expect(page.getByRole("heading",{name:"Workspace settings"})).toBeVisible();
+  await page.locator(".nav-item").filter({hasText:"Clients"}).click();
+  await expect(page.getByRole("heading",{name:"Guest Import Client"})).toBeVisible();
+  await page.locator(".nav-item").filter({hasText:"Invoices"}).click();
+  await expect(page.locator("tbody tr").filter({hasText:"Guest Import Client"})).toContainText("Guest project");
+  await expect(page.locator("tbody tr").filter({hasText:"Guest Import Client"})).toContainText("Paid");
+  await page.locator(".nav-item").filter({hasText:"Payments"}).click();
+  await expect(page.getByText("1 recorded payments")).toBeVisible();
+  await page.locator(".nav-item").filter({hasText:"Expenses"}).click();
+  await expect(page.getByText("Guest cloud hosting")).toBeVisible();
+  await page.reload();
+  await page.locator(".nav-item").filter({hasText:"Clients"}).click();
+  await expect(page.getByRole("heading",{name:"Guest Import Client"})).toBeVisible();
+  const retainedLocalBackup=await page.evaluate(()=>localStorage.getItem("invoqly.guest.workspace.v1"));
+  expect(retainedLocalBackup).not.toBeNull();
+
+  // Importing the same device backup again simulates a retry after a lost response.
+  // The server must treat the stable import ID as idempotent.
+  await page.reload();
+  await page.locator(".nav-item").filter({hasText:"Settings"}).click();
+  await expect(page.getByText("Guest workspace found on this device")).toBeVisible();
+  page.once("dialog",dialog=>dialog.accept());
+  await page.getByRole("button",{name:"Import guest work"}).click();
+  await expect(page.getByText("Guest workspace found on this device")).toHaveCount(0);
+  const clearedLocalBackup=await page.evaluate(()=>localStorage.getItem("invoqly.guest.workspace.v1"));
+  expect(clearedLocalBackup).toBeNull();
+  await page.locator(".nav-item").filter({hasText:"Clients"}).click();
+  await expect(page.getByRole("heading",{name:"Guest Import Client"})).toHaveCount(1);
+  await page.locator(".nav-item").filter({hasText:"Invoices"}).click();
+  await expect(page.locator("tbody tr").filter({hasText:"Guest Import Client"})).toHaveCount(1);
+});

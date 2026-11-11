@@ -2,25 +2,63 @@
 
 **Business, in good order.**
 
-A global business finance workspace for independent professionals and small businesses.
+Invoqly is a business finance workspace for independent professionals and small businesses. Core invoicing and record-keeping are designed to be usable without a subscription or mandatory account.
 
-## Implemented in the current preview
-- Responsive workspace dashboard with live calculations from the current workspace.
-- Client creation and local persistence.
-- Invoice creation with draft, sent and paid status transitions.
-- Printable invoice documents (browser print / Save as PDF).
-- Expense capture and categories.
-- Basic reporting and JSON workspace backup.
-- Currency-aware amount entry stored as integer minor units.
-- South Africa-first defaults with multiple selectable currencies.
+## Start without an account
 
-## Important limitations
-This is an early functional preview, not a production-ready financial application. Records currently persist in the current browser using local storage. There is no cloud database, authentication, multi-device sync, email delivery, payment processing, tax calculation or jurisdiction-specific invoice compliance yet. Do not enter real confidential customer or financial data.
+Open the public site and choose **Try Invoqly free — no account**. Guest mode currently supports:
+
+- Create and manage client records.
+- Draft and issue invoices.
+- Mark invoices paid.
+- Record business expenses.
+- View invoice, outstanding and expense totals.
+- Print invoices or save them as PDF through the browser print dialog.
+- Export a JSON backup.
+
+Guest records are stored locally in the current browser on the current device. They are not uploaded to Invoqly's cloud. Browser storage can be cleared by the user or browser, so export a backup for important records.
+
+## Create an account when you need cloud features
+
+An account unlocks a private PostgreSQL-backed workspace, server-side persistence and multi-device access. If a guest workspace is present in the same browser, the signed-in user can import it directly; a JSON backup from another device can also be uploaded in workspace settings. Import keeps existing cloud records, records paid guest invoices in the payment ledger and uses a stable import ID to avoid duplicates if the request is retried. File imports use separate temporary storage so they never overwrite a different local guest workspace.
+
+Creating an account is optional for guest core functionality. No subscription or payment details are required to use the free core tools.
+
+## Current product boundaries
+
+- Invoqly records payments manually; it does not process card or bank payments.
+- Email delivery and automated reminders are not yet enabled.
+- Tax calculations and jurisdiction-specific invoice compliance are not yet implemented.
+- Guest data is device-local until imported. Cloud data requires authentication and is tenant-scoped.
+- This is a release candidate under verification, not yet an advertised production accounting or tax-compliance service. Do not rely on it as a substitute for professional tax or accounting advice.
+
+## Architecture
+
+- Next.js application with a separate Cloudflare Workers runtime using vinext.
+- Cloudflare Worker preview backed by Neon PostgreSQL through Hyperdrive.
+- Better Auth email/password sessions for private cloud workspaces.
+- Server-side workspace scoping, validation, transactional financial writes and audit events.
+- Guest mode runs entirely in the browser and never calls the cloud workspace API until the user explicitly imports.
 
 ## Development
-Requires Node.js 22. Run `npm install`, then `npm run dev`.
 
-## Quality checks
-`npm audit --audit-level=high`, `npm run typecheck`, `npm test`, `npm run build`, and `npm run test:e2e`. Install Chromium for local browser tests with `npx playwright install chromium`.
+Requires Node.js 22.
 
-See `docs/PRODUCT_BLUEPRINT.md` and `docs/ARCHITECTURE.md`.
+```bash
+npm install
+npm run dev
+```
+
+## Verification
+
+```bash
+npm audit --audit-level=high
+npm run typecheck
+npm test
+npm run build
+npm run test:e2e
+npm run build:vinext
+npm run test:e2e:vinext
+```
+
+See [Product blueprint](docs/PRODUCT_BLUEPRINT.md), [Architecture](docs/ARCHITECTURE.md), and [Production release runbook](docs/production-release-runbook.md).

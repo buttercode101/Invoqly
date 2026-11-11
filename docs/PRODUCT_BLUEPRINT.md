@@ -16,10 +16,14 @@ Global product architecture from day one. South Africa is the first supported ma
 1. **Get paid:** quotes, invoices, recurring invoices, deposits, partial payments, credit notes, receipts, reminders and client-facing payment pages.
 2. **Know your clients:** client records, contacts, billing details, activity history, statements and client portal.
 3. **Understand the business:** expenses, categories, attachments, cash flow, receivables, payables and exports.
-4. **Work with confidence:** business workspaces, roles, audit history, backups, imports and data portability.
+4. **Work with confidence:** optional business accounts, secure cloud workspaces, roles, audit history, backups, imports and data portability.
 5. **Work globally:** ISO currency codes, locale-aware formatting, country-specific tax profiles, time zones and payment-provider adapters.
 
 ## Product rules
+- **No signup wall for core use.** A visitor can create clients, invoices and expenses, track basic invoice status, print documents and export a backup before creating an account.
+- Guest data stays in the current browser until the user explicitly imports it into a signed-in cloud workspace. Clearly explain the device-local storage boundary and offer backup export.
+- Accounts unlock private cloud persistence, recovery and multi-device access. Never require an account merely to create a basic invoice.
+- Guest-to-account import must preserve existing cloud records, validate all data server-side, run transactionally and be idempotent on retry.
 - Issued invoices are financial documents; corrections use explicit credit/reissue workflows.
 - Store money as integer minor units with an ISO 4217 currency code. Never use floating-point arithmetic for financial calculations.
 - Never silently convert transaction currency. FX conversion is an explicit, dated reporting operation with a recorded rate and source.
@@ -29,10 +33,12 @@ Global product architecture from day one. South Africa is the first supported ma
 - Data export and deletion are first-class product capabilities.
 
 ## Initial release scope
-- Authentication and business onboarding
-- Business profile, locale, currency and tax profile
-- Clients and catalog items/services
-- Quotes and invoices with PDF output
+- Public landing page with a clear no-account entry path
+- Guest workspace for clients, invoices, invoice status, expenses, dashboard totals, print/PDF and JSON backup
+- Optional account creation and sign-in for cloud-backed workspaces
+- Explicit guest-to-account import with duplicate prevention
+- Business profile, locale and currency
+- Clients and invoices with server-generated numbering and PDF output
 - Invoice lifecycle and payment recording
 - Expense capture and categories
 - Overview dashboard and receivables reporting

@@ -19,6 +19,9 @@ const payload = z.discriminatedUnion("action", [
   z.object({ action:z.literal("create-payment"), invoiceId:z.string().uuid(), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, method:z.string().min(1).max(40), reference:z.string().max(100).default(""), notes:z.string().max(500).default("") }),
   z.object({ action:z.literal("send-invoice"), invoiceId:z.string().uuid() }),
   z.object({ action:z.literal("delete-draft-invoice"), invoiceId:z.string().uuid() }),
+
+  z.object({ action:z.literal("import-guest-workspace"), importId:z.string().uuid(), businessName:z.string().trim().min(1).max(120), currency, clients:z.array(z.object({id:z.string().uuid(),name:z.string().trim().min(1).max(120),email:z.string().trim().email().max(254).toLowerCase(),company:z.string().max(120)})).max(500), invoices:z.array(z.object({id:z.string().uuid(),clientId:z.string().uuid(),issueDate:date,dueDate:date,paidAt:date.optional(),description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency,status:z.enum(["Draft","Sent","Paid"])})).max(1000), expenses:z.array(z.object({vendor:z.string().trim().min(1).max(160),category:z.string().trim().min(1).max(80),date,amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency})).max(2000) }),
+
 ]);
 
 function fail(message:string,status=400){return NextResponse.json({error:message},{status});}
@@ -43,11 +46,11 @@ export async function POST(request:Request) {
   if(!origin) return fail("A valid same-origin request is required.",403);
   let originUrl:URL;
   try { originUrl=new URL(origin); } catch { return fail("A valid same-origin request is required.",403); }
-  const allowedOrigin=originUrl.origin==="https://invoqly.xyz"||originUrl.origin==="https://www.invoqly.xyz"||originUrl.origin==="https://invoqly.vercel.app"||originUrl.origin==="https://invoqly-preview.buttercoder-dev.workers.dev"||originUrl.origin==="http://localhost:3000"||originUrl.origin==="http://127.0.0.1:3000"||originUrl.origin==="http://localhost:3001"||originUrl.origin==="http://127.0.0.1:3001"||/^https:\/\/invoqly(?:-[a-z0-9-]+)*\.vercel\.app$/.test(originUrl.origin);
+  const allowedOrigin=originUrl.origin==="https://invoqly.xyz"||originUrl.origin==="https://www.invoqly.xyz"||originUrl.origin==="https://invoqly.vercel.app"||originUrl.origin==="https://invoqly-preview.buttercoder-dev.workers.dev"||originUrl.origin==="https://invoqly-production.buttercoder-dev.workers.dev"||originUrl.origin==="http://localhost:3000"||originUrl.origin==="http://127.0.0.1:3000"||originUrl.origin==="http://localhost:3001"||originUrl.origin==="http://127.0.0.1:3001"||/^https:\/\/invoqly(?:-[a-z0-9-]+)*\.vercel\.app$/.test(originUrl.origin);
   if(!allowedOrigin) return fail("This origin is not allowed to change workspace data.",403);
   if(!(request.headers.get("content-type")||"").toLowerCase().includes("application/json")) return fail("JSON content is required.",415);
   const length=Number(request.headers.get("content-length")||"0");
-  if(length>16384) return fail("The submitted data is too large.",413);
+  if(length>1500000) return fail("The submitted data is too large. Export a smaller guest workspace backup and try again.",413);
   try {
     return await withDb(async db => {
     const user = await getCurrentUser(db);
@@ -56,6 +59,41 @@ export async function POST(request:Request) {
     if (!parsed.success) return fail("Check the submitted details and try again.",422);
     const input = parsed.data;
     const workspace = await getOrCreateWorkspace(db,user.id);
+
+    if (input.action === "import-guest-workspace") {
+      if (input.invoices.some(invoice => !input.clients.some(client => client.id === invoice.clientId))) return fail("An imported invoice refers to a client that is missing from this backup.",422);
+      if (input.invoices.some(invoice => invoice.currency !== input.currency) || input.expenses.some(expense => expense.currency !== input.currency)) return fail("All imported records must use the guest workspace currency.",422);
+      const invoiceTotals = input.invoices.map(invoice => invoice.quantity * invoice.unitPriceMinor);
+      if (invoiceTotals.some(total => !Number.isSafeInteger(total))) return fail("An imported invoice total exceeds the supported amount range.",422);
+      await db.transaction(async tx => {
+        await tx.select({id:workspaces.id}).from(workspaces).where(eq(workspaces.id,workspace.id)).for("update");
+        const [previousImport] = await tx.select({id:auditEvents.id}).from(auditEvents).where(and(eq(auditEvents.workspaceId,workspace.id),eq(auditEvents.action,"guest.workspace_imported"),eq(auditEvents.entityId,input.importId))).limit(1);
+        if (previousImport) return;
+        await tx.update(workspaces).set({businessName:input.businessName,defaultCurrency:input.currency,updatedAt:new Date()}).where(eq(workspaces.id,workspace.id));
+        const clientIds = new Map<string,string>();
+        for (const client of input.clients) {
+          const [created] = await tx.insert(clients).values({workspaceId:workspace.id,name:client.name,email:client.email,company:client.company,currency:input.currency}).returning({id:clients.id});
+          clientIds.set(client.id,created.id);
+        }
+        for (const invoice of input.invoices) {
+          const clientId = clientIds.get(invoice.clientId);
+          if (!clientId) throw new Error("An imported invoice client could not be matched.");
+          const [counter] = await tx.insert(invoiceCounters).values({workspaceId:workspace.id,nextNumber:1})
+            .onConflictDoUpdate({target:invoiceCounters.workspaceId,set:{nextNumber:sql`${invoiceCounters.nextNumber} + 1`}})
+            .returning({nextNumber:invoiceCounters.nextNumber});
+          const number = "INV-" + String(counter.nextNumber).padStart(4,"0");
+          const status = invoice.status === "Paid" ? "Paid" : invoice.status === "Sent" ? (invoice.dueDate < today() ? "Overdue" : "Sent") : "Draft";
+          const [created] = await tx.insert(invoices).values({workspaceId:workspace.id,clientId,number,issueDate:invoice.issueDate,dueDate:invoice.dueDate,description:invoice.description,quantity:invoice.quantity,unitPriceMinor:invoice.unitPriceMinor,currency:input.currency,status}).returning({id:invoices.id});
+          if (invoice.status === "Paid") {
+            await tx.insert(payments).values({workspaceId:workspace.id,invoiceId:created.id,clientId,date:invoice.paidAt ?? today(),amountMinor:invoiceTotals[input.invoices.indexOf(invoice)],currency:input.currency,method:"Guest import",reference:"",notes:"Imported from this device's guest workspace"});
+          }
+        }
+        for (const expense of input.expenses) {
+          await tx.insert(expenses).values({workspaceId:workspace.id,vendor:expense.vendor,category:expense.category,date:expense.date,amountMinor:expense.amountMinor,currency:input.currency,notes:"Imported from this device's guest workspace"});
+        }
+        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"guest.workspace_imported",entityType:"guest_import",entityId:input.importId,metadata:{clients:input.clients.length,invoices:input.invoices.length,expenses:input.expenses.length}});
+      });
+    }
 
     if (input.action === "update-settings") {
       await db.transaction(async tx=>{
