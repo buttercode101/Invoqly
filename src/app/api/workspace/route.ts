@@ -14,7 +14,7 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>{const [year,
 const payload = z.discriminatedUnion("action", [
   z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20) }),
   z.object({ action:z.literal("create-client"), name:z.string().trim().min(1).max(120), email:z.string().trim().email().max(254).toLowerCase(), company:z.string().max(120).default(""), currency }),
-  z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid().optional(), customerName:z.string().trim().min(1).max(120).optional(), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, dueDate:date }),
+  z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid().optional(), customerName:z.string().trim().min(1).max(120).optional(), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), saveContact:z.boolean().default(false), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, dueDate:date }),
   z.object({ action:z.literal("create-expense"), vendor:z.string().trim().min(1).max(160), category:z.string().trim().min(1).max(80), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, notes:z.string().max(500).default("") }),
   z.object({ action:z.literal("create-payment"), invoiceId:z.string().uuid(), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, method:z.string().min(1).max(40), reference:z.string().max(100).default(""), notes:z.string().max(500).default("") }),
   z.object({ action:z.literal("send-invoice"), invoiceId:z.string().uuid() }),
@@ -118,7 +118,7 @@ export async function POST(request:Request) {
           const [client] = await tx.select().from(clients).where(and(eq(clients.id,clientId),eq(clients.workspaceId,workspace.id))).limit(1);
           if (!client) throw new Error("The selected client does not exist in this workspace.");
         } else {
-          const [createdClient] = await tx.insert(clients).values({workspaceId:workspace.id,name:input.customerName!,email:input.customerEmail||"",company:"",currency:input.currency}).returning({id:clients.id});
+          const [createdClient] = await tx.insert(clients).values({workspaceId:workspace.id,name:input.customerName!,email:input.customerEmail||"",company:input.customerCompany,isOneOff:!input.saveContact,currency:input.currency}).returning({id:clients.id});
           clientId = createdClient.id;
         }
         const [counter] = await tx.insert(invoiceCounters).values({workspaceId:workspace.id,nextNumber:1})
