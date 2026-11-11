@@ -57,7 +57,7 @@ export function createAuth(db: Database) {
   rateLimit: {
     enabled: process.env.AUTH_RATE_LIMIT_ENABLED !== "false",
     window: 60,
-    max: 10,
+    max: Number(process.env.AUTH_RATE_LIMIT_MAX || 10),
   },
   });
 }
