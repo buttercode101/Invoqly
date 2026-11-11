@@ -58,7 +58,7 @@ test("guest can work without signup, then import their local records after creat
   await page.locator("nav").getByRole("button",{name:"Clients"}).click();
   await expect(page.getByText("Guest Import Client")).toBeVisible();
   await page.locator("nav").getByRole("button",{name:"Invoices"}).click();
-  await expect(page.getByText(/INV-0001 · Guest Import Client/)).toBeVisible();
+  await expect(page.getByText(/Guest One-off Customer/)).toBeVisible();
   await page.locator("nav").getByRole("button",{name:"Expenses"}).click();
   await expect(page.getByText("Guest cloud hosting")).toBeVisible();
   await expect(page.getByRole("link",{name:"Sign in"})).toBeVisible();
