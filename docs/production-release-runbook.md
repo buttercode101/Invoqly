@@ -3,7 +3,7 @@
 ## Current release candidate
 
 - Application repository: `buttercode101/Invoqly`
-- Candidate branch: `feat/invoqly-production`
+- Candidate merged to `main` on 2026-11-11 at `8582101712d06b7018ec3906d14ad3766756907d`
 - Cloudflare preview: `https://invoqly-preview.buttercoder-dev.workers.dev`
 - Production Worker target: `invoqly-production`
 - Production Worker URL: `https://invoqly-production.buttercoder-dev.workers.dev`
