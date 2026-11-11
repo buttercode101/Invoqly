@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { ArrowUpRight, Check, Copy, LoaderCircle, Send, Sparkles } from "lucide-react";
 import { formatMinor } from "@/lib/money";
 
@@ -38,6 +39,8 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [consentLoading, setConsentLoading] = useState(true);
 
   const submit = async (value = prompt) => {
     const text = value.trim();
@@ -86,6 +89,20 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
     }
   };
 
+  useEffect(() => {
+    fetch("/api/assistant/consent").then(response => response.json()).then(data => setConsent(data.accepted === true)).catch(() => setConsent(false)).finally(() => setConsentLoading(false));
+  }, []);
+
+  const setAiConsent = async (accepted: boolean) => {
+    setError("");
+    try {
+      const response = await fetch("/api/assistant/consent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accepted }) });
+      if (!response.ok) throw new Error("Could not update the AI privacy preference.");
+      setConsent(accepted);
+      if (!accepted) { setMessages([]); setResult(null); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not update the AI privacy preference."); }
+  };
+
   const suggestions = [
     "Which overdue invoices should I chase first?",
     "Draft reminders for everything overdue more than 10 days.",
@@ -105,10 +122,17 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       <div className="assistant-main panel">
         <div className="assistant-topline">
           <div><b>Business assistant</b><small>{workspace.businessName} · {workspace.currency}</small></div>
-          <span className="assistant-status"><i/> Ready</span>
+          <div className="assistant-top-actions"><span className="assistant-status"><i className={consent ? "is-enabled" : "is-idle"}/>{consent ? "Enabled" : "Consent required"}</span>{consent && <button type="button" className="assistant-disable" onClick={() => void setAiConsent(false)}>Turn off</button>}</div>
         </div>
         <div className="assistant-conversation" aria-live="polite">
-          {messages.length === 0 && <div className="assistant-welcome">
+          {!consent && <div className="assistant-consent">
+            <div className="assistant-consent-icon"><Sparkles size={19}/></div>
+            <h2>{consentLoading ? "Checking your privacy preference…" : "Enable your AI co-pilot"}</h2>
+            <p>When you use the co-pilot, your message, recent conversation turns and selected workspace records are processed by Cloudflare Workers AI. Invoqly records usage metadata, not your prompt text. No invoice or payment record is changed and no reminder is sent without your approval.</p>
+            <p>Review the <Link href="/privacy" target="_blank">privacy notice</Link> before enabling this optional feature.</p>
+            <button className="btn btn-primary" onClick={() => void setAiConsent(true)} disabled={consentLoading}>I understand — enable AI</button>
+          </div>}
+          {consent && messages.length === 0 && <div className="assistant-welcome">
             <Sparkles size={22}/>
             <h2>What would you like to get done?</h2>
             <p>I can prepare document drafts, model supported cash-flow scenarios and draft payment reminders using your workspace records.</p>
@@ -116,18 +140,18 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
               {suggestions.map(item => <button key={item} onClick={() => void submit(item)} disabled={busy}>{item}<ArrowUpRight size={14}/></button>)}
             </div>
           </div>}
-          {messages.map((message, index) => <div key={index} className={"assistant-message " + message.role}>
+          {consent && messages.map((message, index) => <div key={index} className={"assistant-message " + message.role}>
             {message.role === "assistant" && <span className="assistant-message-icon"><Sparkles size={14}/></span>}
             <p>{message.content}</p>
           </div>)}
-          {busy && <div className="assistant-message assistant"><span className="assistant-message-icon"><Sparkles size={14}/></span><p><LoaderCircle size={15} className="assistant-spinner"/> Reviewing your workspace…</p></div>}
+          {consent && busy && <div className="assistant-message assistant"><span className="assistant-message-icon"><Sparkles size={14}/></span><p><LoaderCircle size={15} className="assistant-spinner"/> Reviewing your workspace…</p></div>}
         </div>
         {error && <p className="assistant-error" role="alert">{error}</p>}
-        <form className="assistant-composer" onSubmit={event => { event.preventDefault(); void submit(); }}>
+        {consent && <form className="assistant-composer" onSubmit={event => { event.preventDefault(); void submit(); }}>
           <textarea value={prompt} onChange={event => setPrompt(event.target.value)} placeholder="Ask Invoqly to prepare, analyse or follow up…" rows={2} maxLength={2000} disabled={busy}/>
           <button className="btn btn-primary" disabled={busy || !prompt.trim()} aria-label="Send message"><Send size={16}/> Send</button>
-        </form>
-        <p className="assistant-footnote">20 AI requests per workspace per day. Your records are never changed or messages sent without approval.</p>
+        </form>}
+        {consent && <p className="assistant-footnote">20 AI requests per workspace per day. Turn off AI at any time. Your records are never changed or messages sent without approval.</p>}
       </div>
       <aside className="assistant-side">
         {result?.draft && <div className="panel assistant-draft">
