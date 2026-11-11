@@ -17,16 +17,14 @@ test("remote preview supports real guest invoicing without creating an account o
   }
   await page.setViewportSize({width:1280,height:900});
   await page.getByRole("button",{name:"Overview"}).click();
-  await page.getByRole("button",{name:"＋ Add a client"}).click();
-  await page.getByLabel("Client name").fill("Preview Guest Client");
-  await page.getByLabel("Email address").fill("preview-guest@example.com");
-  await page.getByRole("button",{name:"Save client"}).click();
   await page.getByRole("button",{name:"Invoices"}).click();
   await page.getByRole("button",{name:"New invoice"}).click();
-  await page.getByLabel("Bill to").selectOption({label:"Preview Guest Client"});
+  await page.getByLabel("Customer name").fill("Preview Guest Client");
+  await page.getByLabel("Email address").fill("preview-guest@example.com");
   await page.getByLabel("Description").fill("Preview guest service");
   await page.getByLabel("Unit price (ZAR)").fill("750.00");
   await page.getByRole("button",{name:"Create invoice"}).click();
+  await expect(page.getByText("Preview Guest Client")).toBeVisible();
 
   const popupPromise=page.waitForEvent("popup");
   await page.getByRole("button",{name:"Print / PDF"}).click();
@@ -51,5 +49,7 @@ test("remote preview supports real guest invoicing without creating an account o
   await expect(page.getByRole("link",{name:"Sign in"})).toBeVisible();
   const guestData=await page.evaluate(()=>localStorage.getItem("invoqly.guest.workspace.v1"));
   expect(guestData).not.toBeNull();
+  const parsed=JSON.parse(guestData!);
+  expect(parsed.clients).toHaveLength(0);
   expect(workspaceApiRequests).toBe(0);
 });
