@@ -18,6 +18,23 @@ const modelSchema = z.object({
   action: z.object({ type: z.string().max(40) }).passthrough()
 });
 
+function isSameOriginRequest(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  const requestUrl = new URL(request.url);
+  if (origin) {
+    try {
+      const parsedOrigin = new URL(origin).origin;
+      const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+      const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+      const expectedOrigin = host ? (forwardedProto ?? requestUrl.protocol.slice(0, -1)) + "://" + host : requestUrl.origin;
+      return parsedOrigin === requestUrl.origin || parsedOrigin === expectedOrigin;
+    } catch {
+      return false;
+    }
+  }
+  return request.headers.get("sec-fetch-site") === "same-origin";
+}
+
 function today(): string { return new Date().toISOString().slice(0, 10); }
 function dateAfterDays(days: number): string {
   const date = new Date();
@@ -55,10 +72,7 @@ function errorResponse(message: string, status = 400) {
 }
 
 export async function POST(request: Request) {
-  const origin = request.headers.get("origin");
-  try {
-    if (!origin || new URL(origin).origin !== new URL(request.url).origin) return errorResponse("A same-origin request is required.", 403);
-  } catch { return errorResponse("A valid same-origin request is required.", 403); }
+  if (!isSameOriginRequest(request)) return errorResponse("A same-origin request is required.", 403);
   if (!(request.headers.get("content-type") ?? "").toLowerCase().includes("application/json")) return errorResponse("JSON content is required.", 415);
   if (Number(request.headers.get("content-length") ?? "0") > 12_000) return errorResponse("The request is too large.", 413);
 
