@@ -32,8 +32,8 @@ test("guest can work without signup, then import their local records after creat
   await expect(printPopup.locator("h1").first()).toHaveText("Guest Studio");
   await printPopup.close();
   await page.getByRole("button",{name:"New invoice"}).click();
-  await page.getByLabel("Customer name").fill("Guest One-off Customer");
-  await page.getByLabel("Email address").fill("oneoff@example.com");
+  await page.getByLabel("Customer name").fill("Guest Second Customer");
+  await page.getByLabel("Email address").fill("second@example.com");
   await page.getByLabel("Description").fill("One-off project");
   await page.getByLabel("Unit price (ZAR)").fill("425.00");
   await page.getByRole("button",{name:"Create invoice"}).click();
