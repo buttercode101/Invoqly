@@ -12,11 +12,10 @@ export function createAuth(db: Database) {
 
   return betterAuth({
   appName: "Invoqly",
-  baseURL: {
-    allowedHosts: ["invoqly.xyz","www.invoqly.xyz","invoqly.vercel.app","invoqly-*.vercel.app","invoqly-preview.buttercoder-dev.workers.dev","localhost:3000","127.0.0.1:3000","localhost:3001","127.0.0.1:3001"],
-    protocol: "auto",
-    fallback: "https://invoqly.xyz",
-  },
+  // Pin Better Auth to the deployment origin. Relying on request-host
+  // inference can fall back to the canonical production host on Workers,
+  // which causes session cookies to be scoped to the wrong origin.
+  baseURL: process.env.BETTER_AUTH_URL || (process.env.NODE_ENV === "production" ? "https://invoqly.xyz" : "http://localhost:3000"),
   secret,
   database: drizzleAdapter(db, { provider: "pg", schema }),
   emailAndPassword: {
