@@ -1,0 +1,52 @@
+{
+  "name": "invoqly",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --config vitest.config.ts src",
+    "test:e2e": "playwright test",
+    "db:migrate": "node scripts/migrate.mjs",
+    "test:e2e:remote": "playwright test",
+    "dev:vinext": "vite dev --port 3001",
+    "build:vinext": "vite build",
+    "start:vinext": "vite preview",
+    "deploy:vinext": "vinext-cloudflare deploy",
+    "test:e2e:vinext": "playwright test --config=playwright.vinext.config.ts"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "1.7.18",
+    "@vinext/cloudflare": "^1.3.3",
+    "better-auth": "1.7.18",
+    "drizzle-orm": "0.45.4",
+    "lucide-react": "^0.468.0",
+    "next": "15.5.29",
+    "postgres": "3.4.7",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-server-dom-webpack": "^19.3.1",
+    "vinext": "^1.4.4",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^2.0.0-beta.v.13",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.6",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^6.3.0",
+    "@vitejs/plugin-rsc": "^0.5.39",
+    "cf": "^1.0.0-beta.28",
+    "typescript": "^5.7.3",
+    "vite": "^8.3.3",
+    "vitest": "5.1.0"
+  },
+  "overrides": {
+    "fflate": "^0.7.5",
+    "postcss": "8.5.32"
+  }
+}
