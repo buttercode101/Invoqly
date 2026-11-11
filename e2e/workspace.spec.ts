@@ -61,7 +61,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
   const quotePrint=await quotePrintPromise;
   await expect(quotePrint.locator("body")).toContainText("Quote Customer");
   await quotePrint.close();
-  await quoteRow.getByTitle("Send quotation").click();
+  await quoteRow.getByTitle("Mark as sent").click();
   await expect(quoteRow).toContainText("Sent");
   await quoteRow.getByTitle("Accept quotation").click();
   await expect(quoteRow).toContainText("Accepted");
