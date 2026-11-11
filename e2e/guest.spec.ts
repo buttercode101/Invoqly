@@ -16,9 +16,21 @@ test("visitors can create and keep a local workspace without registering",async(
   await page.getByLabel("Unit price (ZAR)").fill("1250.00");
   await page.getByRole("button",{name:"Create invoice"}).click();
   await expect(page.getByText(/INV-0001 · Guest Client/)).toBeVisible();
+  await page.getByRole("button",{name:"Issue"}).click();
+  await page.getByRole("button",{name:"Mark paid"}).click();
+
+  await page.getByRole("button",{name:"Expenses"}).click();
+  await page.getByRole("button",{name:"Add expense"}).click();
+  await page.getByLabel("Vendor or supplier").fill("Guest hosting");
+  await page.getByLabel("Amount (ZAR)").fill("99.50");
+  await page.getByRole("button",{name:"Save expense"}).click();
+  await expect(page.getByText("Guest hosting")).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole("heading",{name:"Invoices"})).toBeVisible();
+  await page.getByRole("button",{name:"Invoices"}).click();
   await expect(page.getByText(/INV-0001 · Guest Client/)).toBeVisible();
+  await expect(page.getByText("Paid")).toBeVisible();
+  await page.getByRole("button",{name:"Expenses"}).click();
+  await expect(page.getByText("Guest hosting")).toBeVisible();
   await expect(page.getByRole("link",{name:"Create free account"})).toBeVisible();
 });
