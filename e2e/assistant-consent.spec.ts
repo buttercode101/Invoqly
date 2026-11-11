@@ -1,39 +1,52 @@
 import { expect, test } from "@playwright/test";
 
-test("AI co-pilot requires explicit consent and an authenticated account", async ({ request, baseURL }) => {
-  const origin = baseURL ?? "http://127.0.0.1:3000";
-  const headers = { Origin: origin, "Content-Type": "application/json" };
+test("AI co-pilot requires explicit consent and an authenticated account", async ({ page }) => {
+  await page.goto("/");
+  const initial = await page.evaluate(async () => (await fetch("/api/assistant/consent")).json() as Promise<{ accepted: boolean }>);
+  expect(initial.accepted).toBe(false);
 
-  const initial = await request.get("/api/assistant/consent");
-  expect(initial.ok()).toBeTruthy();
-  expect((await initial.json()).accepted).toBe(false);
-
-  const blocked = await request.post("/api/assistant", {
-    headers,
-    data: { message: "Create an invoice", history: [] }
+  const blocked = await page.evaluate(async () => {
+    const response = await fetch("/api/assistant", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "Create an invoice", history: [] })
+    });
+    return { status: response.status, body: await response.json() };
   });
-  expect(blocked.status()).toBe(428);
+  expect(blocked.status).toBe(428);
 
-  const accepted = await request.post("/api/assistant/consent", {
-    headers,
-    data: { accepted: true }
+  const accepted = await page.evaluate(async () => {
+    const response = await fetch("/api/assistant/consent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accepted: true })
+    });
+    return { status: response.status, body: await response.json() as { accepted: boolean } };
   });
-  expect(accepted.ok()).toBeTruthy();
-  expect((await accepted.json()).accepted).toBe(true);
+  expect(accepted.status).toBe(200);
+  expect(accepted.body.accepted).toBe(true);
 
-  const enabled = await request.get("/api/assistant/consent");
-  expect((await enabled.json()).accepted).toBe(true);
+  const enabled = await page.evaluate(async () => (await fetch("/api/assistant/consent")).json() as Promise<{ accepted: boolean }>);
+  expect(enabled.accepted).toBe(true);
 
-  const guestBlocked = await request.post("/api/assistant", {
-    headers,
-    data: { message: "Create an invoice", history: [] }
+  const guestBlocked = await page.evaluate(async () => {
+    const response = await fetch("/api/assistant", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "Create an invoice", history: [] })
+    });
+    return { status: response.status, body: await response.json() };
   });
-  expect(guestBlocked.status()).toBe(401);
+  expect(guestBlocked.status).toBe(401);
 
-  const revoked = await request.post("/api/assistant/consent", {
-    headers,
-    data: { accepted: false }
+  const revoked = await page.evaluate(async () => {
+    const response = await fetch("/api/assistant/consent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accepted: false })
+    });
+    return { status: response.status, body: await response.json() as { accepted: boolean } };
   });
-  expect(revoked.ok()).toBeTruthy();
-  expect((await revoked.json()).accepted).toBe(false);
+  expect(revoked.status).toBe(200);
+  expect(revoked.body.accepted).toBe(false);
 });
