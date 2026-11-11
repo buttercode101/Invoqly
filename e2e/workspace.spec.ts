@@ -30,18 +30,39 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await page.getByLabel("Bill to").selectOption({label:"One-off customer / enter details"});
   await page.getByLabel("Customer name").fill("Acme Services");
   await page.getByLabel("Email address").fill("accounts@acme.example");
+  await expect(page.getByLabel("Save this customer to contacts for next time")).not.toBeChecked();
   await page.getByLabel("Description").fill("Product design");
   await page.getByLabel("Quantity").fill("2");
   await page.getByLabel("Unit price").fill("1250.50");
   await page.getByRole("button",{name:"Create invoice"}).click();
 
   await goTo(page,"Clients");
-  await expect(page.getByRole("heading",{name:"Acme Services"})).toBeVisible();
+  await expect(page.getByText("No clients yet")).toBeVisible();
+  await expect(page.getByText("Acme Services")).toHaveCount(0);
   await goTo(page,"Invoices");
   let invoiceRow=page.locator("tbody tr").filter({hasText:"Acme Services"});
   await expect(invoiceRow).toContainText("Draft");
+  await expect(invoiceRow).toContainText("Acme Services");
   await invoiceRow.getByTitle("Issue invoice").click();
   await expect(invoiceRow).toContainText("Sent");
+
+  await goTo(page,"Quotes");
+  await page.getByRole("button",{name:"New quotation"}).click();
+  await page.getByLabel("Customer or business name").fill("Quote Customer");
+  await page.getByLabel("Email address (optional)").fill("quote@example.com");
+  await page.getByLabel("Scope of work / description").fill("Website redesign");
+  await page.getByLabel("Quantity").fill("1");
+  await page.getByLabel("Unit price").fill("2400.00");
+  await page.getByRole("button",{name:"Create quotation"}).click();
+  const quoteRow=page.locator("tbody tr").filter({hasText:"Quote Customer"});
+  await expect(quoteRow).toContainText("Draft");
+  await quoteRow.getByTitle("Send quotation").click();
+  await expect(quoteRow).toContainText("Sent");
+  await quoteRow.getByTitle("Accept quotation").click();
+  await expect(quoteRow).toContainText("Accepted");
+  await quoteRow.getByTitle("Convert to invoice").click();
+  await goTo(page,"Invoices");
+  await expect(page.locator("tbody tr").filter({hasText:"Quote Customer"})).toContainText("Draft");
 
   await goTo(page,"Payments");
   await page.getByRole("button",{name:"Record payment"}).click();
@@ -77,7 +98,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
 
   await page.reload();
   await goTo(page,"Clients");
-  await expect(page.getByRole("heading",{name:"Acme Services"})).toBeVisible();
+  await expect(page.getByText("No clients yet")).toBeVisible();
   await goTo(page,"Invoices");
   await expect(page.locator("tbody tr").filter({hasText:"Acme Services"})).toContainText("Paid");
   await goTo(page,"Payments");
