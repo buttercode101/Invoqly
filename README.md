@@ -4,15 +4,13 @@
 
 A global business finance workspace for independent professionals and small businesses.
 
-## Implemented in the current preview
-- Responsive workspace dashboard with live calculations from the current workspace.
-- Client creation and local persistence.
-- Invoice creation with draft, sent and paid status transitions.
-- Printable invoice documents (browser print / Save as PDF).
-- Expense capture and categories.
-- Basic reporting and JSON workspace backup.
-- Currency-aware amount entry stored as integer minor units.
-- South Africa-first defaults with multiple selectable currencies.
+## Free guest mode
+Visitors can open `/guest` and use core invoicing tools without creating an account. Guest clients, invoices and expenses are saved in the current browser, and a JSON backup can be exported at any time. Guest records are not uploaded to the cloud.
+
+## Account workspace
+An account unlocks the private cloud workspace, server-side persistence and multi-device access. Authentication is optional for basic guest use; it is required only for account-backed features.
+
+The guest workspace currently supports client records, invoice drafting/issuing/marking paid, expense capture, dashboard totals and local backup export. It is an early functional slice, not yet a complete accounting or tax-compliance product.
 
 ## Important limitations
 This is an early functional preview, not a production-ready financial application. Records currently persist in the current browser using local storage. There is no cloud database, authentication, multi-device sync, email delivery, payment processing, tax calculation or jurisdiction-specific invoice compliance yet. Do not enter real confidential customer or financial data.
