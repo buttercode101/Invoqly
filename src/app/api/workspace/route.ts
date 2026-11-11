@@ -20,7 +20,7 @@ const payload = z.discriminatedUnion("action", [
   z.object({ action:z.literal("send-invoice"), invoiceId:z.string().uuid() }),
   z.object({ action:z.literal("delete-draft-invoice"), invoiceId:z.string().uuid() }),
 
-  z.object({ action:z.literal("import-guest-workspace"), importId:z.string().uuid(), businessName:z.string().trim().min(1).max(120), currency, clients:z.array(z.object({id:z.string().uuid(),name:z.string().trim().min(1).max(120),email:z.string().trim().email().max(254).toLowerCase(),company:z.string().max(120)})).max(500), invoices:z.array(z.object({id:z.string().uuid(),clientId:z.string().uuid(),issueDate:date,dueDate:date,description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency,status:z.enum(["Draft","Sent","Paid"])})).max(1000), expenses:z.array(z.object({vendor:z.string().trim().min(1).max(160),category:z.string().trim().min(1).max(80),date,amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency})).max(2000) }),
+  z.object({ action:z.literal("import-guest-workspace"), importId:z.string().uuid(), businessName:z.string().trim().min(1).max(120), currency, clients:z.array(z.object({id:z.string().uuid(),name:z.string().trim().min(1).max(120),email:z.string().trim().email().max(254).toLowerCase(),company:z.string().max(120)})).max(500), invoices:z.array(z.object({id:z.string().uuid(),clientId:z.string().uuid(),issueDate:date,dueDate:date,paidAt:date.optional(),description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency,status:z.enum(["Draft","Sent","Paid"])})).max(1000), expenses:z.array(z.object({vendor:z.string().trim().min(1).max(160),category:z.string().trim().min(1).max(80),date,amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency})).max(2000) }),
 
 ]);
 
@@ -85,7 +85,7 @@ export async function POST(request:Request) {
           const status = invoice.status === "Paid" ? "Paid" : invoice.status === "Sent" ? (invoice.dueDate < today() ? "Overdue" : "Sent") : "Draft";
           const [created] = await tx.insert(invoices).values({workspaceId:workspace.id,clientId,number,issueDate:invoice.issueDate,dueDate:invoice.dueDate,description:invoice.description,quantity:invoice.quantity,unitPriceMinor:invoice.unitPriceMinor,currency:input.currency,status}).returning({id:invoices.id});
           if (invoice.status === "Paid") {
-            await tx.insert(payments).values({workspaceId:workspace.id,invoiceId:created.id,clientId,date:today(),amountMinor:invoiceTotals[input.invoices.indexOf(invoice)],currency:input.currency,method:"Guest import",reference:"",notes:"Imported from this device's guest workspace"});
+            await tx.insert(payments).values({workspaceId:workspace.id,invoiceId:created.id,clientId,date:invoice.paidAt ?? today(),amountMinor:invoiceTotals[input.invoices.indexOf(invoice)],currency:input.currency,method:"Guest import",reference:"",notes:"Imported from this device's guest workspace"});
           }
         }
         for (const expense of input.expenses) {
