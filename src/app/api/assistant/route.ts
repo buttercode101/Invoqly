@@ -4,7 +4,7 @@ import { z } from "zod";
 import { withDb } from "@/lib/db";
 import { auditEvents, workspaces } from "@/lib/db/schema";
 import { getCurrentUser, getOrCreateWorkspace, loadWorkspace } from "@/lib/workspace";
-import { decimalToMinor } from "@/lib/money";
+import { decimalToMinor, formatMinor } from "@/lib/money";
 import { calculateCashflow, rankReceivablesToChase, totalChaseImpactMinor, type CashflowInvoice, type CashflowPayable } from "@/lib/cashflow";
 import { runBusinessAssistant } from "@/lib/ai";
 
@@ -240,6 +240,9 @@ ${message}`;
       if (scenarioFields.data.supplierDelayDays > 0 && (!selectedPayables.length || selectedPayables.length !== scenarioFields.data.payableIds.length)) {
         return NextResponse.json({ reply: "I couldn't match the supplier payment to a future-dated expense. Add the supplier bill as a future-dated expense first, then try again.", scenario: null });
       }
+      if (selectedInvoices.some(i => i.status === "Draft" || i.status === "Paid")) {
+        return NextResponse.json({ reply: "Only issued invoices with an outstanding balance can be delayed in a cash-flow scenario.", scenario: null });
+      }
       if (selectedInvoices.some(i => i.currency !== snapshot.currency) || selectedPayables.some(e => e.currency !== snapshot.currency)) {
         return NextResponse.json({ reply: "This scenario includes more than one currency. I won't combine currencies without an explicit exchange-rate source.", scenario: null });
       }
@@ -301,7 +304,7 @@ ${message}`;
           invoiceNumber: invoice.number, customerName: invoice.customerName ?? "Customer",
           dueDate: invoice.dueDate, amountMinor: balance, currency: invoice.currency,
           subject: reminderFields.data.subject ?? "Payment reminder · " + invoice.number,
-          body: "Hi " + (invoice.customerName ?? "there") + ",\n\n" + bodyText + "\n\nInvoice: " + invoice.number + "\nOutstanding: " + balance + " " + invoice.currency + "\nDue date: " + invoice.dueDate + "\n\nThank you."
+          body: "Hi " + (invoice.customerName ?? "there") + ",\n\n" + bodyText + "\n\nInvoice: " + invoice.number + "\nOutstanding: " + formatMinor(balance, invoice.currency, "en-ZA") + "\nDue date: " + invoice.dueDate + "\n\nThank you."
         };
       });
       return NextResponse.json({
