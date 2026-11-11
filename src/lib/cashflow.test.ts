@@ -22,6 +22,8 @@ describe("deterministic cash-flow engine", () => {
     const result = calculateCashflow(base);
     expect(result.weeks).toHaveLength(13);
     expect(result.months).toHaveLength(12);
+    expect(result.months[0]?.startDate).toBe("2026-11-11");
+    expect(result.months[11]?.endDate).toBe("2027-11-10");
     expect(result.events.some(event => event.id === "invoice:i3")).toBe(false);
     expect(result.events.some(event => event.id === "invoice:i4")).toBe(false);
     expect(result.events.find(event => event.id === "invoice:i1")?.amountMinor).toBe(4_000_000);
