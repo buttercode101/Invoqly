@@ -125,7 +125,7 @@
 .assistant-reminder>div{display:grid;gap:3px}
 .assistant-reminder>div b{font-size:12px}
 .assistant-reminder>div span{font-size:11px;color:#748078}
-.assistant-reminder pre{margin:0;padding:10px;border:1px solid #e8ece8;border-radius:8px;background:#fafbf9;color:#445047;font:11px/1.55 inherit;white-space:pre-wrap;overflow-wrap:anywhere}
+.assistant-reminder pre{margin:0;padding:10px;border:1px solid #e8ece8;border-radius:8px;background:#fafbf9;color:#445047;font-family:inherit;font-size:11px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
 .assistant-reminder .btn{justify-content:center}
 .assistant-boundary>b{display:block;margin-bottom:12px;font-size:13px}
 .assistant-boundary>div{display:flex;justify-content:space-between;padding:9px 0;border-top:1px solid #edf0ed;font-size:12px}
