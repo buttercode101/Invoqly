@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   const response = NextResponse.json({ accepted: body.accepted }, { headers: { "Cache-Control": "private, no-store" } });
   response.cookies.set(COOKIE, body.accepted ? VERSION : "", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: new URL(request.url).protocol === "https:",
     sameSite: "strict",
     path: "/",
     maxAge: body.accepted ? 60 * 60 * 24 * 365 : 0
