@@ -5,7 +5,7 @@
 A global business finance workspace for independent professionals and small businesses.
 
 ## Free guest mode
-Visitors can open `/guest` and use core invoicing tools without creating an account. Guest clients, invoices and expenses are saved in the current browser, and a JSON backup can be exported at any time. Guest records are not uploaded to the cloud.
+Visitors can open `/guest` and use core invoicing tools without creating an account. Guest clients, invoices and expenses are saved in the current browser, and a JSON backup can be exported at any time. Guest records are not uploaded to the cloud. Guests can issue invoices, mark them paid and export a JSON backup.
 
 ## Account workspace
 An account unlocks the private cloud workspace, server-side persistence and multi-device access. Authentication is optional for basic guest use; it is required only for account-backed features.
