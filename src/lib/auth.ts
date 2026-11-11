@@ -56,7 +56,7 @@ export function createAuth(db: Database) {
   rateLimit: {
     enabled: true,
     window: 60,
-    max: 100,
+    max: 10,
   },
   });
 }
