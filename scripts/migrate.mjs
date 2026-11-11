@@ -20,6 +20,8 @@ try {
   }
   const quoteMigration=await sql`SELECT "id" FROM "_invoqly_migrations" WHERE "id"='0002_quotes'`;
   if(!quoteMigration.length){const source=await readFile(new URL("../drizzle/0002_quotes.sql",import.meta.url),"utf8");const statements=source.split(";").map(s=>s.trim()).filter(Boolean);await sql.begin(async tx=>{for(const statement of statements)await tx.unsafe(statement);await tx`INSERT INTO "_invoqly_migrations" ("id") VALUES ('0002_quotes')`});process.stdout.write("Applied migration 0002_quotes.\n");} else {process.stdout.write("Migration 0002_quotes already applied.\n");}
+  const oneOffMigration=await sql`SELECT "id" FROM "_invoqly_migrations" WHERE "id"='0003_one_off_customers'`;
+  if(!oneOffMigration.length){const source=await readFile(new URL("../drizzle/0003_one_off_customers.sql",import.meta.url),"utf8");const statements=source.split(";").map(s=>s.trim()).filter(Boolean);await sql.begin(async tx=>{for(const statement of statements)await tx.unsafe(statement);await tx`INSERT INTO "_invoqly_migrations" ("id") VALUES ('0003_one_off_customers')`});process.stdout.write("Applied migration 0003_one_off_customers.\n");} else {process.stdout.write("Migration 0003_one_off_customers already applied.\n");}
 } finally {
   await sql.end({timeout:5});
 }
