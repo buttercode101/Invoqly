@@ -14,11 +14,7 @@ async function createAccount(page:Page,account:ReturnType<typeof identity>) {
   await page.getByRole("button",{name:"Create account"}).click();
   const signupResponse=await signupResponsePromise;
   expect(signupResponse.status()).toBe(200);
-  await expect(page).toHaveURL(/\/sign-in\?created=1$/);
-  await expect(page.locator(".auth-success")).toContainText("Account created");
-  await page.getByLabel("Email address").fill(account.email);
-  await page.locator('input[type="password"]').fill(account.password);
-  await page.getByRole("button",{name:"Sign in"}).click();
+  await expect(page).toHaveURL(/\/app$/);
   await expect(page.locator("main.shell")).toBeVisible();
   await expect(page.locator(".cloud-banner")).toContainText("Secure cloud workspace");
 }
