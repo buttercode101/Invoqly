@@ -23,7 +23,7 @@ const payload = z.discriminatedUnion("action", [
   z.object({ action:z.literal("send-invoice"), invoiceId:z.string().uuid() }),
   z.object({ action:z.literal("delete-draft-invoice"), invoiceId:z.string().uuid() }),
 
-  z.object({ action:z.literal("import-guest-workspace"), importId:z.string().uuid(), businessName:z.string().trim().min(1).max(120), currency, clients:z.array(z.object({id:z.string().uuid(),name:z.string().trim().min(1).max(120),email:z.string().trim().email().max(254).toLowerCase(),company:z.string().max(120)})).max(500), invoices:z.array(z.object({id:z.string().uuid(),clientId:z.string().uuid(),issueDate:date,dueDate:date,paidAt:date.optional(),description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency,status:z.enum(["Draft","Sent","Paid"])})).max(1000), quotes:z.array(z.object({id:z.string().uuid(),customerName:z.string().trim().min(1).max(120),customerEmail:z.string().max(254),customerCompany:z.string().max(120),description:z.string().trim().min(1).max(500),issueDate:date,validUntil:date,quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency,status:z.enum(["Draft","Sent","Accepted","Declined","Converted"])})).max(1000).default([]), expenses:z.array(z.object({vendor:z.string().trim().min(1).max(160),category:z.string().trim().min(1).max(80),date,amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency})).max(2000) }),
+  z.object({ action:z.literal("import-guest-workspace"), importId:z.string().uuid(), businessName:z.string().trim().min(1).max(120), currency, clients:z.array(z.object({id:z.string().uuid(),name:z.string().trim().min(1).max(120),email:z.string().trim().email().max(254).toLowerCase(),company:z.string().max(120)})).max(500), invoices:z.array(z.object({id:z.string().uuid(),clientId:z.string().uuid().optional(),customerName:z.string().trim().min(1).max(120).optional(),customerEmail:z.string().max(254).default(""),customerCompany:z.string().max(120).default(""),issueDate:date,dueDate:date,paidAt:date.optional(),description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency,status:z.enum(["Draft","Sent","Paid"])})).max(1000), quotes:z.array(z.object({id:z.string().uuid(),customerName:z.string().trim().min(1).max(120),customerEmail:z.string().max(254),customerCompany:z.string().max(120),description:z.string().trim().min(1).max(500),issueDate:date,validUntil:date,quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency,status:z.enum(["Draft","Sent","Accepted","Declined","Converted"])})).max(1000).default([]), expenses:z.array(z.object({vendor:z.string().trim().min(1).max(160),category:z.string().trim().min(1).max(80),date,amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency})).max(2000) }),
 
 ]);
 
@@ -64,7 +64,7 @@ export async function POST(request:Request) {
     const workspace = await getOrCreateWorkspace(db,user.id);
 
     if (input.action === "import-guest-workspace") {
-      if (input.invoices.some(invoice => !input.clients.some(client => client.id === invoice.clientId))) return fail("An imported invoice refers to a client that is missing from this backup.",422);
+      if (input.invoices.some(invoice => invoice.clientId ? !input.clients.some(client => client.id === invoice.clientId) : !invoice.customerName)) return fail("An imported invoice is missing its customer details.",422);
       if (input.invoices.some(invoice => invoice.currency !== input.currency) || input.expenses.some(expense => expense.currency !== input.currency)) return fail("All imported records must use the guest workspace currency.",422);
       const invoiceTotals = input.invoices.map(invoice => invoice.quantity * invoice.unitPriceMinor);
       if (invoiceTotals.some(total => !Number.isSafeInteger(total))) return fail("An imported invoice total exceeds the supported amount range.",422);
@@ -79,8 +79,8 @@ export async function POST(request:Request) {
           clientIds.set(client.id,created.id);
         }
         for (const invoice of input.invoices) {
-          const clientId = clientIds.get(invoice.clientId);
-          if (!clientId) throw new Error("An imported invoice client could not be matched.");
+          let clientId = invoice.clientId ? clientIds.get(invoice.clientId) : undefined;
+          if (!clientId) { const [oneOff]=await tx.insert(clients).values({workspaceId:workspace.id,name:invoice.customerName!,email:invoice.customerEmail||"",company:invoice.customerCompany||"",currency:input.currency,isOneOff:true}).returning({id:clients.id}); clientId=oneOff.id; }
           const [counter] = await tx.insert(invoiceCounters).values({workspaceId:workspace.id,nextNumber:1})
             .onConflictDoUpdate({target:invoiceCounters.workspaceId,set:{nextNumber:sql`${invoiceCounters.nextNumber} + 1`}})
             .returning({nextNumber:invoiceCounters.nextNumber});
