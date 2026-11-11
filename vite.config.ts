@@ -12,10 +12,10 @@ const cloudflareAiAdapter = fileURLToPath(
 
 export default defineConfig({
   resolve: {
-    alias: [{
-      find: "@/lib/db/connection",
-      replacement: cloudflareDatabaseAdapter
-    }]
+    alias: [
+      { find: "@/lib/db/connection", replacement: cloudflareDatabaseAdapter },
+      { find: "@/lib/ai", replacement: cloudflareAiAdapter }
+    ]
   },
   plugins: [
     vinext(),
