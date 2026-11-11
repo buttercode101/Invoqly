@@ -36,7 +36,9 @@ test("guest can work without signup, then import their local records after creat
     const data=JSON.parse(localStorage.getItem(key)||"{}");
     data.importId=crypto.randomUUID();
     localStorage.setItem(key,JSON.stringify(data));
-    return localStorage.getItem(key);
+    const backup=localStorage.getItem(key);
+    localStorage.removeItem(key);
+    return backup;
   });
 
   await page.goto("/sign-up");
@@ -48,6 +50,7 @@ test("guest can work without signup, then import their local records after creat
   expect((await signupResponsePromise).status()).toBe(200);
   await expect(page).toHaveURL(/\/app$/);
   await page.locator(".nav-item").filter({hasText:"Settings"}).click();
+  await page.getByLabel("Import a guest backup from another device").setInputFiles({name:"invoqly-guest-backup.json",mimeType:"application/json",buffer:Buffer.from(savedGuestBackup!)});
   await expect(page.getByText("Guest workspace found on this device")).toBeVisible();
   page.once("dialog",dialog=>dialog.accept());
   await page.getByRole("button",{name:"Import guest work"}).click();
