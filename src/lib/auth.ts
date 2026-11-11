@@ -58,6 +58,9 @@ export function createAuth(db: Database) {
     enabled: process.env.AUTH_RATE_LIMIT_ENABLED !== "false",
     window: 60,
     max: Number(process.env.AUTH_RATE_LIMIT_MAX || 10),
+    customRules: {
+      "/sign-up/email": process.env.AUTH_RATE_LIMIT_ENABLED === "false" ? false : { window: 10, max: 3 },
+    },
   },
   });
 }
