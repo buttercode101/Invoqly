@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("visitors can create and keep a local workspace without registering",async({page})=>{
-  await page.goto("/");
+  await page.goto("/guest");
   await expect(page.getByRole("heading",{name:"Your business, in good order."})).toBeVisible();
   await expect(page.getByText("You're using Invoqly for free, without signing up.")).toBeVisible();
 
