@@ -43,7 +43,7 @@ test("guest can work without signup, then import their local records after creat
   await page.getByLabel("Description").fill("Brand identity package");
   await page.getByLabel("Unit price (ZAR)").fill("3200.00");
   await page.getByRole("button",{name:"Create quotation"}).click();
-  await page.getByRole("button",{name:"Send quote"}).click();
+  await page.getByRole("button",{name:"Mark as sent"}).click();
   await page.getByRole("button",{name:"Accept"}).click();
   await page.getByRole("button",{name:"Convert to invoice"}).click();
   await page.getByRole("button",{name:"Issue"}).last().click();
