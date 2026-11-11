@@ -1,5 +1,6 @@
 import { and, eq, gte, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { withDb } from "@/lib/db";
 import { auditEvents, workspaces } from "@/lib/db/schema";
@@ -63,6 +64,8 @@ export async function POST(request: Request) {
 
   const body = requestSchema.safeParse(await request.json().catch(() => null));
   if (!body.success) return errorResponse("Enter a message of up to 2,000 characters.", 422);
+  const consent = await cookies();
+  if (consent.get("invoqly_ai_consent")?.value !== "2026-11-11-v1") return errorResponse("Enable the AI co-pilot after reviewing the privacy notice before sending a request.", 428);
   const message = body.data.message;
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);
