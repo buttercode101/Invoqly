@@ -25,10 +25,10 @@
 - Cloud persistence enables use across devices and is independent from the guest local store.
 
 ### Guest import
-- Import is an explicit, user-confirmed action from workspace settings.
-- The server validates and limits the payload, maps guest client IDs to newly created workspace client IDs, creates invoices and expenses in a database transaction, and records paid invoices as payment ledger entries.
+- Import is an explicit, user-confirmed action from workspace settings. It accepts either the current browser's guest workspace or an exported JSON backup uploaded from another device.
+- The server validates and limits the payload, maps guest client IDs to newly created workspace client IDs, creates invoices and expenses in a database transaction, and records paid invoices as payment ledger entries using the recorded paid date.
 - A stable guest import UUID is stored in the audit log. A workspace row lock and prior-import check prevent a retried import from duplicating records.
-- Existing cloud records are retained. The browser guest copy is cleared only after the server confirms success.
+- Existing cloud records are retained. Same-device guest data is cleared only after server confirmation; uploaded files use a separate pending-import key and cannot overwrite a different local guest workspace.
 
 ## Domain boundaries
 - identity: users, sessions, invitations
