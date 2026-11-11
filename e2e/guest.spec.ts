@@ -23,6 +23,14 @@ test("guest can work without signup, then import their local records after creat
   await page.getByLabel("Vendor or supplier").fill("Guest cloud hosting");
   await page.getByLabel("Amount (ZAR)").fill("45.00");
   await page.getByRole("button",{name:"Save expense"}).click();
+  await page.reload();
+  await page.locator("nav").getByRole("button",{name:"Clients"}).click();
+  await expect(page.getByText("Guest Import Client")).toBeVisible();
+  await page.locator("nav").getByRole("button",{name:"Invoices"}).click();
+  await expect(page.getByText(/INV-0001 · Guest Import Client/)).toBeVisible();
+  await page.locator("nav").getByRole("button",{name:"Expenses"}).click();
+  await expect(page.getByText("Guest cloud hosting")).toBeVisible();
+  await expect(page.getByRole("link",{name:"Sign in"})).toBeVisible();
   const savedGuestBackup=await page.evaluate(()=>{
     const key="invoqly.guest.workspace.v1";
     const data=JSON.parse(localStorage.getItem(key)||"{}");
@@ -49,6 +57,8 @@ test("guest can work without signup, then import their local records after creat
   await page.locator(".nav-item").filter({hasText:"Invoices"}).click();
   await expect(page.locator("tbody tr").filter({hasText:"Guest Import Client"})).toContainText("Guest project");
   await expect(page.locator("tbody tr").filter({hasText:"Guest Import Client"})).toContainText("Paid");
+  await page.locator(".nav-item").filter({hasText:"Payments"}).click();
+  await expect(page.getByText("1 recorded payments")).toBeVisible();
   await page.locator(".nav-item").filter({hasText:"Expenses"}).click();
   await expect(page.getByText("Guest cloud hosting")).toBeVisible();
   await page.reload();
