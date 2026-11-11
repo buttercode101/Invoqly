@@ -48,7 +48,6 @@ test("guest can work without signup, then import their local records after creat
   const savedGuestBackup=await page.evaluate(()=>{
     const key="invoqly.guest.workspace.v1";
     const data=JSON.parse(localStorage.getItem(key)||"{}");
-    data.importId=crypto.randomUUID();
     localStorage.setItem(key,JSON.stringify(data));
     return localStorage.getItem(key);
   });
