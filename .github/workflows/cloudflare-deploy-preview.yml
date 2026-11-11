@@ -102,3 +102,13 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: https://invoqly-preview.buttercoder-dev.workers.dev
         run: npm run test:e2e
+      - name: Upload browser acceptance diagnostics
+        if: always() && steps.credentials.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: invoqly-preview-playwright-diagnostics
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: warn
+          retention-days: 7
