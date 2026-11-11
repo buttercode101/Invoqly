@@ -27,21 +27,19 @@ test("real account, client, invoice, partial payments, expense and reload",async
   const account=identity("Owner");
   await createAccount(page,account);
 
-  await page.getByRole("button",{name:"Add a client"}).click();
-  await page.getByLabel("Client or contact name").fill("Acme Services");
-  await page.getByLabel("Business name").fill("Acme Services Ltd");
-  await page.getByLabel("Email address").fill("accounts@acme.example");
-  await page.getByRole("button",{name:"Save client"}).click();
-  await expect(page.getByRole("heading",{name:"Acme Services"})).toBeVisible();
-
   await page.getByRole("button",{name:"Invoices"}).click();
   await page.getByRole("button",{name:"New invoice"}).click();
-  await page.getByLabel("Bill to").selectOption({label:"Acme Services"});
+  await page.getByLabel("Bill to").selectOption({label:"One-off customer / enter details"});
+  await page.getByLabel("Customer name").fill("Acme Services");
+  await page.getByLabel("Email address").fill("accounts@acme.example");
   await page.getByLabel("Description").fill("Product design");
   await page.getByLabel("Quantity").fill("2");
   await page.getByLabel("Unit price").fill("1250.50");
   await page.getByRole("button",{name:"Create invoice"}).click();
 
+  await page.getByRole("button",{name:"Clients"}).click();
+  await expect(page.getByRole("heading",{name:"Acme Services"})).toBeVisible();
+  await page.getByRole("button",{name:"Invoices"}).click();
   let invoiceRow=page.locator("tbody tr").filter({hasText:"Acme Services"});
   await expect(invoiceRow).toContainText("Draft");
   await invoiceRow.getByTitle("Issue invoice").click();
