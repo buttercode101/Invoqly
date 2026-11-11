@@ -18,6 +18,8 @@ type AssistantResult = {
   draft?: { type: "create_quote" | "create_invoice"; data: QuoteData | InvoiceData; sourceDocumentNumber?: string | null; totalMinor: number; currency: string } | null;
   scenario?: { currency: string; baselineNetMinor: number; scenarioNetMinor: number; differenceMinor: number; safeToSpendMinor: number | null; invoiceDelayDays: number; supplierDelayDays: number; weeks: Array<{ startDate: string; endDate: string; netMinor: number }> } | null;
   reminders?: Reminder[];
+  priorities?: Array<{ invoiceId: string; number: string; customerName: string; openAmountMinor: number; daysOverdue: number; currency: string }>;
+  totalImpactMinor?: number;
   error?: string;
 };
 type Message = { role: "user" | "assistant"; content: string };
@@ -148,6 +150,16 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
           <div className="assistant-draft-total"><span>Change vs baseline</span><strong>{fmt(result.scenario.differenceMinor, result.scenario.currency)}</strong></div>
           <p className="assistant-footnote">Opening cleared cash is not set. This compares projected movements only; no closing balance or safe-to-spend figure is shown.</p>
         </div>}
+        {result?.priorities && result.priorities.length > 0 && <div className="panel assistant-draft">
+          <div className="assistant-card-label"><span><Check size={14}/></span> PRIORITISED BY CASH IMPACT</div>
+          <h2>Invoices to chase first</h2>
+          {result.priorities.map(item => <div className="assistant-draft-row" key={item.invoiceId}>
+            <span><b>{item.number}</b><br/>{item.customerName}<br/><small>{item.daysOverdue} days overdue</small></span>
+            <b>{fmt(item.openAmountMinor, item.currency)}</b>
+          </div>)}
+          <div className="assistant-draft-total"><span>Potential cash to recover</span><strong>{fmt(result.totalImpactMinor ?? 0, result.priorities[0]?.currency ?? workspace.currency)}</strong></div>
+          <p className="assistant-footnote">Ranked by outstanding balance, then days overdue. This is not a guarantee of payment.</p>
+        </div>}
         {result?.reminders && result.reminders.length > 0 && <div className="panel assistant-draft">
           <div className="assistant-card-label"><span><Check size={14}/></span> DRAFTS ONLY</div>
           <h2>{result.reminders.length} payment reminder{result.reminders.length === 1 ? "" : "s"}</h2>
@@ -158,7 +170,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
           </div>)}
           <p className="assistant-footnote">Nothing has been sent or scheduled. Review and send through your chosen channel.</p>
         </div>}
-        {!result?.draft && !result?.scenario && !(result?.reminders?.length) && <div className="panel assistant-boundary">
+        {!result?.draft && !result?.scenario && !(result?.reminders?.length) && !(result?.priorities?.length) && <div className="panel assistant-boundary">
           <b>What the co-pilot can use today</b>
           <div><span>Clients</span><strong>{workspace.clients.length}</strong></div>
           <div><span>Invoices</span><strong>{workspace.invoices.length}</strong></div>
