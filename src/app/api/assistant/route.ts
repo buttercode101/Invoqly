@@ -199,9 +199,10 @@ ${JSON.stringify(modelContext)}`;
         customerName, customerEmail, customerCompany, description, quantity, unitPriceMinor, currency,
         ...(action.type === "create_quote" ? { validUntil: dueDate } : { dueDate, saveContact: false })
       };
+      const documentLabel = action.type === "create_quote" ? "quotation" : "invoice";
       return NextResponse.json({
-        reply,
-        draft: { type: action.type === "create_quote" ? "quote" : "invoice", data: documentData, sourceDocumentNumber: source?.number ?? null, totalMinor, currency }
+        reply: "I've prepared a " + documentLabel + " draft for " + customerName + ". Review the description, quantity and server-calculated total below. Nothing is saved until you approve it.",
+        draft: { type: action.type === "create_quote" ? "create_quote" : "create_invoice", data: documentData, sourceDocumentNumber: source?.number ?? null, totalMinor, currency }
       }, { headers: { "Cache-Control": "private, no-store" } });
     }
 
@@ -267,7 +268,7 @@ ${JSON.stringify(modelContext)}`;
       const differenceMinor = scenarioNetMinor - baselineNetMinor;
       if (!Number.isSafeInteger(differenceMinor)) return errorResponse("The scenario difference exceeds the supported amount range.", 422);
       return NextResponse.json({
-        reply: reply + " I can compare projected cash movement, but your opening cleared cash balance isn't set, so I won't invent closing balances or a safe-to-spend figure.",
+        reply: "Scenario calculated using the workspace records. This compares projected cash movement only; opening cleared cash is not set, so no closing balance or safe-to-spend figure is shown.",
         scenario: {
           currency: snapshot.currency, baselineNetMinor, scenarioNetMinor, differenceMinor,
           safeToSpendMinor: null,
@@ -312,7 +313,10 @@ ${JSON.stringify(modelContext)}`;
       }, { headers: { "Cache-Control": "private, no-store" } });
     }
 
-    return NextResponse.json({ reply, draft: null }, { headers: { "Cache-Control": "private, no-store" } });
+    const safeReply = /\\b(sent|scheduled|created|saved|updated|deleted|paid|filed)\\b/i.test(reply)
+      ? "I haven't changed or sent anything. Tell me which record you want me to review or prepare as a draft."
+      : reply;
+    return NextResponse.json({ reply: safeReply, draft: null }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     console.error("assistant.post", error);
     return errorResponse(error instanceof Error && error.message.includes("AI co-pilot is available") ? error.message : "The AI co-pilot could not complete this request. Your records have not been changed.", 503);
