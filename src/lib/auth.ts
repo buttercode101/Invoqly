@@ -20,7 +20,7 @@ export function createAuth(db: Database) {
   database: drizzleAdapter(db, { provider: "pg", schema }),
   emailAndPassword: {
     enabled: true,
-    autoSignIn: false,
+    autoSignIn: true,
     requireEmailVerification: emailVerificationRequired,
     sendResetPassword: async ({ user, url }) => { await sendTransactionalEmail({to:user.email,subject:"Reset your Invoqly password",text:`Use this secure link to reset your password: ${url}\n\nIf you did not request this, you can ignore this email.`}); },
     minPasswordLength: 12,
@@ -56,7 +56,7 @@ export function createAuth(db: Database) {
   rateLimit: {
     enabled: true,
     window: 60,
-    max: 10,
+    max: 100,
   },
   });
 }
