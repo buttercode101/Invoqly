@@ -240,14 +240,19 @@ export function validateSouthAfricanTaxInvoice(fields: ZaTaxInvoiceFields): ZaTa
     required(fields.recipientAddress, "Recipient address");
     required(fields.quantity === undefined ? undefined : String(fields.quantity), "Quantity or volume");
     required(fields.valueExVatMinor === undefined ? undefined : String(fields.valueExVatMinor), "Value excluding VAT");
+    if (fields.quantity !== undefined && (!Number.isFinite(fields.quantity) || fields.quantity <= 0)) errors.push("Quantity or volume must be greater than zero.");
+    if (fields.valueExVatMinor !== undefined) assertMoney(fields.valueExVatMinor, "Value excluding VAT");
     if (fields.recipientIsVatVendor) {
       required(fields.recipientVatNumber, "Recipient VAT registration number");
       if (fields.recipientVatNumber && !/^\d{10}$/.test(fields.recipientVatNumber)) errors.push("Recipient VAT registration number must contain 10 digits.");
     }
   }
   if (fields.vatMinor === undefined || fields.totalInclVatMinor === undefined) errors.push("VAT amount and total consideration must be shown.");
+  if (fields.vatMinor !== undefined) assertMoney(fields.vatMinor, "VAT amount");
+  if (fields.totalInclVatMinor !== undefined) assertMoney(fields.totalInclVatMinor, "Total consideration");
   if (fields.valueExVatMinor !== undefined && fields.vatMinor !== undefined && fields.totalInclVatMinor !== undefined) {
-    if (fields.valueExVatMinor + fields.vatMinor !== fields.totalInclVatMinor) errors.push("Value excluding VAT plus VAT must equal the total consideration.");
+    const calculatedTotal = fields.valueExVatMinor + fields.vatMinor;
+    if (!Number.isSafeInteger(calculatedTotal) || calculatedTotal !== fields.totalInclVatMinor) errors.push("Value excluding VAT plus VAT must equal the total consideration.");
   }
   if (fields.supplyDate && fields.issueDate) {
     const days = Math.floor((validDate(fields.issueDate, "Issue date") - validDate(fields.supplyDate, "Supply date")) / DAY_MS);
