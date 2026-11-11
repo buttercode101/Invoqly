@@ -161,6 +161,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
           <div className="assistant-draft-row"><span>Customer</span><b>{result.draft.data.customerName}</b></div>
           <div className="assistant-draft-row"><span>Description</span><b>{result.draft.data.description}</b></div>
           <div className="assistant-draft-row"><span>Quantity</span><b>{result.draft.data.quantity}</b></div>
+          <div className="assistant-draft-row"><span>{"validUntil" in result.draft.data ? "Valid until" : "Due date"}</span><b>{"validUntil" in result.draft.data ? result.draft.data.validUntil : result.draft.data.dueDate}</b></div>
           <div className="assistant-draft-row"><span>Unit price</span><b>{fmt(result.draft.data.unitPriceMinor, result.draft.currency)}</b></div>
           <div className="assistant-draft-total"><span>Calculated total</span><strong>{fmt(result.draft.totalMinor, result.draft.currency)}</strong></div>
           <button className="btn btn-primary assistant-approve" onClick={() => void approve()}><Check size={16}/> Approve and create</button>
