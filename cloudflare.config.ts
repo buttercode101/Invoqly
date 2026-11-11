@@ -6,6 +6,8 @@ if (!configuredHyperdriveId && !localHyperdriveConnection) {
   throw new Error("Set CLOUDFLARE_HYPERDRIVE_ID before deploying Invoqly to Cloudflare.");
 }
 const hyperdriveId = configuredHyperdriveId || "00000000-0000-0000-0000-000000000000";
+// Workers AI has no local workerd simulation; CI exercises auth/consent gates without opening a remote AI session.
+const enableWorkersAiBinding = process.env.CI_COMPATIBILITY_RUNTIME !== "true";
 
 export default defineConfig({
   worker: defineWorker({
@@ -20,6 +22,7 @@ export default defineConfig({
     },
     env: {
       ASSETS: bindings.assets(),
+      ...(enableWorkersAiBinding ? { AI: bindings.ai() } : {}),
       BETTER_AUTH_SECRET: bindings.secret(),
       AUTH_EMAIL_VERIFICATION: bindings.text(process.env.AUTH_EMAIL_VERIFICATION || "false"),
       BETTER_AUTH_URL: bindings.text(process.env.BETTER_AUTH_URL || "https://invoqly-preview.buttercoder-dev.workers.dev"),

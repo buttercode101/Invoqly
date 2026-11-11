@@ -6,13 +6,16 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 const cloudflareDatabaseAdapter = fileURLToPath(
   new URL("./src/lib/db/connection.cloudflare.ts", import.meta.url)
 );
+const cloudflareAiAdapter = fileURLToPath(
+  new URL("./src/lib/ai.cloudflare.ts", import.meta.url)
+);
 
 export default defineConfig({
   resolve: {
-    alias: [{
-      find: "@/lib/db/connection",
-      replacement: cloudflareDatabaseAdapter
-    }]
+    alias: [
+      { find: "@/lib/db/connection", replacement: cloudflareDatabaseAdapter },
+      { find: "@/lib/ai", replacement: cloudflareAiAdapter }
+    ]
   },
   plugins: [
     vinext(),
