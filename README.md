@@ -8,19 +8,21 @@ Invoqly is a business finance workspace for independent professionals and small 
 
 Open the public site and choose **Try Invoqly free — no account**. Guest mode currently supports:
 
-- Create and manage client records.
+- Create invoices immediately by typing customer details manually; saving a contact is optional.
+- Save reusable contacts when you choose.
+- Create quotations, print or save them as PDF, track sent/accepted/declined status, and convert accepted quotes into invoices.
 - Draft and issue invoices.
 - Mark invoices paid.
 - Record business expenses.
 - View invoice, outstanding and expense totals.
-- Print invoices or save them as PDF through the browser print dialog.
+- Print invoices and quotations or save them as PDF through the browser print dialog.
 - Export a JSON backup.
 
 Guest records are stored locally in the current browser on the current device. They are not uploaded to Invoqly's cloud. Browser storage can be cleared by the user or browser, so export a backup for important records.
 
 ## Create an account when you need cloud features
 
-An account unlocks a private PostgreSQL-backed workspace, server-side persistence and multi-device access. If a guest workspace is present in the same browser, the signed-in user can import it directly; a JSON backup from another device can also be uploaded in workspace settings. Import keeps existing cloud records, records paid guest invoices in the payment ledger and uses a stable import ID to avoid duplicates if the request is retried. File imports use separate temporary storage so they never overwrite a different local guest workspace.
+An account unlocks a private PostgreSQL-backed workspace, server-side persistence, multi-device access and synced quotations. One-off invoice customers remain out of the saved contacts list unless the user explicitly chooses to save them. If a guest workspace is present in the same browser, the signed-in user can import it directly; a JSON backup from another device can also be uploaded in workspace settings. Import keeps existing cloud records, records paid guest invoices in the payment ledger and uses a stable import ID to avoid duplicates if the request is retried. File imports use separate temporary storage so they never overwrite a different local guest workspace.
 
 Creating an account is optional for guest core functionality. No subscription or payment details are required to use the free core tools.
 
