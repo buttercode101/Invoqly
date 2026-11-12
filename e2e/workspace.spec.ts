@@ -19,6 +19,13 @@ async function createAccount(page:Page,account:ReturnType<typeof identity>) {
   const signupResponse=await signupResponsePromise;
   expect(signupResponse.status()).toBe(200);
   await expect(page).toHaveURL(/\/app$/);
+  const workspaceResponse = await page.request.get("/api/workspace");
+  expect(workspaceResponse.status(), "signed-in workspace API must return HTTP 200").toBe(200);
+  const workspacePayload = await workspaceResponse.json() as { workspace?: { businessName?: string; currency?: string; clients?: unknown[]; invoices?: unknown[] } };
+  expect(workspacePayload.workspace?.businessName).toBeTruthy();
+  expect(workspacePayload.workspace?.currency).toMatch(/^[A-Z]{3}$/);
+  expect(Array.isArray(workspacePayload.workspace?.clients)).toBe(true);
+  expect(Array.isArray(workspacePayload.workspace?.invoices)).toBe(true);
   await expect(page.locator("main.shell")).toBeVisible();
   await expect(page.locator(".cloud-banner")).toContainText("Secure cloud workspace");
 }
