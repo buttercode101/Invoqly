@@ -68,6 +68,11 @@ function sum(values: number[]): number {
     return next;
   }, 0);
 }
+function explicitCustomerEmail(message: string): string {
+  const matches = [...message.matchAll(/\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b/gi)].map(match => match[0]);
+  return matches.length === 1 ? matches[0]! : "";
+}
+
 function explicitHoursAddition(message: string): number | null {
   const match = message.match(/\b(?:add|plus|increase(?:\s+by)?|another)\s+(\d{1,6})\s+hours?\b/i);
   if (!match) return null;
@@ -264,8 +269,10 @@ ${JSON.stringify(modelContext)}`;
       const firstLine = resolvedLines[0]!;
       const explicitDate = explicitDocumentDate(message);
       const dueDate = explicitDate ?? dateAfterDays(14);
-      const customerEmail = matchedClient?.email ?? fields.data.customerEmail ?? "";
-      const customerCompany = matchedClient?.company ?? fields.data.customerCompany ?? "";
+      // Never persist contact details invented by the model. Reuse a saved client or a single address explicitly present in the user message.
+      const customerEmail = matchedClient?.email ?? explicitCustomerEmail(message);
+      const proposedCompany = fields.data.customerCompany?.trim() ?? "";
+      const customerCompany = matchedClient?.company ?? (proposedCompany && message.toLowerCase().includes(proposedCompany.toLowerCase()) ? proposedCompany : "");
       const documentData = {
         ...(matchedClient && action.type === "create_invoice" ? { clientId: matchedClient.id } : {}),
         customerName, customerEmail, customerCompany, description: firstLine.description, quantity: firstLine.quantity, unitPriceMinor: firstLine.unitPriceMinor, lineItems: taxedLines, currency,
