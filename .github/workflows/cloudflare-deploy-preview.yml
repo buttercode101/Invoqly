@@ -96,7 +96,7 @@ jobs:
           exit 1
       - name: Install Playwright Chromium
         if: steps.credentials.outputs.ready == 'true'
-        run: npx playwright install chromium
+        run: npx playwright install chromium --with-deps
       - name: Run guest, VAT and live AI browser acceptance against remote preview
         if: steps.credentials.outputs.ready == 'true'
         env:
