@@ -26,6 +26,7 @@ test("guest can create and print multi-line invoices and quotations without an a
   await page.getByRole("button", { name: "Create invoice" }).click();
   const invoiceRow = page.locator(".row").filter({ hasText: "Guest Multi Customer" });
   await expect(invoiceRow).toContainText("Labour +1 more lines");
+  await expect(invoiceRow).toContainText(/2[\\s\\u00a0,]?900/);
   const invoicePopupPromise = page.waitForEvent("popup");
   await invoiceRow.getByRole("button", { name: "Print / PDF" }).click();
   const invoicePopup = await invoicePopupPromise;
@@ -74,6 +75,7 @@ test("signed-in workspace creates, converts and reloads a multi-line quotation",
 
   const quoteRow = page.locator("tbody tr").filter({ hasText: "Cloud Multi Quote" });
   await expect(quoteRow).toContainText("Labour +1 more lines");
+  await expect(quoteRow).toContainText(/6[\\s\\u00a0,]?400/);
   const printPromise = page.waitForEvent("popup");
   await quoteRow.getByTitle("Print quotation").click();
   const popup = await printPromise;
