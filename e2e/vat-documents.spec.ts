@@ -16,13 +16,18 @@ test("VAT-registered workspace calculates and preserves VAT on a quotation conve
   await createAccount(page);
   await page.locator(".nav-item").filter({ hasText: "Settings" }).first().click();
   await page.getByLabel("My business is registered for VAT").check();
-  await page.getByLabel("SARS VAT registration number").fill("4123456789");
+  await page.getByLabel("SARS VAT registration number").fill("412 345 6789");
+  await expect(page.getByLabel("SARS VAT registration number")).toHaveValue("4123456789");
   await page.getByLabel("Business address").fill("10 QA Street, Gqeberha, 6001");
+  const settingsResponse = page.waitForResponse(response => response.url().endsWith("/api/workspace") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Save settings" }).click();
-  await expect(page.getByText("Connected · Cloud sync enabled")).toBeVisible();
+  expect((await settingsResponse).status()).toBe(200);
+  await expect(page.locator(".settings-form")).toHaveCount(0);
 
   await page.locator(".nav-item").filter({ hasText: "Quotes" }).first().click();
   await page.getByRole("button", { name: "New quotation" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create a quotation" })).toBeVisible();
   await page.getByLabel("Customer or business name").fill("VAT Test Customer");
   await page.getByLabel("Scope of work / description").fill("Professional services");
   await page.getByLabel("Quantity").fill("1");
