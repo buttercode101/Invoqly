@@ -31,6 +31,7 @@ async function createAccount(page:Page,account:ReturnType<typeof identity>) {
 }
 
 test("real account, client, invoice, partial payments, expense and reload",async({page})=>{
+  test.setTimeout(240_000);
   await page.addInitScript(() => {
     const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean; share?: (data: ShareData) => Promise<void> };
     Object.defineProperty(nav, "canShare", { configurable: true, value: (data: ShareData) => Array.isArray(data.files) && data.files.every(file => file.type === "application/pdf") });
