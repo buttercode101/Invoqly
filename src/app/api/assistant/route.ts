@@ -274,7 +274,7 @@ ${JSON.stringify(modelContext)}`;
       const documentLabel = action.type === "create_quote" ? "quotation" : "invoice";
       return NextResponse.json({
         reply: "Draft prepared for " + customerName + " with " + resolvedLines.length + " line item(s). " + (explicitDate ? "I used the date you specified." : "I applied the standard 14-day date; review it before approval.") + " Review each line and the server-calculated total. Nothing is saved until you approve it.",
-        draft: { type: action.type === "create_quote" ? "create_quote" : "create_invoice", data: documentData, lineItems: breakdown.lines.map(item => ({ ...item, lineTotalMinor: item.grossMinor })), sourceDocumentNumber: source?.number ?? null, totalMinor, currency }
+        draft: { type: action.type === "create_quote" ? "create_quote" : "create_invoice", data: documentData, lineItems: breakdown.lines.map(item => ({ ...item, lineTotalMinor: item.grossMinor })), sourceDocumentNumber: source?.number ?? null, totalMinor, netMinor: breakdown.netMinor, taxMinor: breakdown.taxMinor, currency }
       }, { headers: { "Cache-Control": "private, no-store" } });
     }
 
