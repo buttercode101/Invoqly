@@ -257,6 +257,13 @@ test("real account, client, invoice, partial payments, expense and reload",async
       await page.getByRole("button",{name:"New invoice"}).click();
       await expect(page.getByRole("dialog")).toBeVisible();
       await page.screenshot({path:"test-results/invoqly-invoice-form-desktop-1440.png",fullPage:true});
+      await page.locator(".form-modal").evaluate(el => { el.scrollTop = el.scrollHeight; });
+      const desktopDueDateBox = await page.getByLabel("Due date").boundingBox();
+      const desktopSubmitBox = await page.getByRole("button",{name:"Create invoice"}).boundingBox();
+      expect(desktopDueDateBox).not.toBeNull();
+      expect(desktopSubmitBox).not.toBeNull();
+      expect(desktopDueDateBox!.y + desktopDueDateBox!.height).toBeLessThan(desktopSubmitBox!.y);
+      await page.screenshot({path:"test-results/invoqly-invoice-form-desktop-1440-bottom.png",fullPage:true});
       await page.getByRole("button",{name:"Close"}).click();
     }
   }
