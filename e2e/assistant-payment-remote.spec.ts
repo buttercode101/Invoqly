@@ -66,8 +66,13 @@ test("execution mode requires explicit approval and records exactly one full set
   await page.getByRole("button", { name: "Execution mode · Off" }).click();
   const ask = page.getByLabel("Ask your business co-pilot");
   await ask.fill(`Mark invoice ${invoiceNumber} paid in full and record the payment.`);
+  const executionResponsePromise = page.waitForResponse(response => response.url().endsWith("/api/assistant") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Send message" }).click();
-  await expect(page.getByRole("heading", { name: "Record payment" })).toBeVisible({ timeout: 75_000 });
+  const executionResponse = await executionResponsePromise;
+  const executionPayload = await executionResponse.json() as { reply?: string; execution?: unknown; error?: string };
+  expect(executionResponse.status(), executionPayload.error ?? executionPayload.reply ?? "execution proposal request must succeed").toBe(200);
+  expect(executionPayload.execution, executionPayload.reply ?? "AI must return an approval proposal").toBeTruthy();
+  await expect(page.getByRole("heading", { name: "Record payment" })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(invoiceNumber, { exact: true })).toBeVisible();
   await expect(page.getByText(customer, { exact: true })).toBeVisible();
   await expect(page.getByText("R 325,00").first()).toBeVisible();
