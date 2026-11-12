@@ -267,3 +267,24 @@ for(const width of [320,360,375,390,560,768,820,1120,1440]){
     await expect(page.getByRole("heading",{name:"Choose a new password"})).toBeVisible();
   });
 }
+
+test("mobile install prompt never overlaps the fixed bottom navigation",async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await createAccount(page,identity("Mobile Install QA"));
+  await page.evaluate(()=>{
+    const event=new Event("beforeinstallprompt",{cancelable:true}) as Event & {prompt?:()=>Promise<void>;userChoice?:Promise<{outcome:"dismissed"|"accepted";platform:string}>};
+    event.prompt=async()=>{};
+    event.userChoice=Promise.resolve({outcome:"dismissed",platform:"web"});
+    window.dispatchEvent(event);
+  });
+  const install=page.getByRole("button",{name:"Install app"});
+  await expect(install).toBeVisible();
+  const bounds=await page.evaluate(()=>{
+    const button=document.querySelector(".pwa-install")!.getBoundingClientRect();
+    const nav=document.querySelector(".sidebar")!.getBoundingClientRect();
+    return {installBottom:button.bottom,navigationTop:nav.top,viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth};
+  });
+  expect(bounds.installBottom).toBeLessThanOrEqual(bounds.navigationTop);
+  expect(bounds.document).toBeLessThanOrEqual(bounds.viewport);
+  await expect(page.locator(".sidebar .nav-item").first()).toBeVisible();
+});
