@@ -17,7 +17,7 @@ type Reminder = { invoiceNumber: string; customerName: string; dueDate: string; 
 type AssistantResult = {
   reply: string;
   draft?: { type: "create_quote" | "create_invoice"; data: QuoteData | InvoiceData; sourceDocumentNumber?: string | null; totalMinor: number; currency: string } | null;
-  scenario?: { currency: string; baselineNetMinor: number; scenarioNetMinor: number; differenceMinor: number; safeToSpendMinor: number | null; invoiceDelayDays: number; supplierDelayDays: number; weeks: Array<{ startDate: string; endDate: string; netMinor: number }> } | null;
+  scenario?: { currency: string; baselineNetMinor: number; scenarioNetMinor: number; differenceMinor: number; safeToSpendMinor: number | null; invoiceDelayDays: number; supplierDelayDays: number; weeks: Array<{ startDate: string; endDate: string; netMinor: number; inflowsMinor: number; outflowsMinor: number }>; months: Array<{ startDate: string; endDate: string; netMinor: number; inflowsMinor: number; outflowsMinor: number }> } | null;
   reminders?: Reminder[];
   priorities?: Array<{ invoiceId: string; number: string; customerName: string; openAmountMinor: number; daysOverdue: number; currency: string }>;
   totalImpactMinor?: number;
@@ -173,7 +173,19 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
           <div className="assistant-draft-row"><span>Baseline net movement</span><b>{fmt(result.scenario.baselineNetMinor, result.scenario.currency)}</b></div>
           <div className="assistant-draft-row"><span>Scenario net movement</span><b>{fmt(result.scenario.scenarioNetMinor, result.scenario.currency)}</b></div>
           <div className="assistant-draft-total"><span>Change vs baseline</span><strong>{fmt(result.scenario.differenceMinor, result.scenario.currency)}</strong></div>
-          <p className="assistant-footnote">Opening cleared cash is not set. This compares projected movements only; no closing balance or safe-to-spend figure is shown.</p>
+          <div className="assistant-period-heading"><b>13-week view</b><span>Weekly net movement</span></div>
+          <div className="assistant-period-list">
+            {result.scenario.weeks.map((week, index) => <div className="assistant-period-row" key={week.startDate}>
+              <span>W{index + 1} · {week.startDate}</span><b>{fmt(week.netMinor, result.scenario!.currency)}</b>
+            </div>)}
+          </div>
+          <div className="assistant-period-heading"><b>12-month view</b><span>Monthly net movement</span></div>
+          <div className="assistant-period-list">
+            {result.scenario.months.map(month => <div className="assistant-period-row" key={month.startDate}>
+              <span>{new Date(month.startDate + "T00:00:00Z").toLocaleDateString("en-ZA", { month: "short", year: "numeric", timeZone: "UTC" })}</span><b>{fmt(month.netMinor, result.scenario!.currency)}</b>
+            </div>)}
+          </div>
+          <p className="assistant-footnote">Opening cleared cash is not set. These are projected cash movements, not account balances. Safe-to-spend remains unavailable until a verified opening cash balance and reserve are entered.</p>
         </div>}
         {result?.priorities && result.priorities.length > 0 && <div className="panel assistant-draft">
           <div className="assistant-card-label"><span><Check size={14}/></span> PRIORITISED BY CASH IMPACT</div>
