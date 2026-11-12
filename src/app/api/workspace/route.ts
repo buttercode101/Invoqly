@@ -30,7 +30,7 @@ const payload = z.discriminatedUnion("action", [
 ]);
 
 function fail(message:string,status=400){return NextResponse.json({error:message},{status});}
-function today(){return new Date().toISOString().slice(0,10);}
+function today(){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Johannesburg",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const part=(type:string)=>parts.find(item=>item.type===type)?.value??"";return part("year")+"-"+part("month")+"-"+part("day");}
 
 export async function GET() {
   try {
