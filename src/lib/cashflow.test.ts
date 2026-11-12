@@ -100,4 +100,28 @@ describe("deterministic cash-flow engine", () => {
     expect(top.map(item => item.invoiceId)).toEqual(["i1", "i2"]);
     expect(totalChaseImpactMinor(top)).toBe(6_500_000);
   });
+  it("matches a manual downside calculation when an outflow arrives before a late receipt", () => {
+    const result = calculateCashflow({
+      asOfDate: "2026-11-12",
+      currency: "ZAR",
+      openingBalanceMinor: 10_000,
+      reserveMinor: 5_000,
+      invoices: [{ id: "late", number: "INV-LATE", customerName: "Late payer", dueDate: "2026-11-15", amountMinor: 2_000, status: "Sent", currency: "ZAR" }],
+      outflows: [{ id: "rent", label: "Rent", date: "2026-11-13", amountMinor: 12_000, currency: "ZAR" }]
+    });
+    expect(result.lowestProjectedBalanceMinor).toBe(-2_000);
+    expect(result.lowestProjectedBalanceDate).toBe("2026-11-13");
+    expect(result.safeToSpendMinor).toBe(0);
+    expect(result.weeks[0]?.closingBalanceMinor).toBe(0);
+  });
+
+  it("does not schedule a delayed receivable beyond the forecast horizon", () => {
+    const result = calculateCashflow({
+      asOfDate: "2026-11-12",
+      currency: "ZAR",
+      openingBalanceMinor: null,
+      invoices: [{ id: "late", number: "INV-LATE", customerName: "Late payer", dueDate: "2027-11-10", amountMinor: 5_000, status: "Sent", currency: "ZAR" }]
+    }, { delayedInvoiceIds: ["late"], invoiceDelayDays: 30 });
+    expect(result.events).toHaveLength(0);
+  });
 });
