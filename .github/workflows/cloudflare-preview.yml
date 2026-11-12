@@ -72,6 +72,8 @@ jobs:
         run: |
           printf 'BETTER_AUTH_SECRET=%s\n' "$BETTER_AUTH_SECRET" > .dev.vars
           printf 'AUTH_EMAIL_VERIFICATION=false\n' >> .dev.vars
+          printf 'AUTH_RATE_LIMIT_ENABLED=false\n' >> .dev.vars
+          printf 'AUTH_RATE_LIMIT_MAX=100\n' >> .dev.vars
       - name: Test Cloudflare workerd production runtime
         run: npm run test:e2e:vinext
       - name: Upload browser diagnostics
