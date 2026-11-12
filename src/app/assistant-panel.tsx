@@ -5,18 +5,20 @@ import Link from "next/link";
 import { ArrowUpRight, Check, Copy, LoaderCircle, Send, Sparkles } from "lucide-react";
 import { formatMinor } from "@/lib/money";
 
+type AssistantLineItem = { description: string; quantity: number; unitPriceMinor: number; taxTreatment?: "standard" | "zero_rated" | "exempt" | "out_of_scope"; priceMode?: "inclusive" | "exclusive"; taxRateBasisPoints?: number };
+type AssistantDraftLine = AssistantLineItem & { lineTotalMinor: number; netMinor?: number; taxMinor?: number; grossMinor?: number; appliedRateBasisPoints?: number };
 type QuoteData = {
   customerName: string; customerEmail: string; customerCompany: string; description: string;
-  quantity: number; unitPriceMinor: number; lineItems?: Array<{ description: string; quantity: number; unitPriceMinor: number }>; currency: string; validUntil: string;
+  quantity: number; unitPriceMinor: number; lineItems?: AssistantLineItem[]; currency: string; validUntil: string;
 };
 type InvoiceData = {
   clientId?: string; customerName: string; customerEmail: string; customerCompany: string; description: string;
-  quantity: number; unitPriceMinor: number; lineItems?: Array<{ description: string; quantity: number; unitPriceMinor: number }>; currency: string; dueDate: string; saveContact?: boolean;
+  quantity: number; unitPriceMinor: number; lineItems?: AssistantLineItem[]; currency: string; dueDate: string; saveContact?: boolean;
 };
 type Reminder = { invoiceNumber: string; customerName: string; dueDate: string; amountMinor: number; currency: string; subject: string; body: string };
 type AssistantResult = {
   reply: string;
-  draft?: { type: "create_quote" | "create_invoice"; data: QuoteData | InvoiceData; lineItems: Array<{ description: string; quantity: number; unitPriceMinor: number; lineTotalMinor: number }>; sourceDocumentNumber?: string | null; totalMinor: number; netMinor?: number; taxMinor?: number; currency: string } | null;
+  draft?: { type: "create_quote" | "create_invoice"; data: QuoteData | InvoiceData; lineItems: AssistantDraftLine[]; sourceDocumentNumber?: string | null; totalMinor: number; netMinor?: number; taxMinor?: number; currency: string } | null;
   scenario?: { currency: string; baselineNetMinor: number; scenarioNetMinor: number; differenceMinor: number; safeToSpendMinor: number | null; invoiceDelayDays: number; supplierDelayDays: number; weeks: Array<{ startDate: string; endDate: string; netMinor: number; inflowsMinor: number; outflowsMinor: number }>; months: Array<{ startDate: string; endDate: string; netMinor: number; inflowsMinor: number; outflowsMinor: number }> } | null;
   reminders?: Reminder[];
   priorities?: Array<{ invoiceId: string; number: string; customerName: string; openAmountMinor: number; daysOverdue: number; currency: string }>;
@@ -38,6 +40,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState<AssistantResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [approving, setApproving] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
   const [consent, setConsent] = useState(false);
@@ -45,7 +48,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
 
   const submit = async (value = prompt) => {
     const text = value.trim();
-    if (!text || busy || !consent) return;
+    if (!text || busy || approving || !consent) return;
     setPrompt("");
     setError("");
     setResult(null);
@@ -71,13 +74,21 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
   };
 
   const approve = async () => {
-    if (!result?.draft) return;
-    const ok = result.draft.type === "create_quote"
-      ? await onCreateQuote(result.draft.data as QuoteData)
-      : await onCreateInvoice(result.draft.data as InvoiceData);
-    if (ok) {
-      setResult(null);
-      setMessages(current => [...current, { role: "assistant", content: "Approved and saved. The new document is now in your workspace." }]);
+    if (!result?.draft || approving) return;
+    setApproving(true);
+    setError("");
+    try {
+      const ok = result.draft.type === "create_quote"
+        ? await onCreateQuote(result.draft.data as QuoteData)
+        : await onCreateInvoice(result.draft.data as InvoiceData);
+      if (ok) {
+        setResult(null);
+        setMessages(current => [...current, { role: "assistant", content: "Approved and saved. The new document is now in your workspace." }]);
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The document could not be saved. Please try again.");
+    } finally {
+      setApproving(false);
     }
   };
 
@@ -123,7 +134,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       <div className="assistant-main panel">
         <div className="assistant-topline">
           <div><b>Business assistant</b><small>{workspace.businessName} · {workspace.currency}</small></div>
-          <div className="assistant-top-actions"><span className="assistant-status"><i className={consent ? "is-enabled" : "is-idle"}/>{consent ? "Enabled" : "Consent required"}</span>{consent && <button type="button" className="assistant-disable" onClick={() => void setAiConsent(false)} disabled={busy}>Turn off</button>}</div>
+          <div className="assistant-top-actions"><span className="assistant-status"><i className={consent ? "is-enabled" : "is-idle"}/>{consent ? "Enabled" : "Consent required"}</span>{consent && <button type="button" className="assistant-disable" onClick={() => void setAiConsent(false)} disabled={busy || approving}>Turn off</button>}</div>
         </div>
         <div className="assistant-conversation" aria-live="polite">
           {!consent && <div className="assistant-consent">
@@ -138,7 +149,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
             <h2>What would you like to get done?</h2>
             <p>I can prepare document drafts, model supported cash-flow scenarios and draft payment reminders using your workspace records.</p>
             <div className="assistant-suggestions">
-              {suggestions.map(item => <button key={item} onClick={() => void submit(item)} disabled={busy}>{item}<ArrowUpRight size={14}/></button>)}
+              {suggestions.map(item => <button key={item} onClick={() => void submit(item)} disabled={busy || approving}>{item}<ArrowUpRight size={14}/></button>)}
             </div>
           </div>}
           {consent && messages.map((message, index) => <div key={index} className={"assistant-message " + message.role}>
@@ -162,13 +173,14 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
           <div className="assistant-draft-row"><span>Customer</span><b>{result.draft.data.customerName}</b></div>
           <div className="assistant-draft-row"><span>{"dueDate" in result.draft.data ? "Due date" : "Valid until"}</span><b>{"dueDate" in result.draft.data ? result.draft.data.dueDate : result.draft.data.validUntil}</b></div>
           {result.draft.lineItems.map((item, index) => <div className="assistant-line-item" key={index}>
-            <div><b>{item.description}</b><span>{item.quantity} × {fmt(item.unitPriceMinor, result.draft!.currency)}</span></div>
+            <div><b>{item.description}</b><span>{item.quantity} × {fmt(item.unitPriceMinor, result.draft!.currency)}</span><small>{item.taxTreatment === "standard" ? `Standard-rated · ${(item.taxRateBasisPoints ?? 0) / 100}% · ${item.priceMode === "inclusive" ? "VAT inclusive" : "VAT exclusive"}` : item.taxTreatment === "zero_rated" ? "Zero-rated · 0%" : item.taxTreatment === "exempt" ? "Exempt" : item.taxTreatment === "out_of_scope" ? "Out of scope · no VAT added" : "VAT treatment to review"}</small></div>
             <strong>{fmt(item.lineTotalMinor, result.draft!.currency)}</strong>
           </div>)}
-          <div className="assistant-draft-row"><span>{"validUntil" in result.draft.data ? "Valid until" : "Due date"}</span><b>{"validUntil" in result.draft.data ? result.draft.data.validUntil : result.draft.data.dueDate}</b></div>
-          <div className="assistant-draft-total"><span>Calculated total</span><strong>{fmt(result.draft.totalMinor, result.draft.currency)}</strong></div>
-          {(result.draft.taxMinor ?? 0) > 0 && <div className="assistant-draft-row"><span>Net {fmt(result.draft.netMinor ?? result.draft.totalMinor, result.draft.currency)} · VAT</span><b>{fmt(result.draft.taxMinor!, result.draft.currency)}</b></div>}
-          <button className="btn btn-primary assistant-approve" onClick={() => void approve()}><Check size={16}/> Approve and create</button>
+          {result.draft.netMinor !== undefined && <div className="assistant-draft-row"><span>Net amount</span><b>{fmt(result.draft.netMinor, result.draft.currency)}</b></div>}
+          {result.draft.taxMinor !== undefined && <div className="assistant-draft-row"><span>VAT</span><b>{fmt(result.draft.taxMinor, result.draft.currency)}</b></div>}
+          <div className="assistant-draft-total"><span>{result.draft.netMinor !== undefined ? "Gross total" : "Calculated total"}</span><strong>{fmt(result.draft.totalMinor, result.draft.currency)}</strong></div>
+          {result.draft.lineItems.some(item => item.taxTreatment === "standard") && <p className="assistant-footnote">Standard-rated is the default for VAT-registered workspaces. Confirm the treatment on each line before approval.</p>}
+          <button className="btn btn-primary assistant-approve" onClick={() => void approve()} disabled={approving}>{approving ? <><LoaderCircle size={16} className="spin"/> Saving…</> : <><Check size={16}/> Approve and create</>}</button>
           <p className="assistant-footnote">The total is calculated by Invoqly's money engine, not generated by AI.</p>
         </div>}
         {result?.scenario && <div className="panel assistant-draft">
