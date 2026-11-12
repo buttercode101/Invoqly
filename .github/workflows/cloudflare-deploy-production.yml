@@ -30,6 +30,7 @@ jobs:
       INVOQLY_PRODUCTION_MIGRATION_DATABASE_URL: ${{ secrets.INVOQLY_PRODUCTION_MIGRATION_DATABASE_URL }}
       CLOUDFLARE_HYPERDRIVE_ID: ${{ vars.CLOUDFLARE_PRODUCTION_HYPERDRIVE_ID }}
       INVOQLY_WORKER_NAME: invoqly-production
+      INVOQLY_RECEIPTS_BUCKET: invoqly-receipts-prod
       AUTH_EMAIL_VERIFICATION: "false"
       BETTER_AUTH_URL: https://invoqly-production.buttercoder-dev.workers.dev
       NEXT_PUBLIC_APP_URL: https://invoqly-production.buttercoder-dev.workers.dev
