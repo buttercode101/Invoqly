@@ -40,7 +40,7 @@ test("execution mode requires explicit approval and records exactly one full set
   await page.getByLabel("Email address").fill("execution-qa-" + Date.now() + "@example.com");
   await page.locator('input[type="password"]').first().fill("Invoqly-Execution-QA-2026!");
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\\/app$/);
+  await expect(page).toHaveURL(/\/app$/);
 
   await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
   await page.getByRole("button", { name: "New invoice" }).click();
