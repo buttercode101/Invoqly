@@ -39,7 +39,7 @@ test("guest can create, share a PDF, back up and restore an invoice without an a
   await expect(page.getByText("No invoices yet. Create one when you're ready.")).toBeVisible();
   await page.getByRole("button", { name: "Settings" }).click();
   page.once("dialog", dialog => dialog.accept());
-  await page.locator('input[type="file"]').last().setInputFiles(backupPath!);
+  await page.getByLabel("Restore backup").setInputFiles(backupPath!);
   await expect(page.getByRole("status")).toContainText("Backup restored");
   await page.getByRole("button", { name: "Invoices" }).click();
   await expect(page.getByText(/Backup Share QA/)).toBeVisible();
