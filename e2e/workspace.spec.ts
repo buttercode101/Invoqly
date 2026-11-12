@@ -163,6 +163,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
       await goTo(page,"Invoices");
       await page.getByRole("button",{name:"New invoice"}).click();
       await expect(page.getByRole("dialog")).toBeVisible();
+      await expect(page.getByRole("button",{name:"Create invoice"})).toBeInViewport();
       await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-320.png",fullPage:true});
       await page.getByRole("button",{name:"Close"}).click();
     }
@@ -185,6 +186,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
       await goTo(page,"Quotes");
       await page.getByRole("button",{name:"New quotation"}).click();
       await expect(page.getByRole("heading",{name:"Create a quotation"})).toBeVisible();
+      await expect(page.getByRole("button",{name:"Create quotation"})).toBeInViewport();
       await page.screenshot({path:"test-results/invoqly-quote-form-mobile-390.png",fullPage:true});
       await page.getByRole("button",{name:"Close"}).click();
     }
@@ -194,6 +196,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
       await goTo(page,"Invoices");
       await page.getByRole("button",{name:"New invoice"}).click();
       await expect(page.getByRole("dialog")).toBeVisible();
+      await expect(page.getByRole("button",{name:"Create invoice"})).toBeInViewport();
       await page.screenshot({path:"test-results/invoqly-invoice-form-desktop-1440.png",fullPage:true});
       await page.getByRole("button",{name:"Close"}).click();
     }
