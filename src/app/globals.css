@@ -334,3 +334,11 @@ html[data-theme="dark"] .assistant-draft .assistant-footnote{color:#a2ada5}
 html[data-theme="dark"] .assistant-reminder{border-color:#2c3a30}
 html[data-theme="dark"] .assistant-reminder>div span{color:#a2ada5}
 html[data-theme="dark"] .assistant-reminder pre{background:#121a15;color:#d7e1d9;border-color:#34473a}
+
+html[data-theme="dark"] .assistant-card-label{color:#a5c8ac}
+html[data-theme="dark"] .assistant-card-label>span{background:#294632;color:#d6e9d8}
+html[data-theme="dark"] .assistant-line-item{border-color:#2c3a30}
+html[data-theme="dark"] .assistant-line-item>div b{color:#e8efe9}
+html[data-theme="dark"] .assistant-line-item>div span{color:#a2ada5}
+html[data-theme="dark"] .assistant-line-item>strong{color:#e8efe9}
+html[data-theme="dark"] .assistant-draft-actions .assistant-edit{background:#1d2a21;color:#dce8df;border-color:#35483a}
