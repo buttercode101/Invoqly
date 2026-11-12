@@ -1,3 +1,4 @@
+import { calculateDocumentTotal, resolveDocumentLineItems, type DocumentLineItem } from "./documents";
 export type CashflowInvoice = {
   id: string;
   number: string;
@@ -8,6 +9,25 @@ export type CashflowInvoice = {
   status: "Draft" | "Sent" | "Partially paid" | "Paid" | "Overdue";
   currency: string;
 };
+
+
+export type CashflowDocumentInvoice = Omit<CashflowInvoice, "amountMinor"> & {
+  description: string;
+  quantity: number;
+  unitPriceMinor: number;
+  lineItems?: DocumentLineItem[];
+};
+
+/** Convert a persisted invoice to its gross, multi-line document value before forecasting. */
+export function cashflowInvoiceFromDocument(invoice: CashflowDocumentInvoice): CashflowInvoice {
+  const amountMinor = calculateDocumentTotal(resolveDocumentLineItems(invoice.lineItems, {
+    description: invoice.description,
+    quantity: invoice.quantity,
+    unitPriceMinor: invoice.unitPriceMinor
+  }));
+  if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) throw new Error("Invoice total is invalid for cash-flow forecasting.");
+  return { ...invoice, amountMinor };
+}
 
 export type CashflowOutflow = {
   id: string;
