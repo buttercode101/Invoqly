@@ -263,3 +263,26 @@ html[data-theme="dark"] .assistant-draft-total{border-color:#3b4b40;background:#
 html[data-theme="dark"] .theme-toggle{color:#e7eee8}
 html[data-theme="dark"] .form-error{background:#3a2826;border-color:#63423c;color:#f1b7ad}
 html[data-theme="dark"] .sidebar-bottom .profile-row{border-color:#344239}
+
+
+/* AI draft review must stay legible in the dark workspace theme. */
+html[data-theme="dark"] .assistant-card-label{color:#a5c8ac}
+html[data-theme="dark"] .assistant-card-label>span{background:#294632;color:#d6e9d8}
+html[data-theme="dark"] .assistant-draft h2{color:#e8efe9}
+html[data-theme="dark"] .assistant-source{color:#a2ada5}
+html[data-theme="dark"] .assistant-draft-row{border-color:#2c3a30}
+html[data-theme="dark"] .assistant-draft-row span{color:#a2ada5}
+html[data-theme="dark"] .assistant-draft-row b{color:#e8efe9}
+html[data-theme="dark"] .assistant-draft-total{color:#b7c3ba}
+html[data-theme="dark"] .assistant-draft-total strong{color:#e8efe9}
+html[data-theme="dark"] .assistant-draft .assistant-footnote{color:#a2ada5}
+html[data-theme="dark"] .assistant-draft-lines-heading{color:#d5dfd7;border-color:#2c3a30}
+html[data-theme="dark"] .assistant-draft-lines-heading span{color:#a2ada5}
+html[data-theme="dark"] .assistant-draft-line-editor{background:#18221b;border-color:#35453a}
+html[data-theme="dark"] .assistant-draft-editor>label,
+html[data-theme="dark"] .assistant-draft-editor-two>label,
+html[data-theme="dark"] .assistant-draft-line-editor>label{color:#d5dfd7}
+html[data-theme="dark"] .assistant-draft-editor label span{color:#a2ada5}
+html[data-theme="dark"] .assistant-draft-editor input{background:#121a15;color:#e8efe9;border-color:#35453a}
+html[data-theme="dark"] .assistant-draft-remove{color:#e6a39a}
+html[data-theme="dark"] .assistant-draft-add{color:#a9d3b5}
