@@ -45,7 +45,7 @@ test("VAT-registered workspace calculates and preserves VAT on a quotation conve
 
   const quoteRow = page.locator("tbody tr").filter({ hasText: "VAT Test Customer" });
   await expect(quoteRow).toContainText(/115/);
-  await quoteRow.getByTitle("Print quotation").click();
+  await quoteRow.getByTitle("Preview quotation").click();
   const quotePopup = page.getByRole("dialog", { name: /Quotation ·/ });
   await expect(quotePopup).toBeVisible();
   await expect(quotePopup.locator("iframe")).toBeVisible();
