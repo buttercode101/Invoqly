@@ -24,6 +24,7 @@ const payload = z.discriminatedUnion("action", [
   z.object({ action:z.literal("create-expense"), vendor:z.string().trim().min(1).max(160), category:z.string().trim().min(1).max(80), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, notes:z.string().max(500).default(""), receiptObjectKey:z.string().max(300).optional() }),
   z.object({ action:z.literal("create-payment"), invoiceId:z.string().uuid(), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, method:z.string().min(1).max(40), reference:z.string().max(100).default(""), notes:z.string().max(500).default("") }),
   z.object({ action:z.literal("send-invoice"), invoiceId:z.string().uuid() }),
+  z.object({ action:z.literal("update-draft-invoice"), invoiceId:z.string().uuid(), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50), currency, dueDate:date }),
   z.object({ action:z.literal("delete-draft-invoice"), invoiceId:z.string().uuid() }),
 
   z.object({ action:z.literal("import-guest-workspace"), importId:z.string().uuid(), businessName:z.string().trim().min(1).max(120), currency, clients:z.array(z.object({id:z.string().uuid(),name:z.string().trim().min(1).max(120),email:z.string().trim().email().max(254).toLowerCase(),company:z.string().max(120)})).max(500), invoices:z.array(z.object({id:z.string().uuid(),clientId:z.string().uuid().optional(),customerName:z.string().trim().min(1).max(120).optional(),customerEmail:z.string().max(254).default(""),customerCompany:z.string().max(120).default(""),issueDate:date,dueDate:date,paidAt:date.optional(),description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),lineItems:z.array(lineItem).min(1).max(50).optional(),currency,status:z.enum(["Draft","Sent","Paid"])})).max(1000), quotes:z.array(z.object({id:z.string().uuid(),customerName:z.string().trim().min(1).max(120),customerEmail:z.string().max(254),customerCompany:z.string().max(120),description:z.string().trim().min(1).max(500),issueDate:date,validUntil:date,quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),lineItems:z.array(lineItem).min(1).max(50).optional(),currency,status:z.enum(["Draft","Sent","Accepted","Declined","Converted"])})).max(1000).default([]), expenses:z.array(z.object({vendor:z.string().trim().min(1).max(160),category:z.string().trim().min(1).max(80),date,amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),currency})).max(2000) }),
@@ -170,6 +171,28 @@ export async function POST(request:Request) {
         return created;
       });
       void result;
+    }
+
+    if (input.action === "update-draft-invoice") {
+      let lineItems: DocumentLineItem[];
+      try {
+        lineItems = applyDocumentTaxProfile(resolveDocumentLineItems(input.lineItems, { description: input.description, quantity: input.quantity, unitPriceMinor: input.unitPriceMinor }), { vatRegistered: workspace.vatRegistered, taxDate: today(), priceMode: "inclusive" });
+        calculateDocumentTotal(lineItems);
+      } catch (error) { return fail(error instanceof Error ? error.message : "Invoice line items are invalid.",422); }
+      const updated = await db.transaction(async tx => {
+        const [existing] = await tx.select().from(invoices).where(and(eq(invoices.id,input.invoiceId),eq(invoices.workspaceId,workspace.id))).limit(1);
+        if (!existing) return null;
+        if (existing.status !== "Draft") throw new Error("Only draft invoices can be edited. Issued invoices are retained as financial records.");
+        const [payment] = await tx.select({id:payments.id}).from(payments).where(and(eq(payments.invoiceId,existing.id),eq(payments.workspaceId,workspace.id))).limit(1);
+        if (payment) throw new Error("An invoice with recorded payments cannot be edited.");
+        const [saved] = await tx.update(invoices).set({
+          description:lineItems[0]!.description, quantity:lineItems[0]!.quantity,
+          unitPriceMinor:lineItems[0]!.unitPriceMinor, lineItems, currency:input.currency, dueDate:input.dueDate
+        }).where(and(eq(invoices.id,existing.id),eq(invoices.workspaceId,workspace.id),eq(invoices.status,"Draft"))).returning();
+        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"invoice.draft_updated",entityType:"invoice",entityId:existing.id,metadata:{number:existing.number}});
+        return saved;
+      });
+      if (!updated) return fail("Invoice not found in this workspace.",404);
     }
 
     if (input.action === "create-quote") {
