@@ -59,7 +59,8 @@ describe("AI-assisted document draft preparation", () => {
     })).toThrow(/unambiguous hourly labour line/);
     expect(() => prepareAssistantDocumentDraft({
       proposedLines: [{ description: "Labour hours", quantity: 1_000_000, priceSource: { type: "source", index: 0 } }],
-      sourceLineItems, explicitAmounts: [], currency: "ZAR", hoursAddition: 1, mentionsHours: true
+      sourceLineItems: [{ description: "Labour hours", quantity: 1_000_000, unitPriceMinor: 75_000 }],
+      explicitAmounts: [], currency: "ZAR", hoursAddition: 1, mentionsHours: true
     })).toThrow(/adjusted labour quantity/);
   });
 });
