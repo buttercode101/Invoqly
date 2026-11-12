@@ -14,16 +14,16 @@ Open the public site and choose **Try Invoqly free — no account**. Guest mode 
 - Create quotations, print or save them as PDF, track sent/accepted/declined status, and convert accepted quotes into invoices.
 - Draft and issue invoices.
 - Mark invoices paid.
-- Record business expenses.
+- Record business expenses manually, with an optional compressed receipt photo captured from a mobile camera or selected from the device.
 - View invoice, outstanding and expense totals.
 - Print invoices and quotations or save them as PDF through the browser print dialog.
 - Export a JSON backup.
 
-Guest records are stored locally in the current browser on the current device. They are not uploaded to Invoqly's cloud. Browser storage can be cleared by the user or browser, so export a backup for important records.
+Guest records are stored locally in the current browser on the current device. They are not uploaded to Invoqly's cloud. The installable web app caches its guest workspace shell so previously opened guest work can be reopened offline; guest changes remain local to that device. Browser storage can be cleared by the user or browser, so export a backup for important records.
 
 ## Create an account when you need cloud features
 
-An account unlocks a private PostgreSQL-backed workspace, server-side persistence, multi-device access and synced quotations. One-off invoice customers remain out of the saved contacts list unless the user explicitly chooses to save them. If a guest workspace is present in the same browser, the signed-in user can import it directly; a JSON backup from another device can also be uploaded in workspace settings. Import keeps existing cloud records, records paid guest invoices in the payment ledger and uses a stable import ID to avoid duplicates if the request is retried. File imports use separate temporary storage so they never overwrite a different local guest workspace.
+An account unlocks a private PostgreSQL-backed workspace, server-side persistence, multi-device access, synced quotations and optional compressed receipt-photo attachments on cloud expenses. One-off invoice customers remain out of the saved contacts list unless the user explicitly chooses to save them. If a guest workspace is present in the same browser, the signed-in user can import it directly; a JSON backup from another device can also be uploaded in workspace settings. Import keeps existing cloud records, records paid guest invoices in the payment ledger and uses a stable import ID to avoid duplicates if the request is retried. File imports use separate temporary storage so they never overwrite a different local guest workspace.
 
 Creating an account is optional for guest core functionality. No subscription or payment details are required to use the free core tools.
 
@@ -35,7 +35,10 @@ Creating an account is optional for guest core functionality. No subscription or
 - The deterministic South African VAT calculation and tax-invoice validation core exists, but it is not yet integrated into invoice/expense records. VAT201 is not filed or submitted; any working summary requires practitioner review.
 - Cash-flow scenarios currently use recorded invoices and future-dated expenses. There are no connected bank feeds, payment gateways, opening cash balance or verified safe-to-spend amount yet.
 - Client payment-behaviour profiles now derive transparent on-time rates, average days to pay and preferred methods from recorded invoices/payments; they are not credit scores. Full communication timelines, receipt OCR, voice/photo document extraction and automated follow-ups are not yet implemented.
-- Guest data is device-local until imported. Cloud data requires authentication and is tenant-scoped.
+- Guest data is device-local until imported. Cloud data requires authentication and is tenant-scoped. The signed-in workspace currently requires a network connection; there is no offline cloud-write queue or background sync.
+- The signed-in product currently exposes one active workspace per user; workspace membership primitives exist, but a multi-workspace create/switch UI and end-to-end tenant-switching workflow are not yet complete.
+- Cloud expense receipt photos are stored as compressed image data with the expense record (up to 480 KB per image); manual expense entry remains available without a photo. Receipt OCR and automatic expense extraction are not implemented.
+- The PWA shell and guest route support offline reopening after an initial online visit. No Android TWA/Play Store wrapper is included in this repository yet.
 - The Cloudflare preview has passed the release-candidate verification suite. Production deployment remains gated on a dedicated production Hyperdrive configuration and the production migration/release workflow. Invoqly is not a tax-compliance service; do not rely on it as a substitute for professional tax or accounting advice.
 
 ## Architecture
