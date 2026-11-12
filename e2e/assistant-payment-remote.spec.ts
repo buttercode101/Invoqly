@@ -11,8 +11,13 @@ test("AI invoice draft is reviewed, issued and paid", async ({ page }) => {
   await page.locator(".sidebar .nav-item").filter({ hasText: "AI Co-pilot" }).first().click();
   await page.getByRole("button", { name: "I understand — enable AI" }).click();
   await page.getByLabel("Ask your business co-pilot").fill("Prepare an invoice for customer Invoqly AI Payment QA. One line: One-off consulting, quantity 1, unit price ZAR 250.00, due 2026-12-12. Prepare the draft.");
+  const aiResponsePromise = page.waitForResponse(response => response.url().endsWith("/api/assistant") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Send message" }).click();
-  await expect(page.getByRole("heading", { name: "Invoice draft" })).toBeVisible({ timeout: 75_000 });
+  const aiResponse = await aiResponsePromise;
+  const aiPayload = await aiResponse.json() as { reply?: string; draft?: unknown; error?: string };
+  expect(aiResponse.status(), aiPayload.error ?? aiPayload.reply ?? "AI request must succeed").toBe(200);
+  expect(aiPayload.draft, aiPayload.reply ?? "AI must return a reviewable invoice draft").toBeTruthy();
+  await expect(page.getByRole("heading", { name: "Invoice draft" })).toBeVisible({ timeout: 20_000 });
   await page.getByRole("button", { name: "Edit details" }).click();
   await expect(page.getByRole("heading", { name: "Review invoice draft" })).toBeVisible();
   await page.getByLabel("Unit price").fill("275.00");
