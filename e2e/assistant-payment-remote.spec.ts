@@ -86,7 +86,7 @@ test("execution mode requires explicit approval and records exactly one full set
   await page.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByText("Execution cancelled. No payment was recorded.")).toBeVisible();
   let workspace = await page.request.get("/api/workspace");
-  let data = await workspace.json() as { workspace: { invoices: Array<{ number: string; status: string }>; payments: Array<{ invoiceId: string }> } };
+  let data = await workspace.json() as { workspace: { invoices: Array<{ id: string; number: string; status: string }>; payments: Array<{ invoiceId: string }> } };
   const cancelledInvoice = data.workspace.invoices.find(item => item.number === invoiceNumber);
   expect(cancelledInvoice?.status).toBe("Sent");
   expect(data.workspace.payments).toHaveLength(0);
@@ -107,8 +107,23 @@ test("execution mode requires explicit approval and records exactly one full set
   expect(data.workspace.payments).toHaveLength(1);
 
   await ask.fill(`Mark invoice ${invoiceNumber} paid in full and record the payment again.`);
+  const duplicateAssistantPromise = page.waitForResponse(response => response.url().endsWith("/api/assistant") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Send message" }).click();
-  await expect(page.getByText(/no outstanding balance to record/i)).toBeVisible({ timeout: 75_000 });
+  const duplicateAssistantResponse = await duplicateAssistantPromise;
+  const duplicateAssistantPayload = await duplicateAssistantResponse.json() as { reply?: string; execution?: unknown };
+  expect(duplicateAssistantResponse.status()).toBe(200);
+  expect(duplicateAssistantPayload.execution).toBeFalsy();
+  workspace = await page.request.get("/api/workspace");
+  data = await workspace.json();
+  expect(data.workspace.payments).toHaveLength(1);
+
+  const invoiceId = data.workspace.invoices.find(item => item.number === invoiceNumber)?.id;
+  expect(invoiceId).toBeTruthy();
+  const duplicatePayment = await page.request.post("/api/workspace", { data: {
+    action: "create-payment", invoiceId, date: "2026-11-12", amountMinor: 32500,
+    currency: "ZAR", method: "Manual", reference: "duplicate-settlement-guard"
+  } });
+  expect(duplicatePayment.status()).toBe(409);
   workspace = await page.request.get("/api/workspace");
   data = await workspace.json();
   expect(data.workspace.payments).toHaveLength(1);
