@@ -27,6 +27,17 @@ describe("shareable document PDF", () => {
     expect(source.endsWith("%%EOF")).toBe(true);
   });
 
+  it("creates separate valid page content streams for long documents", async () => {
+    const long = { ...input, lineItems: Array.from({ length: 48 }, (_, index) => ({
+      description: "Service line " + (index + 1), quantity: 1, unitPriceMinor: 10000,
+      taxTreatment: "out_of_scope" as const, priceMode: "exclusive" as const
+    })) };
+    const source = await createDocumentPdf(long).text();
+    expect(source).toContain("/Count 2");
+    expect((source.match(/\\/Type \\/Page /g) ?? []).length).toBe(2);
+    expect(source).toContain("Service line 48");
+  });
+
   it("supports invoice and quotation outputs with three selectable template treatments", async () => {
     const modern = await createDocumentPdf(input).text();
     const minimal = await createDocumentPdf({ ...input, template: "minimal" }).text();
