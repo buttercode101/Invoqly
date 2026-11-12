@@ -55,7 +55,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await page.getByLabel("Unit price").fill("1300.50");
   await page.getByRole("button", { name: "Save invoice changes" }).click();
   invoiceRow=page.locator("tbody tr").filter({hasText:"Acme Services"});
-  await expect(invoiceRow).toContainText("2601.00");
+  await expect(invoiceRow).toContainText(/2[\s\u00a0]?601,00/);
   await invoiceRow.getByTitle("Preview or save PDF").click();
   await expect(page.getByRole("dialog", { name: /INV-/ })).toBeVisible();
   await page.getByLabel("Document style").selectOption("minimal");
@@ -95,7 +95,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await page.getByRole("button",{name:"Create quotation"}).click();
   const quoteRow=page.locator("tbody tr").filter({hasText:"Quote Customer"});
   await expect(quoteRow).toContainText("Draft");
-  await quoteRow.getByTitle("Print quotation").click();
+  await quoteRow.getByTitle("Preview quotation").click();
   const quotePrint=page.getByRole("dialog", { name: /Quotation ·/ });
   await expect(quotePrint).toBeVisible();
   await expect(quotePrint.locator("iframe")).toBeVisible();
