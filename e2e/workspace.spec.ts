@@ -201,7 +201,12 @@ test("real account, client, invoice, partial payments, expense and reload",async
       await goTo(page,"Invoices");
       await page.getByRole("button",{name:"New invoice"}).click();
       await expect(page.getByRole("dialog")).toBeVisible();
+      await expect(page.getByLabel("Currency")).toBeVisible();
+      await expect(page.getByLabel("Due date")).toBeVisible();
       await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-320.png",fullPage:true});
+      const mobileInvoiceSubmit = page.getByRole("button",{name:"Create invoice"});
+      await mobileInvoiceSubmit.scrollIntoViewIfNeeded();
+      await expect(mobileInvoiceSubmit).toBeVisible();
       await page.getByRole("button",{name:"Close"}).click();
     }
     if(width===390){
@@ -219,7 +224,12 @@ test("real account, client, invoice, partial payments, expense and reload",async
       await goTo(page,"Invoices");
       await page.getByRole("button",{name:"New invoice"}).click();
       await expect(page.getByRole("heading",{name:"Create an invoice"})).toBeVisible();
+      await expect(page.getByLabel("Currency")).toBeVisible();
+      await expect(page.getByLabel("Due date")).toBeVisible();
       await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-390.png",fullPage:true});
+      const mobileInvoiceSubmit = page.getByRole("button",{name:"Create invoice"});
+      await mobileInvoiceSubmit.scrollIntoViewIfNeeded();
+      await expect(mobileInvoiceSubmit).toBeVisible();
       await page.getByRole("button",{name:"Close"}).click();
       await goTo(page,"Quotes");
       await page.getByRole("button",{name:"New quotation"}).click();
