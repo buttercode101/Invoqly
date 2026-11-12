@@ -109,7 +109,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await page.getByLabel("Currency").selectOption("ZAR");
   await page.getByLabel("Category").selectOption("Software");
   await page.getByRole("button",{name:"Save expense"}).click();
-  await expect(page.getByText("Cloud hosting")).toBeVisible();
+  await expect(page.locator(".expense-table-desktop").getByText("Cloud hosting")).toBeVisible();
 
   await page.reload();
   await goTo(page,"Clients");
@@ -119,7 +119,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await goTo(page,"Payments");
   await expect(page.locator("tbody tr")).toHaveCount(2);
   await goTo(page,"Expenses");
-  await expect(page.getByText("Cloud hosting")).toBeVisible();
+  await expect(page.locator(".expense-table-desktop").getByText("Cloud hosting")).toBeVisible();
   for (const width of [320,360,375,390,560,768,820,1120,1440]) {
     await page.setViewportSize({width,height:900});
     for (const section of ["Overview","Invoices","Quotes","Clients","Expenses","Payments","Reports","Settings"]) {
