@@ -49,7 +49,7 @@ test("guest can create and print multi-line invoices and quotations without an a
   const invoiceRow = page.getByText("Guest Multi Customer").locator("xpath=../..");
   await expect(invoiceRow).toContainText("Labour +1 more line");
   await expect(invoiceRow).toContainText(/2[\s\u00a0,]?900/);
-  await invoiceRow.getByRole("button", { name: "Preview / PDF" }).click();
+  await invoiceRow.getByRole("button", { name: "Preview PDF" }).click();
   const invoicePreview = page.getByRole("dialog", { name: /Invoice ·/ });
   await expect(invoicePreview).toBeVisible();
   await expect(invoicePreview.locator("iframe")).toBeVisible();
@@ -69,7 +69,7 @@ test("guest can create and print multi-line invoices and quotations without an a
   await page.getByRole("button", { name: "Create quotation" }).click();
   const quoteRow = page.getByText("Guest Multi Quote").locator("xpath=../..");
   await expect(quoteRow).toContainText("R");
-  await quoteRow.getByRole("button", { name: "Preview / PDF" }).click();
+  await quoteRow.getByRole("button", { name: "Preview PDF" }).click();
   const quotePreview = page.getByRole("dialog", { name: /Quotation ·/ });
   await expect(quotePreview).toBeVisible();
   await expect(quotePreview.locator("iframe")).toBeVisible();
@@ -101,7 +101,7 @@ test("signed-in workspace creates, converts and reloads a multi-line quotation",
   const quoteRow = page.locator("tbody tr").filter({ hasText: "Cloud Multi Quote" });
   await expect(quoteRow).toContainText("Labour +1 more line");
   await expect(quoteRow).toContainText(/6[\s\u00a0,]?400/);
-  await quoteRow.getByTitle("Print quotation").click();
+  await quoteRow.getByTitle("Preview quotation").click();
   const popup = page.getByRole("dialog", { name: /Quotation ·/ });
   await expect(popup).toBeVisible();
   await expect(popup.locator("iframe")).toBeVisible();
