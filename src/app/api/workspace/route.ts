@@ -1,5 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { env } from "cloudflare:workers";
 import { z } from "zod";
 import { withDb } from "@/lib/db";
 import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, quoteCounters, quotes, workspaces } from "@/lib/db/schema";
@@ -20,7 +21,7 @@ const payload = z.discriminatedUnion("action", [
   z.object({ action:z.literal("create-quote"), customerName:z.string().trim().min(1).max(120), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), currency, validUntil:date }),
   z.object({ action:z.literal("convert-quote"), quoteId:z.string().uuid(), dueDate:date }),
   z.object({ action:z.literal("update-quote-status"), quoteId:z.string().uuid(), status:z.enum(["Sent","Accepted","Declined"]) }),
-  z.object({ action:z.literal("create-expense"), vendor:z.string().trim().min(1).max(160), category:z.string().trim().min(1).max(80), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, notes:z.string().max(500).default("") }),
+  z.object({ action:z.literal("create-expense"), vendor:z.string().trim().min(1).max(160), category:z.string().trim().min(1).max(80), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, notes:z.string().max(500).default(""), receiptObjectKey:z.string().max(300).optional() }),
   z.object({ action:z.literal("create-payment"), invoiceId:z.string().uuid(), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, method:z.string().min(1).max(40), reference:z.string().max(100).default(""), notes:z.string().max(500).default("") }),
   z.object({ action:z.literal("send-invoice"), invoiceId:z.string().uuid() }),
   z.object({ action:z.literal("delete-draft-invoice"), invoiceId:z.string().uuid() }),
@@ -191,9 +192,15 @@ export async function POST(request:Request) {
     }
 
     if (input.action === "create-expense") {
+      if (input.receiptObjectKey) {
+        const prefix = workspace.id + "/expenses/";
+        if (!input.receiptObjectKey.startsWith(prefix) || input.receiptObjectKey.includes("..")) throw new Error("The receipt attachment does not belong to this workspace.");
+        const bucket = (env as unknown as { R2_RECEIPTS: { head(key:string):Promise<unknown|null> } }).R2_RECEIPTS;
+        if (!(await bucket.head(input.receiptObjectKey))) throw new Error("The receipt upload could not be found. Upload it again before saving the expense.");
+      }
       await db.transaction(async tx=>{
-        const [created] = await tx.insert(expenses).values({workspaceId:workspace.id,vendor:input.vendor,category:input.category,date:input.date,amountMinor:input.amountMinor,currency:input.currency,notes:input.notes}).returning();
-        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"expense.created",entityType:"expense",entityId:created.id,metadata:{amountMinor:created.amountMinor,currency:created.currency}});
+        const [created] = await tx.insert(expenses).values({workspaceId:workspace.id,vendor:input.vendor,category:input.category,date:input.date,amountMinor:input.amountMinor,currency:input.currency,notes:input.notes,receiptObjectKey:input.receiptObjectKey??null}).returning();
+        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"expense.created",entityType:"expense",entityId:created.id,metadata:{amountMinor:created.amountMinor,currency:created.currency,receiptAttached:Boolean(created.receiptObjectKey)}});
       });
     }
 
