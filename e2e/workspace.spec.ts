@@ -179,8 +179,10 @@ test("real account, client, invoice, partial payments, expense and reload",async
       await page.locator(".mobile-more-trigger").click();
       await expect(page.getByRole("menu")).toBeVisible();
       await expect(page.getByRole("menuitem",{name:"AI Co-pilot"})).toBeVisible();
-      const menuTargets=await page.getByRole("menu").getByRole("menuitem").evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {width:r.width,height:r.height}}));
-      expect(menuTargets).toHaveLength(4);
+      const menuItems=page.getByRole("menu").getByRole("menuitem");
+      await expect(menuItems).toHaveText(["AI Co-pilot","Payments","Reports","Cash flow","Settings"]);
+      const menuTargets=await menuItems.evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {width:r.width,height:r.height}}));
+      expect(menuTargets).toHaveLength(5);
       for(const target of menuTargets){expect(target.width).toBeGreaterThanOrEqual(44);expect(target.height).toBeGreaterThanOrEqual(44);}
       await page.getByRole("menuitem",{name:"Settings"}).click();
     }
