@@ -16,11 +16,13 @@ type InvoiceData = {
   quantity: number; unitPriceMinor: number; lineItems?: AssistantLineItem[]; currency: string; dueDate: string; saveContact?: boolean;
 };
 type Reminder = { invoiceNumber: string; customerName: string; dueDate: string; amountMinor: number; currency: string; subject: string; body: string };
+type ExecutionProposal = { type: "record_payment"; invoiceId: string; invoiceNumber: string; customerName: string; amountMinor: number; balanceBeforeMinor: number; currency: string; date: string; method: string; reference: string };
 type AssistantResult = {
   reply: string;
   draft?: { type: "create_quote" | "create_invoice"; data: QuoteData | InvoiceData; lineItems: AssistantDraftLine[]; sourceDocumentNumber?: string | null; totalMinor: number; netMinor?: number; taxMinor?: number; currency: string } | null;
   scenario?: { currency: string; baselineNetMinor: number; scenarioNetMinor: number; differenceMinor: number; safeToSpendMinor: number | null; invoiceDelayDays: number; supplierDelayDays: number; weeks: Array<{ startDate: string; endDate: string; netMinor: number; inflowsMinor: number; outflowsMinor: number }>; months: Array<{ startDate: string; endDate: string; netMinor: number; inflowsMinor: number; outflowsMinor: number }> } | null;
   reminders?: Reminder[];
+  execution?: ExecutionProposal | null;
   priorities?: Array<{ invoiceId: string; number: string; customerName: string; openAmountMinor: number; daysOverdue: number; currency: string }>;
   totalImpactMinor?: number;
   profiles?: Array<{ clientId: string; clientName: string; currency: string; onTimeRatePercent: number | null; averageDaysToPay: number | null; preferredPaymentMethod: string | null; overdueBalanceMinor: number; dueInvoiceCount: number; onTimeInvoiceCount: number; paidInvoiceCount: number; lateInvoiceCount: number; confidence: "low" | "medium" | "high" | "none" }>;
@@ -32,11 +34,12 @@ type Props = {
   onCreateQuote: (data: QuoteData) => Promise<boolean>;
   onCreateInvoice: (data: InvoiceData) => Promise<boolean>;
   onEditDraft: (type: "create_quote" | "create_invoice", data: QuoteData | InvoiceData) => void;
+  onExecute: (proposal: ExecutionProposal) => Promise<boolean>;
 };
 
 const fmt = (amount: number, currency: string) => formatMinor(amount, currency, "en-ZA");
 
-export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoice, onEditDraft }: Props) {
+export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoice, onEditDraft, onExecute }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState<AssistantResult | null>(null);
@@ -46,6 +49,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
   const [copied, setCopied] = useState("");
   const [consent, setConsent] = useState(false);
   const [consentLoading, setConsentLoading] = useState(true);
+  const [executionMode, setExecutionMode] = useState(false);
 
   const submit = async (value = prompt) => {
     const text = value.trim();
@@ -59,7 +63,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history: messages.slice(-8).map(item => ({ ...item, content: item.content.slice(-800) })) })
+        body: JSON.stringify({ message: text, mode: executionMode ? "execute" : "assist", history: messages.slice(-8).map(item => ({ ...item, content: item.content.slice(-800) })) })
       });
       const payload = await response.json() as AssistantResult;
       if (!response.ok) throw new Error(payload.error || "The co-pilot couldn't complete that request.");
@@ -93,6 +97,30 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
     }
   };
 
+  const approveExecution = async () => {
+    if (!result?.execution || approving) return;
+    setApproving(true);
+    setError("");
+    try {
+      const ok = await onExecute(result.execution);
+      if (ok) {
+        setResult(null);
+        setMessages(current => [...current, { role: "assistant", content: "Approved. The full payment has been recorded in your workspace." }]);
+      } else {
+        setError("The payment was not recorded. Check the invoice balance and try again; no payment was added by this action.");
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The payment could not be recorded. No other records were changed.");
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const discardExecution = () => {
+    setResult(null);
+    setMessages(current => [...current, { role: "assistant", content: "Execution cancelled. No payment was recorded." }]);
+  };
+
   const copyReminder = async (reminder: Reminder) => {
     try {
       await navigator.clipboard.writeText("Subject: " + reminder.subject + "\n\n" + reminder.body);
@@ -112,7 +140,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       const response = await fetch("/api/assistant/consent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accepted }) });
       if (!response.ok) throw new Error("Could not update the AI privacy preference.");
       setConsent(accepted);
-      if (!accepted) { setMessages([]); setResult(null); }
+      if (!accepted) { setMessages([]); setResult(null); setExecutionMode(false); }
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not update the AI privacy preference."); }
   };
 
@@ -135,7 +163,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       <div className="assistant-main panel">
         <div className="assistant-topline">
           <div><b>Business assistant</b><small>{workspace.businessName} · {workspace.currency}</small></div>
-          <div className="assistant-top-actions"><span className="assistant-status"><i className={consent ? "is-enabled" : "is-idle"}/>{consent ? "Enabled" : "Consent required"}</span>{consent && <button type="button" className="assistant-disable" onClick={() => void setAiConsent(false)} disabled={busy || approving}>Turn off</button>}</div>
+          <div className="assistant-top-actions">{consent && <button type="button" className={executionMode ? "assistant-disable is-execution" : "assistant-disable"} onClick={() => setExecutionMode(value => !value)} disabled={busy || approving}>{executionMode ? "Execution mode · On" : "Execution mode · Off"}</button>}<span className="assistant-status"><i className={consent ? "is-enabled" : "is-idle"}/>{consent ? "Enabled" : "Consent required"}</span>{consent && <button type="button" className="assistant-disable" onClick={() => void setAiConsent(false)} disabled={busy || approving}>Turn off</button>}</div>
         </div>
         <div className="assistant-conversation" aria-live="polite">
           {!consent && <div className="assistant-consent">
@@ -148,7 +176,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
           {consent && messages.length === 0 && <div className="assistant-welcome">
             <Sparkles size={22}/>
             <h2>What would you like to get done?</h2>
-            <p>I can prepare document drafts, model supported cash-flow scenarios and draft payment reminders using your workspace records.</p>
+            <p>I can prepare document drafts, model supported cash-flow scenarios and draft payment reminders using your workspace records. Turn on Execution mode to prepare a full-settlement payment action for your approval.</p>
             <div className="assistant-suggestions">
               {suggestions.map(item => <button key={item} onClick={() => void submit(item)} disabled={busy || approving}>{item}<ArrowUpRight size={14}/></button>)}
             </div>
@@ -167,6 +195,17 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
         {consent && <p className="assistant-footnote">20 AI requests per workspace per day. Turn off AI at any time. Your records are never changed or messages sent without approval.</p>}
       </div>
       <aside className="assistant-side">
+        {result?.execution && <div className="panel assistant-draft">
+          <div className="assistant-card-label"><span><Check size={14}/></span> READY FOR YOUR APPROVAL</div>
+          <h2>Record payment</h2>
+          <div className="assistant-draft-row"><span>Invoice</span><b>{result.execution.invoiceNumber}</b></div>
+          <div className="assistant-draft-row"><span>Customer</span><b>{result.execution.customerName}</b></div>
+          <div className="assistant-draft-row"><span>Payment date</span><b>{result.execution.date}</b></div>
+          <div className="assistant-draft-row"><span>Remaining balance</span><b>{fmt(result.execution.balanceBeforeMinor, result.execution.currency)}</b></div>
+          <div className="assistant-draft-total"><span>Full settlement amount</span><strong>{fmt(result.execution.amountMinor, result.execution.currency)}</strong></div>
+          <div className="assistant-draft-actions"><button type="button" className="btn btn-light" onClick={discardExecution} disabled={approving}>Cancel</button><button type="button" className="btn btn-primary assistant-approve" onClick={() => void approveExecution()} disabled={approving}><Check size={16}/>{approving ? "Recording…" : "Confirm and record payment"}</button></div>
+          <p className="assistant-footnote">Nothing is recorded until you confirm. Execution mode only supports full settlement for now; partial payments remain available in the Payments form.</p>
+        </div>}
         {result?.draft && <div className="panel assistant-draft">
           <div className="assistant-card-label"><span><Check size={14}/></span> READY FOR REVIEW</div>
           <h2>{result.draft.type === "create_quote" ? "Quotation draft" : "Invoice draft"}</h2>
