@@ -95,11 +95,15 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await goTo(page,"Expenses");
   await page.getByRole("button",{name:"Record expense"}).click();
   await page.getByLabel("Vendor or supplier").fill("Cloud hosting");
+  const receiptPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/S5sAAAAASUVORK5CYII=", "base64");
+  await page.locator('input[type="file"][accept="image/jpeg,image/png,image/webp"]').setInputFiles({name:"receipt.png",mimeType:"image/png",buffer:receiptPng});
+  await expect(page.getByAltText("Receipt photo preview")).toBeVisible();
   await page.getByLabel("Amount").fill("350.75");
   await page.getByLabel("Currency").selectOption("ZAR");
   await page.getByLabel("Category").selectOption("Software");
   await page.getByRole("button",{name:"Save expense"}).click();
   await expect(page.getByText("Cloud hosting")).toBeVisible();
+  await expect(page.getByRole("link",{name:"View receipt photo for Cloud hosting"})).toBeVisible();
 
   await page.reload();
   await goTo(page,"Clients");
@@ -110,6 +114,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await expect(page.locator("tbody tr")).toHaveCount(2);
   await goTo(page,"Expenses");
   await expect(page.getByText("Cloud hosting")).toBeVisible();
+  await expect(page.getByRole("link",{name:"View receipt photo for Cloud hosting"})).toBeVisible();
   for (const width of [320,375,768,1120]) {
     await page.setViewportSize({width,height:900});
     const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));

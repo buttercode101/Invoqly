@@ -124,6 +124,7 @@ export const expenses = pgTable("expenses", {
   amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
   currency: char("currency", { length: 3 }).notNull(),
   notes: varchar("notes", { length: 500 }).notNull().default(""),
+  receiptImageData: text("receipt_image_data"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("expenses_workspace_date_idx").on(t.workspaceId, t.date)]);
 
