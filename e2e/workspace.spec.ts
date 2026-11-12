@@ -121,11 +121,11 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await goTo(page,"Payments");
   await page.getByRole("button",{name:"Record payment"}).click();
   await page.getByLabel("Invoice").selectOption({index:0});
-  await page.getByLabel("Amount received").fill("1502.00");
+  await page.getByLabel("Amount received").fill("1602.00");
   await page.getByLabel("Date received").fill("2026-11-10");
   await page.getByRole("button",{name:"Save payment"}).click();
   await expect(page.locator(".form-error")).toContainText("Payment cannot exceed the outstanding invoice balance");
-  await page.getByLabel("Amount received").fill("1501.00");
+  await page.getByLabel("Amount received").fill("1601.00");
   await page.getByRole("button",{name:"Save payment"}).click();
   await goTo(page,"Invoices");
   invoiceRow=page.locator("tbody tr").filter({hasText:"Acme Services"});
