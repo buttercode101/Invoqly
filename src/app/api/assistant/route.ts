@@ -1,6 +1,5 @@
 import { and, eq, gte, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { z } from "zod";
 import { withDb } from "@/lib/db";
 import { auditEvents, workspaces } from "@/lib/db/schema";
@@ -20,6 +19,13 @@ const modelSchema = z.object({
   reply: z.string().trim().min(1).max(1_500),
   action: z.object({ type: z.string().max(40) }).passthrough()
 });
+
+function cookieValue(request: Request, name: string): string | null {
+  const prefix = name + "=";
+  const item = (request.headers.get("cookie") ?? "").split(";").map(part => part.trim()).find(part => part.startsWith(prefix));
+  if (!item) return null;
+  try { return decodeURIComponent(item.slice(prefix.length)); } catch { return item.slice(prefix.length); }
+}
 
 function isSameOriginRequest(request: Request): boolean {
   const origin = request.headers.get("origin");
@@ -97,15 +103,14 @@ export async function POST(request: Request) {
 
   const body = requestSchema.safeParse(await request.json().catch(() => null));
   if (!body.success) return errorResponse("Enter a message of up to 2,000 characters.", 422);
-  const consent = await cookies();
-  if (consent.get("invoqly_ai_consent")?.value !== "2026-11-11-v1") return errorResponse("Enable the AI co-pilot after reviewing the privacy notice before sending a request.", 428);
+  if (cookieValue(request, "invoqly_ai_consent") !== "2026-11-11-v1") return errorResponse("Enable the AI co-pilot after reviewing the privacy notice before sending a request.", 428);
   const message = body.data.message;
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);
 
   try {
     const context = await withDb(async db => {
-      const user = await getCurrentUser(db);
+      const user = await getCurrentUser(db, request.headers);
       if (!user) return { ok: false as const, error: "Sign in to use the AI co-pilot.", status: 401 as const };
       const workspace = await getOrCreateWorkspace(db, user.id);
       const snapshot = await loadWorkspace(db, workspace.id);
