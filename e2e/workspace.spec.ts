@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 
 function identity(label:string) {
   const suffix=`${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-  return { name:label, email:`${label.toLowerCase()}-${suffix}@example.com`, password:"InvoqlySecurePassphrase!2026" };
+  const slug=label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") || "workspace";
+  return { name:label, email:`${slug}-${suffix}@example.com`, password:"InvoqlySecurePassphrase!2026" };
 }
 
 async function goTo(page:Page,section:string) { await page.locator(".nav-item").filter({hasText:section}).first().click(); }
