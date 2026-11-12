@@ -5,24 +5,38 @@ import Link from "next/link";
 import styles from "./guest-workspace.module.css";
 
 type Client={id:string;name:string;email:string;company:string;currency:string;createdAt:string};
-type Invoice={id:string;clientId?:string;customerName:string;customerEmail:string;customerCompany:string;number:string;description:string;issueDate:string;dueDate:string;quantity:number;unitPriceMinor:number;currency:string;status:"Draft"|"Sent"|"Paid";paidAt?:string;};
-type Quote={id:string;number:string;customerName:string;customerEmail:string;customerCompany:string;description:string;issueDate:string;validUntil:string;quantity:number;unitPriceMinor:number;currency:string;status:"Draft"|"Sent"|"Accepted"|"Declined"|"Converted"};
+type LineItem={description:string;quantity:number;unitPriceMinor:number};
+type Invoice={id:string;clientId?:string;customerName:string;customerEmail:string;customerCompany:string;number:string;description:string;issueDate:string;dueDate:string;quantity:number;unitPriceMinor:number;lineItems?:LineItem[];currency:string;status:"Draft"|"Sent"|"Paid";paidAt?:string;};
+type Quote={id:string;number:string;customerName:string;customerEmail:string;customerCompany:string;description:string;issueDate:string;validUntil:string;quantity:number;unitPriceMinor:number;lineItems?:LineItem[];currency:string;status:"Draft"|"Sent"|"Accepted"|"Declined"|"Converted"};
 type Expense={id:string;vendor:string;category:string;date:string;amountMinor:number;currency:string;};
 type Store={businessName:string;currency:string;clients:Client[];invoices:Invoice[];quotes:Quote[];expenses:Expense[]};
 const KEY="invoqly.guest.workspace.v1";
 const blank:Store={businessName:"Your business",currency:"ZAR",clients:[],invoices:[],quotes:[],expenses:[]};
 const money=(minor:number,currency:string)=>new Intl.NumberFormat("en-ZA",{style:"currency",currency}).format(minor/100);
 const minor=(value:string)=>{const n=Number(value);if(!Number.isFinite(n)||n<=0)throw new Error("Enter an amount greater than zero.");const result=Math.round(n*100);if(!Number.isSafeInteger(result))throw new Error("That amount is too large to store safely.");return result};
+const documentLines=(doc:{description:string;quantity:number;unitPriceMinor:number;lineItems?:LineItem[]})=>doc.lineItems?.length?doc.lineItems:[{description:doc.description,quantity:doc.quantity,unitPriceMinor:doc.unitPriceMinor}];
+const documentTotal=(doc:{description:string;quantity:number;unitPriceMinor:number;lineItems?:LineItem[]})=>documentLines(doc).reduce((sum,line)=>{const total=line.quantity*line.unitPriceMinor;if(!Number.isSafeInteger(total)||!Number.isSafeInteger(sum+total))throw new Error("Document total is too large to store safely.");return sum+total},0);
+const readFormLines=(form:FormData):LineItem[]=>{
+ const descriptions=[String(form.get("description")??""),...form.getAll("extraDescription").map(String)];
+ const quantities=[String(form.get("quantity")??"1"),...form.getAll("extraQuantity").map(String)];
+ const prices=[String(form.get("price")??""),...form.getAll("extraPrice").map(String)];
+ if(descriptions.length>50)throw new Error("A document can contain up to 50 line items.");
+ const lines=descriptions.map((description,index)=>({description:description.trim(),quantity:Number(quantities[index]),unitPriceMinor:minor(prices[index]??"")}));
+ if(lines.some(line=>!line.description||line.description.length>500||!Number.isSafeInteger(line.quantity)||line.quantity<1))throw new Error("Every line needs a description and a positive whole-number quantity.");
+ const total=lines.reduce((sum,line)=>{const value=line.quantity*line.unitPriceMinor;if(!Number.isSafeInteger(value)||!Number.isSafeInteger(sum+value))throw new Error("Document total is too large to store safely.");return sum+value},0);
+ if(total<=0)throw new Error("Enter at least one priced line item.");
+ return lines;
+};
 const localDate=(value=new Date())=>{const local=new Date(value.getTime()-value.getTimezoneOffset()*60000);return local.toISOString().slice(0,10)};
 const date=()=>localDate();
 const defaultDueDate=()=>{const value=new Date();value.setDate(value.getDate()+14);return localDate(value)};
 
 export default function GuestWorkspaceClient(){
- const [store,setStore]=useState<Store>(blank),[ready,setReady]=useState(false),[storageWritable,setStorageWritable]=useState(true),[tab,setTab]=useState("Overview"),[modal,setModal]=useState<"client"|"invoice"|"quote"|"expense"|null>(null),[error,setError]=useState("");
+ const [store,setStore]=useState<Store>(blank),[ready,setReady]=useState(false),[storageWritable,setStorageWritable]=useState(true),[tab,setTab]=useState("Overview"),[modal,setModal]=useState<"client"|"invoice"|"quote"|"expense"|null>(null),[error,setError]=useState(""),[extraLines,setExtraLines]=useState<Array<{description:string;quantity:string;price:string}>>([]);
  useEffect(()=>{try{const raw=localStorage.getItem(KEY);if(raw){const parsed=JSON.parse(raw) as Store;if(parsed&&Array.isArray(parsed.clients)&&Array.isArray(parsed.invoices)&&Array.isArray(parsed.expenses))setStore({...blank,...parsed,quotes:Array.isArray(parsed.quotes)?parsed.quotes:[],invoices:parsed.invoices.map((i:any)=>({...i,customerName:i.customerName??parsed.clients.find((c:any)=>c.id===i.clientId)?.name??"Customer",customerEmail:i.customerEmail??parsed.clients.find((c:any)=>c.id===i.clientId)?.email??"",customerCompany:i.customerCompany??parsed.clients.find((c:any)=>c.id===i.clientId)?.company??""}))});else{setStorageWritable(false);setError("The saved guest workspace is damaged. We have left it untouched; export or recover your backup before continuing.")}}}catch{setStorageWritable(false);setError("We couldn't read this browser's saved workspace. Your existing data has been left untouched.")}finally{setReady(true)}},[]);
  useEffect(()=>{if(ready&&storageWritable){try{localStorage.setItem(KEY,JSON.stringify(store))}catch{setError("This browser could not save more local data. Export a backup and free some browser storage.")}}},[store,ready,storageWritable]);
- const total=useMemo(()=>store.invoices.filter(x=>x.status!=="Draft").reduce((s,x)=>s+x.quantity*x.unitPriceMinor,0),[store]);
- const outstanding=useMemo(()=>store.invoices.filter(x=>x.status==="Sent").reduce((s,x)=>s+x.quantity*x.unitPriceMinor,0),[store]);
+ const total=useMemo(()=>store.invoices.filter(x=>x.status!=="Draft").reduce((s,x)=>s+documentTotal(x),0),[store]);
+ const outstanding=useMemo(()=>store.invoices.filter(x=>x.status==="Sent").reduce((s,x)=>s+documentTotal(x),0),[store]);
  const expenseTotal=useMemo(()=>store.expenses.reduce((s,x)=>s+x.amountMinor,0),[store]);
  const addClient=(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();const f=new FormData(e.currentTarget);setStore(s=>({...s,clients:[{id:crypto.randomUUID(),name:String(f.get("name")),email:String(f.get("email")),company:String(f.get("company")),currency:s.currency,createdAt:new Date().toISOString()},...s.clients]}));setModal(null)};
  const addInvoice=(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();try{const f=new FormData(e.currentTarget);const price=minor(String(f.get("price")));const qty=Number(f.get("quantity"));const customerName=String(f.get("customerName")||"").trim();if(!customerName)throw new Error("Enter the customer name.");if(!Number.isSafeInteger(qty)||qty<1)throw new Error("Enter a valid quantity.");if(!Number.isSafeInteger(qty*price))throw new Error("The invoice total is too large to store safely.");const saveContact=f.get("saveContact")==="on";setStore(s=>{const contact=saveContact?{id:crypto.randomUUID(),name:customerName,email:String(f.get("customerEmail")||""),company:String(f.get("customerCompany")||""),currency:s.currency,createdAt:new Date().toISOString()}:undefined;return {...s,clients:contact?[contact,...s.clients]:s.clients,invoices:[{id:crypto.randomUUID(),clientId:contact?.id,customerName,customerEmail:String(f.get("customerEmail")||""),customerCompany:String(f.get("customerCompany")||""),number:"INV-"+String(s.invoices.length+1).padStart(4,"0"),description:String(f.get("description")),issueDate:date(),dueDate:String(f.get("dueDate")),quantity:qty,unitPriceMinor:price,currency:s.currency,status:"Draft"},...s.invoices]}});setModal(null);setError("")}catch(e){setError(e instanceof Error?e.message:"Check the invoice details.")}};
