@@ -64,7 +64,7 @@ test("VAT-registered workspace calculates and preserves VAT on a quotation conve
   await expect(invoiceRow).toContainText(/115/);
   const converted = await page.evaluate(async () => {
     const response = await fetch("/api/workspace", { cache: "no-store" });
-    return (await response.json()).workspace;
+    return (await response.json() as { workspace: any }).workspace;
   });
   const savedInvoice = converted.invoices.find((invoice: any) => invoice.customerName === "VAT Test Customer");
   expect(savedInvoice.lineItems[0]).toMatchObject({
