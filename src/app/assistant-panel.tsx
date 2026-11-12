@@ -119,7 +119,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       setError("Add a customer name and a valid document date before saving.");
       return;
     }
-    if (draftReview.customerEmail && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(draftReview.customerEmail.trim())) {
+    if (draftReview.customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draftReview.customerEmail.trim())) {
       setError("Enter a valid customer email address or leave it blank.");
       return;
     }
