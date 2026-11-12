@@ -160,8 +160,8 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
         </div>
         {error && <p className="assistant-error" role="alert">{error}</p>}
         {consent && <form className="assistant-composer" onSubmit={event => { event.preventDefault(); void submit(); }}>
-          <textarea value={prompt} onChange={event => setPrompt(event.target.value)} placeholder="Ask Invoqly to prepare, analyse or follow up…" rows={2} maxLength={2000} disabled={busy}/>
-          <button className="btn btn-primary" disabled={busy || !prompt.trim()} aria-label="Send message"><Send size={16}/> Send</button>
+          <textarea value={prompt} onChange={event => setPrompt(event.target.value)} aria-label="Ask your business co-pilot" placeholder="Ask Invoqly to prepare, analyse or follow up…" rows={2} maxLength={2000} disabled={busy || approving}/>
+          <button className="btn btn-primary" disabled={busy || approving || !prompt.trim()} aria-label="Send message"><Send size={16}/> Send</button>
         </form>}
         {consent && <p className="assistant-footnote">20 AI requests per workspace per day. Turn off AI at any time. Your records are never changed or messages sent without approval.</p>}
       </div>
