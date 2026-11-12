@@ -34,7 +34,7 @@ describe("shareable document PDF", () => {
     })) };
     const source = await createDocumentPdf(long).text();
     expect(source).toContain("/Count 2");
-    expect((source.match(/\\/Type \\/Page /g) ?? []).length).toBe(2);
+    expect((source.match(/\/Type \/Page /g) ?? []).length).toBe(2);
     expect(source).toContain("Service line 48");
   });
 
