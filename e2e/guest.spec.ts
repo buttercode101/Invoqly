@@ -29,12 +29,12 @@ test("guest can work without signup, then import their local records after creat
   await page.locator('input[name="extraQuantity"]').fill("1");
   await page.locator('input[name="extraPrice"]').fill("150.00");
   await page.getByRole("button",{name:"Create invoice"}).click();
-  await expect(page.getByRole("button",{name:"Print / PDF"})).toBeVisible();
-  const printPopupPromise=page.waitForEvent("popup");
-  await page.getByRole("button",{name:"Print / PDF"}).click();
-  const printPopup=await printPopupPromise;
-  await expect(printPopup.locator("h1").first()).toHaveText("Guest Studio");
-  await printPopup.close();
+  await expect(page.getByRole("button",{name:"Preview PDF"})).toBeVisible();
+  await page.getByRole("button",{name:"Preview PDF"}).click();
+  const invoicePreview=page.getByRole("dialog",{name:/Invoice ·/});
+  await expect(invoicePreview).toBeVisible();
+  await expect(invoicePreview.getByTitle("Final PDF document preview")).toBeVisible();
+  await invoicePreview.getByRole("button",{name:"Close PDF preview"}).click();
   await page.getByRole("button",{name:"New invoice"}).click();
   await page.getByLabel("Customer name").fill("Guest Second Customer");
   await page.getByLabel("Email address").fill("second@example.com");
