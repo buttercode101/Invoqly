@@ -106,6 +106,8 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       if (ok) {
         setResult(null);
         setMessages(current => [...current, { role: "assistant", content: "Approved. The full payment has been recorded in your workspace." }]);
+      } else {
+        setError("The payment was not recorded. Check the invoice balance and try again; no payment was added by this action.");
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The payment could not be recorded. No other records were changed.");
