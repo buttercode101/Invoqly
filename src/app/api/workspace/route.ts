@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { env } from "cloudflare:workers";
+import { headReceiptObject } from "@/lib/receipts";
 import { z } from "zod";
 import { withDb } from "@/lib/db";
 import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, quoteCounters, quotes, workspaces } from "@/lib/db/schema";
@@ -195,8 +195,7 @@ export async function POST(request:Request) {
       if (input.receiptObjectKey) {
         const prefix = workspace.id + "/expenses/";
         if (!input.receiptObjectKey.startsWith(prefix) || input.receiptObjectKey.includes("..")) throw new Error("The receipt attachment does not belong to this workspace.");
-        const bucket = (env as unknown as { R2_RECEIPTS: { head(key:string):Promise<unknown|null> } }).R2_RECEIPTS;
-        if (!(await bucket.head(input.receiptObjectKey))) throw new Error("The receipt upload could not be found. Upload it again before saving the expense.");
+        if (!(await headReceiptObject(input.receiptObjectKey))) throw new Error("The receipt upload could not be found. Upload it again before saving the expense.");
       }
       await db.transaction(async tx=>{
         const [created] = await tx.insert(expenses).values({workspaceId:workspace.id,vendor:input.vendor,category:input.category,date:input.date,amountMinor:input.amountMinor,currency:input.currency,notes:input.notes,receiptObjectKey:input.receiptObjectKey??null}).returning();
