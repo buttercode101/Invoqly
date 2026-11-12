@@ -119,11 +119,18 @@ test("execution mode requires explicit approval and records exactly one full set
 
   const invoiceId = data.workspace.invoices.find(item => item.number === invoiceNumber)?.id;
   expect(invoiceId).toBeTruthy();
-  const duplicatePayment = await page.request.post("/api/workspace", { data: {
-    action: "create-payment", invoiceId, date: "2026-11-12", amountMinor: 32500,
-    currency: "ZAR", method: "Manual", reference: "duplicate-settlement-guard"
-  } });
-  expect(duplicatePayment.status()).toBe(409);
+  const duplicatePayment = await page.evaluate(async (id: string) => {
+    const response = await fetch("/api/workspace", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "create-payment", invoiceId: id, date: "2026-11-12", amountMinor: 32500,
+        currency: "ZAR", method: "Manual", reference: "duplicate-settlement-guard"
+      })
+    });
+    return { status: response.status };
+  }, invoiceId!);
+  expect(duplicatePayment.status).toBe(409);
   workspace = await page.request.get("/api/workspace");
   data = await workspace.json();
   expect(data.workspace.payments).toHaveLength(1);
