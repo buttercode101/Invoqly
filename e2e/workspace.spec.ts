@@ -115,6 +115,16 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await goTo(page,"Expenses");
   await expect(page.getByText("Cloud hosting")).toBeVisible();
   await expect(page.getByRole("link",{name:"View receipt photo for Cloud hosting"})).toBeVisible();
+  await page.setViewportSize({width:390,height:844});
+  await expect(page.locator(".side-nav .nav-item[data-nav]")).toHaveCount(9);
+  await expect(page.locator('.side-nav .nav-item[data-nav="AI Co-pilot"]')).toBeHidden();
+  await expect(page.getByRole("button",{name:"More workspace sections"})).toBeVisible();
+  await page.getByRole("button",{name:"More workspace sections"}).click();
+  await expect(page.locator(".mobile-more-menu")).toBeVisible();
+  await page.locator(".mobile-more-menu").getByRole("button",{name:"Settings"}).click();
+  await expect(page.locator(".mobile-more-menu")).toHaveCount(0);
+  await page.screenshot({path:"test-results/workspace-mobile-navigation.png",fullPage:true});
+  await page.setViewportSize({width:1280,height:900});
   for (const width of [320,375,768,1120]) {
     await page.setViewportSize({width,height:900});
     const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
