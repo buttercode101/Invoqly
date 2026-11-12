@@ -52,9 +52,15 @@ test("live AI co-pilot prepares an editable quotation and saves the user's appro
   await expect(page.getByLabel("Unit price")).toHaveValue("100.00");
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: "test-results/invoqly-ai-edit-form-mobile-390.png", fullPage: true });
-  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({ path: "test-results/invoqly-ai-edit-form-mobile-390-top.png", fullPage: true });
+  await page.setViewportSize({ width: 320, height: 720 });
+  const editDimensions = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, document: document.documentElement.scrollWidth }));
+  expect(editDimensions.document).toBeLessThanOrEqual(editDimensions.viewport);
+  await page.getByLabel("Unit price").scrollIntoViewIfNeeded();
   await page.getByLabel("Unit price").fill("125.00");
+  await page.getByRole("button", { name: "Create quotation" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("button", { name: "Create quotation" })).toBeVisible();
+  await page.screenshot({ path: "test-results/invoqly-ai-edit-form-mobile-320-bottom.png", fullPage: true });
   await page.getByRole("button", { name: "Create quotation" }).click();
 
   const createdQuote = page.locator("tbody tr").filter({ hasText: customer });
