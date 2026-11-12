@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 test.skip(process.env.RUN_REMOTE_RECEIPT_E2E !== "1", "Requires Cloudflare preview R2 storage.");
 
 test("expense receipt photo uploads and remains available after reload", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/sign-up");
   await page.getByLabel("Your name").fill("Receipt QA");
   await page.getByLabel("Email address").fill("receipt-qa-" + Date.now() + "@example.com");
