@@ -25,6 +25,23 @@ describe("client payment profiles", () => {
     }]);
   });
 
+  it("uses early payments for average time and preferred method without counting future invoices as due", () => {
+    const result = buildClientPaymentProfiles({
+      ...base,
+      invoices: [...base.invoices, {
+        id: "i4", clientId: "c1", issueDate: "2026-11-10", dueDate: "2026-12-01",
+        quantity: 1, unitPriceMinor: 5_000, currency: "ZAR", status: "Paid"
+      }],
+      payments: [...base.payments, {
+        invoiceId: "i4", date: "2026-11-11", amountMinor: 5_000, currency: "ZAR", method: "Card"
+      }]
+    })[0];
+    expect(result?.dueInvoiceCount).toBe(3);
+    expect(result?.paidInvoiceCount).toBe(3);
+    expect(result?.averageDaysToPay).toBe(8);
+    expect(result?.preferredPaymentMethod).toBe("Card");
+  });
+
   it("does not invent a score when the client has no due invoices", () => {
     const result = buildClientPaymentProfiles({ ...base, invoices: [] })[0];
     expect(result?.onTimeRatePercent).toBeNull();
