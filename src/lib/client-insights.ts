@@ -65,12 +65,12 @@ export function buildClientPaymentProfiles(input: {
   }
 
   return input.clients.map(client => {
-    const dueInvoices = input.invoices.filter(invoice =>
+    const clientInvoices = input.invoices.filter(invoice =>
       invoice.clientId === client.id &&
       invoice.currency === client.currency &&
-      invoice.status !== "Draft" &&
-      parseDate(invoice.dueDate, "Invoice due date") <= parseDate(input.asOfDate, "As-of date")
+      invoice.status !== "Draft"
     );
+    const dueInvoices = clientInvoices.filter(invoice => parseDate(invoice.dueDate, "Invoice due date") <= parseDate(input.asOfDate, "As-of date"));
     let onTimeInvoiceCount = 0;
     let paidInvoiceCount = 0;
     let lateInvoiceCount = 0;
@@ -78,31 +78,36 @@ export function buildClientPaymentProfiles(input: {
     const paymentDays: number[] = [];
     const methods = new Map<string, { count: number; latestDate: string }>();
 
-    for (const invoice of dueInvoices) {
+    for (const invoice of clientInvoices) {
       const total = invoice.quantity * invoice.unitPriceMinor;
       if (!Number.isSafeInteger(total) || total <= 0) throw new Error("Invoice total is invalid for client payment analysis.");
-      const rows = paymentByInvoice.get(invoice.id) ?? [];
-      const paid = rows.filter(payment => payment.currency === invoice.currency);
-      const paidMinor = paid.reduce((sum, payment) => addSafe(sum, payment.amountMinor), 0);
+      const rows = (paymentByInvoice.get(invoice.id) ?? []).filter(payment =>
+        payment.currency === invoice.currency && payment.date <= input.asOfDate
+      );
+      const paidMinor = rows.reduce((sum, payment) => addSafe(sum, payment.amountMinor), 0);
       const fullyPaid = paidMinor >= total;
-      const latestPaymentDate = paid.map(payment => payment.date).sort().at(-1) ?? null;
+      const sortedPaymentDates = rows.map(payment => payment.date).sort();
+      const latestPaymentDate = sortedPaymentDates[sortedPaymentDates.length - 1] ?? null;
 
       if (fullyPaid && latestPaymentDate) {
         paidInvoiceCount++;
         const days = Math.max(0, Math.floor((parseDate(latestPaymentDate, "Payment date") - parseDate(invoice.issueDate, "Invoice issue date")) / DAY_MS));
         paymentDays.push(days);
-        if (latestPaymentDate <= invoice.dueDate) onTimeInvoiceCount++;
-        else lateInvoiceCount++;
-      } else {
-        overdueBalanceMinor = addSafe(overdueBalanceMinor, Math.max(0, total - paidMinor));
-        lateInvoiceCount++;
       }
 
-      for (const payment of paid) {
+      for (const payment of rows) {
         const method = payment.method.trim();
         if (!method) continue;
         const current = methods.get(method) ?? { count: 0, latestDate: "" };
         methods.set(method, { count: current.count + 1, latestDate: payment.date > current.latestDate ? payment.date : current.latestDate });
+      }
+
+      if (parseDate(invoice.dueDate, "Invoice due date") <= parseDate(input.asOfDate, "As-of date")) {
+        if (fullyPaid && latestPaymentDate && latestPaymentDate <= invoice.dueDate) onTimeInvoiceCount++;
+        else {
+          lateInvoiceCount++;
+          if (!fullyPaid) overdueBalanceMinor = addSafe(overdueBalanceMinor, Math.max(0, total - paidMinor));
+        }
       }
     }
 
