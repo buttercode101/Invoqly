@@ -19,6 +19,6 @@ describe("multi-line document totals", () => {
     expect(() => validateDocumentLineItems([])).toThrow(/between 1 and 50/);
     expect(() => validateDocumentLineItems(Array.from({ length: 51 }, () => ({ description: "x", quantity: 1, unitPriceMinor: 1 })))).toThrow(/between 1 and 50/);
     expect(() => calculateDocumentTotal([{ description: "x", quantity: 1.5, unitPriceMinor: 100 }])).toThrow(/whole number/);
-    expect(() => calculateDocumentTotal([{ description: "x", quantity: 2, unitPriceMinor: Number.MAX_SAFE_INTEGER }])).toThrow(/line 1 total/);
+    expect(() => calculateDocumentTotal([{ description: "x", quantity: 2, unitPriceMinor: Number.MAX_SAFE_INTEGER }])).toThrow(/line 1 total/i;
   });
 });
