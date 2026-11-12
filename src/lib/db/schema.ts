@@ -58,6 +58,8 @@ export const workspaces = pgTable("workspaces", {
   vatRegistered: boolean("vat_registered").notNull().default(false),
   vatNumber: varchar("vat_number", { length: 10 }).notNull().default(""),
   businessAddress: varchar("business_address", { length: 250 }).notNull().default(""),
+  openingCashBalanceMinor: bigint("opening_cash_balance_minor", { mode: "number" }),
+  cashReserveMinor: bigint("cash_reserve_minor", { mode: "number" }).notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
