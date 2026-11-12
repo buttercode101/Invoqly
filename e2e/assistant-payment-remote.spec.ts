@@ -78,7 +78,11 @@ test("execution mode requires explicit approval and records exactly one full set
   await ask.fill(`Mark invoice ${invoiceNumber} paid in full and record the payment.`);
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByRole("heading", { name: "Record payment" })).toBeVisible({ timeout: 75_000 });
+  const paymentResponsePromise = page.waitForResponse(response => response.url().endsWith("/api/workspace") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Confirm and record payment" }).click();
+  const paymentResponse = await paymentResponsePromise;
+  const paymentPayload = await paymentResponse.json() as { error?: string };
+  expect(paymentResponse.status(), paymentPayload.error ?? "approved payment must be recorded successfully").toBe(200);
   await expect(page.getByText("Approved. The full payment has been recorded in your workspace.")).toBeVisible();
   workspace = await page.request.get("/api/workspace");
   data = await workspace.json();
