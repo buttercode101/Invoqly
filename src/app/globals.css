@@ -176,3 +176,10 @@
 .assistant-client-metrics span{font-size:9px;line-height:1.35;color:#849087}
 .assistant-client-profile-foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#78837a;font-size:10px}
 @media(max-width:420px){.assistant-client-metrics{gap:6px}.assistant-client-metrics strong{font-size:12px}}
+
+
+.assistant-line-item{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid #edf0ed}
+.assistant-line-item>div{display:grid;gap:4px;min-width:0}
+.assistant-line-item>div b{font-size:12px;color:#29372e;overflow-wrap:anywhere}
+.assistant-line-item>div span{font-size:10px;color:#7b857d}
+.assistant-line-item>strong{font-size:12px;color:#34483a;white-space:nowrap;font-variant-numeric:tabular-nums}
