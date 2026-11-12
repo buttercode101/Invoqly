@@ -49,7 +49,7 @@ function validIsoDate(value: string | undefined): string | null {
   return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 10) === value ? value : null;
 }
 function explicitDocumentDate(message: string): string | null {
-  const iso = message.match(/\b20\d{2}-\d{2}-\d{2}\b/)?.[0];
+  const iso = message.match(/\b(?:due(?:\s+date)?|valid(?:\s+until)?|expires?|by)\s+(?:on\s+)?(20\d{2}-\d{2}-\d{2})\b/i)?.[1];
   if (iso) return validIsoDate(iso);
   const relative = message.match(/\b(?:due|valid|expires?)\s+(?:in|for|after)\s+(\d{1,3})\s+days?\b/i) ?? message.match(/\b(?:in|after)\s+(\d{1,3})\s+days?\b/i);
   if (!relative) return null;
