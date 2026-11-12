@@ -95,7 +95,9 @@ describe("deterministic cash-flow engine", () => {
       inflowsMinor: 6_500_000, outflowsMinor: 3_300_000, netMinor: 3_200_000,
       openingBalanceMinor: 10_000_000, closingBalanceMinor: 13_200_000
     });
-    expect(result.safeToSpendMinor).toBe(8_000_000);
+    // 52 weekly contractor payments make the 12-month closing cash R12,000; below the R20,000 reserve.
+    expect(result.lowestProjectedBalanceMinor).toBe(1_200_000);
+    expect(result.safeToSpendMinor).toBe(0);
   });
 
   it("reconciles a delayed-receipt and delayed-supplier scenario against the baseline by hand", () => {
