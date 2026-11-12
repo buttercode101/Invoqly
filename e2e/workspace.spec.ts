@@ -7,7 +7,7 @@ function identity(label:string) {
   return { name:label, email:`${slug}-${suffix}@example.com`, password:"InvoqlySecurePassphrase!2026" };
 }
 
-async function goTo(page:Page,section:string) { await page.locator(".nav-item").filter({hasText:section}).first().click(); }
+async function goTo(page:Page,section:string) { await page.locator(".sidebar .nav-item").filter({hasText:section}).first().click(); }
 
 async function createAccount(page:Page,account:ReturnType<typeof identity>) {
   await page.goto("/sign-up");
