@@ -24,6 +24,10 @@ test("guest can work without signup, then import their local records after creat
   await page.getByLabel("Email address").fill("oneoff@example.com");
   await page.getByLabel("Description").fill("Guest project");
   await page.getByLabel("Unit price (ZAR)").fill("845.00");
+  await page.getByRole("button",{name:"Add another line"}).click();
+  await page.locator('input[name="extraDescription"]').fill("Guest materials");
+  await page.locator('input[name="extraQuantity"]').fill("1");
+  await page.locator('input[name="extraPrice"]').fill("150.00");
   await page.getByRole("button",{name:"Create invoice"}).click();
   await expect(page.getByRole("button",{name:"Print / PDF"})).toBeVisible();
   const printPopupPromise=page.waitForEvent("popup");
@@ -43,6 +47,10 @@ test("guest can work without signup, then import their local records after creat
   await page.getByLabel("Email address").fill("guest-quote@example.com");
   await page.getByLabel("Description").fill("Brand identity package");
   await page.getByLabel("Unit price (ZAR)").fill("3200.00");
+  await page.getByRole("button",{name:"Add another line"}).click();
+  await page.locator('input[name="extraDescription"]').fill("Guest travel");
+  await page.locator('input[name="extraQuantity"]').fill("1");
+  await page.locator('input[name="extraPrice"]').fill("250.00");
   await page.getByRole("button",{name:"Create quotation"}).click();
   await page.getByRole("button",{name:"Mark as sent"}).click();
   await page.getByRole("button",{name:"Accept"}).click();
@@ -88,6 +96,10 @@ test("guest can work without signup, then import their local records after creat
   await expect(page.getByText("Guest One-off Customer")).toHaveCount(0);
   await page.locator(".nav-item").filter({hasText:"Invoices"}).click();
   await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Guest project");
+  await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Guest project +1 more line");
+  await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("995");
+  await expect(page.locator("tbody tr").filter({hasText:"Guest Quote Customer"})).toContainText("Brand identity package +1 more line");
+  await expect(page.locator("tbody tr").filter({hasText:"Guest Quote Customer"})).toContainText(/3[\s\u00a0,]?450/);
   await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Paid");
   await expect(page.locator("tbody tr").filter({hasText:"Guest Second Customer"})).toContainText("Draft");
   await page.locator(".nav-item").filter({hasText:"Expenses"}).click();

@@ -42,6 +42,24 @@ describe("client payment profiles", () => {
     expect(result?.preferredPaymentMethod).toBe("Card");
   });
 
+  it("uses the full multi-line invoice total when measuring overdue balances", () => {
+    const result = buildClientPaymentProfiles({
+      ...base,
+      invoices: [{
+        id: "multi", clientId: "c1", issueDate: "2026-10-01", dueDate: "2026-10-15",
+        quantity: 1, unitPriceMinor: 10_000, currency: "ZAR", status: "Overdue",
+        lineItems: [
+          { description: "Labour", quantity: 1, unitPriceMinor: 10_000 },
+          { description: "Materials", quantity: 1, unitPriceMinor: 5_000 }
+        ]
+      }],
+      payments: [{ invoiceId: "multi", date: "2026-10-10", amountMinor: 12_000, currency: "ZAR", method: "Bank transfer" }]
+    })[0];
+    expect(result?.paidInvoiceCount).toBe(0);
+    expect(result?.overdueBalanceMinor).toBe(3_000);
+    expect(result?.onTimeRatePercent).toBe(0);
+  });
+
   it("does not invent a score when the client has no due invoices", () => {
     const result = buildClientPaymentProfiles({ ...base, invoices: [] })[0];
     expect(result?.onTimeRatePercent).toBeNull();

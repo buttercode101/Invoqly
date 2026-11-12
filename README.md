@@ -9,6 +9,7 @@ Invoqly is a business finance workspace for independent professionals and small 
 Open the public site and choose **Try Invoqly free — no account**. Guest mode currently supports:
 
 - Create invoices immediately by typing customer details manually; saving a contact is optional.
+- Add multiple priced lines to invoices and quotations, with deterministic totals and PDF output.
 - Save reusable contacts when you choose.
 - Create quotations, print or save them as PDF, track sent/accepted/declined status, and convert accepted quotes into invoices.
 - Draft and issue invoices.
@@ -30,7 +31,7 @@ Creating an account is optional for guest core functionality. No subscription or
 
 - Invoqly records payments manually; it does not process card or bank payments.
 - Email delivery and automated reminders are not yet enabled. The AI co-pilot can prepare reminder drafts, but it does not send or schedule them.
-- The optional AI co-pilot is available in authenticated workspaces after explicit privacy consent. It can prepare invoice/quote drafts, rank overdue receivables, draft reminders and model supported cash-flow scenarios. AI never performs financial arithmetic or writes records without approval.
+- The optional AI co-pilot is available in authenticated workspaces after explicit privacy consent. It can prepare multi-line invoice/quote drafts using exact historical line prices or user-stated prices, rank overdue receivables, draft reminders and model supported cash-flow scenarios. AI never performs financial arithmetic or writes records without approval.
 - The deterministic South African VAT calculation and tax-invoice validation core exists, but it is not yet integrated into invoice/expense records. VAT201 is not filed or submitted; any working summary requires practitioner review.
 - Cash-flow scenarios currently use recorded invoices and future-dated expenses. There are no connected bank feeds, payment gateways, opening cash balance or verified safe-to-spend amount yet.
 - Client payment-behaviour profiles now derive transparent on-time rates, average days to pay and preferred methods from recorded invoices/payments; they are not credit scores. Full communication timelines, receipt OCR, voice/photo document extraction and automated follow-ups are not yet implemented.
