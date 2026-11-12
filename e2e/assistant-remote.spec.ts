@@ -111,6 +111,7 @@ test("live AI co-pilot prepares an editable quotation and saves the user's appro
   await page.screenshot({ path: "test-results/invoqly-ai-edit-form-mobile-320-bottom.png", fullPage: true });
   await page.getByRole("button", { name: "Create quotation" }).click();
 
+  await page.setViewportSize({ width: 1440, height: 1000 });
   const createdQuote = page.locator("tbody tr").filter({ hasText: customer });
   await expect(createdQuote).toBeVisible({ timeout: 20_000 });
   await expect(createdQuote).toContainText("Draft");
