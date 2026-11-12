@@ -9,12 +9,16 @@ const cloudflareDatabaseAdapter = fileURLToPath(
 const cloudflareAiAdapter = fileURLToPath(
   new URL("./src/lib/ai.cloudflare.ts", import.meta.url)
 );
+const cloudflareReceiptAdapter = fileURLToPath(
+  new URL("./src/lib/receipts.cloudflare.ts", import.meta.url)
+);
 
 export default defineConfig({
   resolve: {
     alias: [
       { find: "@/lib/db/connection", replacement: cloudflareDatabaseAdapter },
-      { find: "@/lib/ai", replacement: cloudflareAiAdapter }
+      { find: "@/lib/ai", replacement: cloudflareAiAdapter },
+      { find: "@/lib/receipts", replacement: cloudflareReceiptAdapter }
     ]
   },
   plugins: [
