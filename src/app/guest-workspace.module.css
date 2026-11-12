@@ -12,3 +12,10 @@
 .shell :is(a,button,input,select):focus-visible{outline:2px solid #6f9b7a;outline-offset:2px}
 @media(hover:hover){.side nav button:hover,.quick button:hover,.rowRight button:hover{background:#edf3ee;color:#244f3d;border-color:#cbdacb}.primary:hover,.account:hover{background:#1d4233}}
 @media(prefers-reduced-motion:reduce){.shell *{scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+.restore{position:relative;display:inline-flex;align-items:center;min-height:36px;padding:8px 10px;border:1px solid #dfe7df;border-radius:5px;background:#fff;color:#315d45;font-size:10px;font-weight:700;cursor:pointer}
+.restore input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.restore:focus-within{outline:2px solid #6f9b7a;outline-offset:2px}
+.backupActions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.success{font-size:12px;color:#2f6b45;background:#eef6ef;border:1px solid #dcebdc;padding:10px 12px;border-radius:7px}
+@media(max-width:620px){.restore{min-height:44px}.backupActions{align-items:stretch}.backupActions>*{flex:1;justify-content:center}}
