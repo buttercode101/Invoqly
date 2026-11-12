@@ -140,7 +140,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       const response = await fetch("/api/assistant/consent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accepted }) });
       if (!response.ok) throw new Error("Could not update the AI privacy preference.");
       setConsent(accepted);
-      if (!accepted) { setMessages([]); setResult(null); }
+      if (!accepted) { setMessages([]); setResult(null); setExecutionMode(false); }
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not update the AI privacy preference."); }
   };
 
@@ -176,7 +176,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
           {consent && messages.length === 0 && <div className="assistant-welcome">
             <Sparkles size={22}/>
             <h2>What would you like to get done?</h2>
-            <p>I can prepare document drafts, model supported cash-flow scenarios and draft payment reminders using your workspace records.</p>
+            <p>I can prepare document drafts, model supported cash-flow scenarios and draft payment reminders using your workspace records. Turn on Execution mode to prepare a full-settlement payment action for your approval.</p>
             <div className="assistant-suggestions">
               {suggestions.map(item => <button key={item} onClick={() => void submit(item)} disabled={busy || approving}>{item}<ArrowUpRight size={14}/></button>)}
             </div>
