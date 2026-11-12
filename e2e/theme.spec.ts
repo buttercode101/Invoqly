@@ -33,7 +33,7 @@ test("light and dark themes toggle, persist and remain legible at phone and desk
       const heading = document.querySelector("h1");
       const supporting = document.querySelector("section p");
       const panelHeading = document.querySelector("h2");
-      const panel = panelHeading?.parentElement?.parentElement;
+      const panel = panelHeading?.parentElement?.parentElement?.parentElement;
       const panelSupporting = panelHeading?.nextElementSibling;
       return {
         viewport: document.documentElement.clientWidth,
