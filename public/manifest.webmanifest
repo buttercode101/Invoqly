@@ -1,0 +1,12 @@
+{
+  "id": "/",
+  "name": "Invoqly — Business, in good order.",
+  "short_name": "Invoqly",
+  "description": "Invoices, quotations and business records that work on your device.",
+  "start_url": "/guest",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f6f2",
+  "theme_color": "#f5f6f2",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

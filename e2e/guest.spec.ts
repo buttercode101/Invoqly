@@ -4,6 +4,12 @@ test("guest can work without signup, then import their local records after creat
   await page.goto("/");
   await page.getByRole("link",{name:"Try Invoqly free — no account"}).click();
   await expect(page).toHaveURL(/\/guest$/);
+  await page.evaluate(async () => { if ("serviceWorker" in navigator) await navigator.serviceWorker.ready; });
+  await expect(page.getByRole("heading",{name:"Your business, in good order."})).toBeVisible();
+  await page.context().setOffline(true);
+  await page.reload();
+  await expect(page.getByRole("heading",{name:"Your business, in good order."})).toBeVisible();
+  await page.context().setOffline(false);
   await expect(page.getByRole("heading",{name:"Your business, in good order."})).toBeVisible();
   await page.getByRole("button",{name:"Settings"}).click();
   await page.getByLabel("Business or trading name").fill("Guest Studio");
