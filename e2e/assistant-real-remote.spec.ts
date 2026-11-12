@@ -25,13 +25,13 @@ test("real Workers AI prepares a priced invoice draft that is reviewed before sa
 
   await expect(page.getByRole("heading", { name: "Invoice draft" })).toBeVisible({ timeout: 90_000 });
   await expect(page.getByLabel("Review customer name")).toHaveValue("Remote AI Draft Customer");
-  await expect(page.locator(".assistant-draft-total")).toContainText(/2[\\s\\u00a0]?500/);
+  await expect(page.locator(".assistant-draft-total")).toContainText(/2.500/);
   await expect(page.locator(".nav-item").filter({ hasText: "Invoices" }).first()).toContainText("0");
   await page.screenshot({ path: "test-results/ai-real-workers-draft.png", fullPage: true });
 
   await page.getByRole("button", { name: "Approve and create" }).click();
   await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
   const invoice = page.locator("tbody tr").filter({ hasText: "Remote AI Draft Customer" });
-  await expect(invoice).toContainText(/2[\\s\\u00a0]?500/);
+  await expect(invoice).toContainText(/2.500/);
   await expect(invoice).toContainText("Draft");
 });
