@@ -29,10 +29,13 @@ Creating an account is optional for guest core functionality. No subscription or
 ## Current product boundaries
 
 - Invoqly records payments manually; it does not process card or bank payments.
-- Email delivery and automated reminders are not yet enabled.
-- Tax calculations and jurisdiction-specific invoice compliance are not yet implemented.
+- Email delivery and automated reminders are not yet enabled. The AI co-pilot can prepare reminder drafts, but it does not send or schedule them.
+- The optional AI co-pilot is available in authenticated workspaces after explicit privacy consent. It can prepare invoice/quote drafts, rank overdue receivables, draft reminders and model supported cash-flow scenarios. AI never performs financial arithmetic or writes records without approval.
+- The deterministic South African VAT calculation and tax-invoice validation core exists, but it is not yet integrated into invoice/expense records. VAT201 is not filed or submitted; any working summary requires practitioner review.
+- Cash-flow scenarios currently use recorded invoices and future-dated expenses. There are no connected bank feeds, payment gateways, opening cash balance or verified safe-to-spend amount yet.
+- Client payment-behaviour scoring, full communication timelines, receipt OCR, voice/photo document extraction and automated follow-ups are not yet implemented.
 - Guest data is device-local until imported. Cloud data requires authentication and is tenant-scoped.
-- The Cloudflare preview has passed the release-candidate verification suite. Production deployment remains gated on a production Hyperdrive configuration and release workflow. Invoqly is not a tax-compliance service; do not rely on it as a substitute for professional tax or accounting advice.
+- The Cloudflare preview has passed the release-candidate verification suite. Production deployment remains gated on a dedicated production Hyperdrive configuration and the production migration/release workflow. Invoqly is not a tax-compliance service; do not rely on it as a substitute for professional tax or accounting advice.
 
 ## Architecture
 
