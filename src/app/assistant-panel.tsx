@@ -21,6 +21,7 @@ type AssistantResult = {
   reminders?: Reminder[];
   priorities?: Array<{ invoiceId: string; number: string; customerName: string; openAmountMinor: number; daysOverdue: number; currency: string }>;
   totalImpactMinor?: number;
+  profiles?: Array<{ clientId: string; clientName: string; currency: string; onTimeRatePercent: number | null; averageDaysToPay: number | null; preferredPaymentMethod: string | null; overdueBalanceMinor: number; dueInvoiceCount: number; onTimeInvoiceCount: number; paidInvoiceCount: number; lateInvoiceCount: number; confidence: "low" | "medium" | "high" | "none" }>;
   error?: string;
 };
 type Message = { role: "user" | "assistant"; content: string };
@@ -187,6 +188,24 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
           </div>
           <p className="assistant-footnote">Opening cleared cash is not set. These are projected cash movements, not account balances. Safe-to-spend remains unavailable until a verified opening cash balance and reserve are entered.</p>
         </div>}
+        {result?.profiles && <div className="panel assistant-draft">
+          <div className="assistant-card-label"><span><Check size={14}/></span> PAYMENT HISTORY</div>
+          <h2>Client payment behaviour</h2>
+          {result.profiles.length === 0 && <p className="assistant-footnote">No saved clients are available to analyse yet.</p>}
+          {result.profiles.map(profile => <div className="assistant-client-profile" key={profile.clientId}>
+            <div className="assistant-client-profile-top"><b>{profile.clientName}</b><span className={"assistant-confidence " + profile.confidence}>{profile.confidence === "none" ? "No history" : profile.confidence + " sample"}</span></div>
+            <div className="assistant-client-metrics">
+              <div><strong>{profile.onTimeRatePercent === null ? "—" : profile.onTimeRatePercent + "%"}</strong><span>Paid on time</span></div>
+              <div><strong>{profile.averageDaysToPay === null ? "—" : profile.averageDaysToPay + " days"}</strong><span>Average time to pay</span></div>
+              <div><strong>{fmt(profile.overdueBalanceMinor, profile.currency)}</strong><span>Overdue balance</span></div>
+            </div>
+            <div className="assistant-client-profile-foot">
+              <span>{profile.paidInvoiceCount} paid of {profile.dueInvoiceCount} due invoices</span>
+              <span>{profile.preferredPaymentMethod ? "Often pays by " + profile.preferredPaymentMethod : "No preferred method yet"}</span>
+            </div>
+          </div>)}
+          <p className="assistant-footnote">The percentage is the share of invoices paid by their due date. It is not a credit score or a prediction. Low samples are labelled; missing history is not treated as poor reliability.</p>
+        </div>}
         {result?.priorities && result.priorities.length > 0 && <div className="panel assistant-draft">
           <div className="assistant-card-label"><span><Check size={14}/></span> PRIORITISED BY CASH IMPACT</div>
           <h2>Invoices to chase first</h2>
@@ -207,7 +226,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
           </div>)}
           <p className="assistant-footnote">Nothing has been sent or scheduled. Review and send through your chosen channel.</p>
         </div>}
-        {!result?.draft && !result?.scenario && !(result?.reminders?.length) && !(result?.priorities?.length) && <div className="panel assistant-boundary">
+        {!result?.draft && !result?.scenario && !(result?.reminders?.length) && !(result?.priorities?.length) && !result?.profiles && <div className="panel assistant-boundary">
           <b>What the co-pilot can use today</b>
           <div><span>Clients</span><strong>{workspace.clients.length}</strong></div>
           <div><span>Invoices</span><strong>{workspace.invoices.length}</strong></div>
