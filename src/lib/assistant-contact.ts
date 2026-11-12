@@ -5,7 +5,7 @@ export function resolveAssistantCustomerContact(input: {
   proposedCompany?: string | null;
   savedClient?: SavedCustomerContact | null;
 }): { email: string; company: string } {
-  const explicitEmails = [...input.message.matchAll(/\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b/gi)].map(match => match[0]!);
+  const explicitEmails = [...input.message.matchAll(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi)].map(match => match[0]!);
   const savedEmail = input.savedClient?.email?.trim() ?? "";
   const savedCompany = input.savedClient?.company?.trim() ?? "";
   const proposedCompany = input.proposedCompany?.trim() ?? "";
