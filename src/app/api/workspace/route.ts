@@ -15,7 +15,7 @@ const currency = z.string().regex(/^[A-Z]{3}$/).refine(value=>{try{new Intl.Numb
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>{const [year,month,day]=value.split("-").map(Number);const parsed=new Date(Date.UTC(year,month-1,day));return parsed.getUTCFullYear()===year&&parsed.getUTCMonth()===month-1&&parsed.getUTCDate()===day},"Enter a real calendar date.");
 const lineItem = z.object({description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),taxTreatment:z.enum(["standard","zero_rated","exempt","out_of_scope"]).optional(),priceMode:z.enum(["inclusive","exclusive"]).optional()});
 const payload = z.discriminatedUnion("action", [
-  z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20), vatRegistered:z.boolean().optional(), vatNumber:z.string().trim().max(10).optional(), businessAddress:z.string().trim().max(250).optional() }),
+  z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20), vatRegistered:z.boolean().optional(), vatNumber:z.string().trim().max(10).optional(), businessAddress:z.string().trim().max(250).optional(), openingCashBalanceMinor:z.number().int().min(-Number.MAX_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER).nullable().optional(), cashReserveMinor:z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).optional() }),
   z.object({ action:z.literal("create-client"), name:z.string().trim().min(1).max(120), email:z.string().trim().email().max(254).toLowerCase(), company:z.string().max(120).default(""), currency }),
   z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid().optional(), customerName:z.string().trim().min(1).max(120).optional(), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), saveContact:z.boolean().default(false), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), currency, dueDate:date }),
   z.object({ action:z.literal("create-quote"), customerName:z.string().trim().min(1).max(120), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), currency, validUntil:date }),
@@ -124,6 +124,8 @@ export async function POST(request:Request) {
           vatRegistered: input.vatRegistered ?? workspace.vatRegistered,
           vatNumber: input.vatNumber ?? workspace.vatNumber,
           businessAddress: input.businessAddress ?? workspace.businessAddress,
+          openingCashBalanceMinor: input.openingCashBalanceMinor === undefined ? workspace.openingCashBalanceMinor : input.openingCashBalanceMinor,
+          cashReserveMinor: input.cashReserveMinor ?? workspace.cashReserveMinor,
           updatedAt: new Date()
         }).where(eq(workspaces.id, workspace.id));
         await tx.insert(auditEvents).values({
