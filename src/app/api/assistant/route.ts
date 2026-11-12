@@ -9,7 +9,7 @@ import { decimalToMinor, formatMinor } from "@/lib/money";
 import { calculateCashflow, rankReceivablesToChase, totalChaseImpactMinor, type CashflowInvoice, type CashflowPayable } from "@/lib/cashflow";
 import { runBusinessAssistant } from "@/lib/ai";
 import { buildClientPaymentProfiles } from "@/lib/client-insights";
-import { calculateDocumentTotal, resolveDocumentLineItems, type DocumentLineItem } from "@/lib/documents";
+import { applyDocumentTaxProfile, calculateDocumentTax, calculateDocumentTotal, resolveDocumentLineItems, type DocumentLineItem } from "@/lib/documents";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -238,7 +238,7 @@ ${JSON.stringify(modelContext)}`;
             if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1_000_000) return errorResponse("The adjusted labour quantity is outside the supported range.", 422);
             hoursAdditionApplied = true;
           }
-          resolvedLines.push({ description: line.description, quantity, unitPriceMinor: sourceLine.unitPriceMinor });
+          resolvedLines.push({ description: line.description, quantity, unitPriceMinor: sourceLine.unitPriceMinor, taxTreatment: sourceLine.taxTreatment, priceMode: sourceLine.priceMode });
         } else {
           const stated = statedAmounts[line.priceSource.index];
           if (!stated || stated.currency !== currency) {
@@ -248,9 +248,13 @@ ${JSON.stringify(modelContext)}`;
         }
       }
       if (hoursAddition !== null && !hoursAdditionApplied) return NextResponse.json({ reply: "I couldn't safely apply the additional hours to a verified hourly source line. Please confirm the hourly rate and source line.", draft: null });
-      let totalMinor: number;
-      try { totalMinor = calculateDocumentTotal(resolvedLines); }
-      catch (error) { return errorResponse(error instanceof Error ? error.message : "The document total is outside the supported range.", 422); }
+      let taxedLines: DocumentLineItem[];
+      let breakdown: ReturnType<typeof calculateDocumentTax>;
+      try {
+        taxedLines = applyDocumentTaxProfile(resolvedLines, { vatRegistered: snapshot.vatRegistered, taxDate: today(), priceMode: "inclusive" });
+        breakdown = calculateDocumentTax(taxedLines);
+      } catch (error) { return errorResponse(error instanceof Error ? error.message : "The document total is outside the supported range.", 422); }
+      const totalMinor = breakdown.grossMinor;
       const proposedName = fields.data.customerName ?? source?.customerName;
       const matchedClient = snapshot.clients.find(c => c.name.toLowerCase() === (proposedName ?? "").toLowerCase());
       const customerName = matchedClient?.name ?? proposedName;
@@ -264,13 +268,13 @@ ${JSON.stringify(modelContext)}`;
       const customerCompany = matchedClient?.company ?? fields.data.customerCompany ?? "";
       const documentData = {
         ...(matchedClient && action.type === "create_invoice" ? { clientId: matchedClient.id } : {}),
-        customerName, customerEmail, customerCompany, description: firstLine.description, quantity: firstLine.quantity, unitPriceMinor: firstLine.unitPriceMinor, lineItems: resolvedLines, currency,
+        customerName, customerEmail, customerCompany, description: firstLine.description, quantity: firstLine.quantity, unitPriceMinor: firstLine.unitPriceMinor, lineItems: taxedLines, currency,
         ...(action.type === "create_quote" ? { validUntil: dueDate } : { dueDate, saveContact: false })
       };
       const documentLabel = action.type === "create_quote" ? "quotation" : "invoice";
       return NextResponse.json({
         reply: "Draft prepared for " + customerName + " with " + resolvedLines.length + " line item(s). " + (explicitDate ? "I used the date you specified." : "I applied the standard 14-day date; review it before approval.") + " Review each line and the server-calculated total. Nothing is saved until you approve it.",
-        draft: { type: action.type === "create_quote" ? "create_quote" : "create_invoice", data: documentData, lineItems: resolvedLines.map(item => ({ ...item, lineTotalMinor: item.quantity * item.unitPriceMinor })), sourceDocumentNumber: source?.number ?? null, totalMinor, currency }
+        draft: { type: action.type === "create_quote" ? "create_quote" : "create_invoice", data: documentData, lineItems: breakdown.lines.map(item => ({ ...item, lineTotalMinor: item.grossMinor })), sourceDocumentNumber: source?.number ?? null, totalMinor, currency }
       }, { headers: { "Cache-Control": "private, no-store" } });
     }
 
