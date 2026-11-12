@@ -19,8 +19,8 @@ export type DocumentPdfInput = {
 };
 
 const money = (minor: number, currency: string) => new Intl.NumberFormat("en-ZA", { style: "currency", currency }).format(minor / 100);
-const clean = (value: unknown) => String(value ?? "").normalize("NFKD").replace(/[^\x20-\x7E]/g, " ").replace(/\\s+/g, " ").trim();
-const esc = (value: string) => clean(value).replace(/\\\\/g, "\\\\").replace(/\\(/g, "\\(").replace(/\\)/g, "\\)");
+const clean = (value: unknown) => String(value ?? "").normalize("NFKD").replace(/[^\x20-\x7E]/g, " ").replace(/\s+/g, " ").trim();
+const esc = (value: string) => clean(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 const wrap = (value: string, max = 72) => {
   const words = clean(value).split(" ");
   const rows: string[] = [];
@@ -42,10 +42,6 @@ export function createDocumentPdf(input: DocumentPdfInput): Blob {
   const newPage = () => {
     if (commands.length) pages.push(commands);
     commands = ["BT", "/F2 9 Tf", "48 800 Td", "14 TL"];
-  };
-  const line = (value: string, size = 9, bold = false, color = "0.16 0.20 0.17") => {
-    commands.push(`ET ${color} rg BT /${bold ? "F2" : "F1"} ${size} Tf 48 ${y} Td (${esc(value)}) Tj ET`);
-    y -= size + 6;
   };
   let y = 790;
   const textAt = (x: number, yy: number, value: string, size = 9, bold = false, color = "0.16 0.20 0.17") =>
