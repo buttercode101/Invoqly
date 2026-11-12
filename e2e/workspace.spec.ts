@@ -208,6 +208,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
       const mobileInvoiceSubmit = page.getByRole("button",{name:"Create invoice"});
       await mobileInvoiceSubmit.scrollIntoViewIfNeeded();
       await expect(mobileInvoiceSubmit).toBeVisible();
+      await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-320-bottom.png",fullPage:true});
       await page.getByRole("button",{name:"Close"}).click();
     }
     if(width===390){
@@ -231,6 +232,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
       const mobileInvoiceSubmit = page.getByRole("button",{name:"Create invoice"});
       await mobileInvoiceSubmit.scrollIntoViewIfNeeded();
       await expect(mobileInvoiceSubmit).toBeVisible();
+      await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-390-bottom.png",fullPage:true});
       await page.getByRole("button",{name:"Close"}).click();
       await goTo(page,"Quotes");
       await page.getByRole("button",{name:"New quotation"}).click();
