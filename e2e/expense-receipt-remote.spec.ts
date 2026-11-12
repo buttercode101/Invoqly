@@ -33,4 +33,13 @@ test("expense receipt photo uploads and remains available after reload", async (
   await popup.waitForLoadState();
   await expect.poll(() => popup.evaluate(() => document.contentType)).toBe("image/png");
   await popup.close();
+
+  await page.getByRole("button", { name: "Record expense" }).click();
+  await page.getByLabel("Vendor or supplier").fill("Manual entry QA supplier");
+  await page.getByLabel("Amount").fill("30.00");
+  await page.getByLabel("Currency").selectOption("ZAR");
+  await page.getByLabel("Category").selectOption("Office");
+  await page.getByRole("button", { name: "Save expense" }).click();
+  await expect(page.getByText("Manual entry QA supplier")).toBeVisible();
+  await expect(page.getByRole("link", { name: "View photo" })).toHaveCount(1);
 });
