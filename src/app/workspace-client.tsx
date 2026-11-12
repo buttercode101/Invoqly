@@ -7,6 +7,8 @@ import ThemeToggle from "@/app/theme-toggle";
 import { deriveInvoiceStatus, outstandingBalanceMinor } from "@/lib/billing";
 import { applyDocumentTaxProfile, calculateDocumentTax, calculateDocumentTotal, type DocumentLineItem } from "@/lib/documents";
 import { currencyExponent, decimalToMinor, formatMinor } from "@/lib/money";
+import { calculateCashflow, cashflowInvoiceFromDocument } from "@/lib/cashflow";
+import { buildClientPaymentProfiles } from "@/lib/client-insights";
 import { ArrowDownLeft, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, ChevronDown, ChevronRight, CircleHelp, Command, CreditCard, Download, FileCheck2, FilePlus2, FileText, Home, LifeBuoy, MoreHorizontal, Plus, Search, Settings2, Sparkles, Users, Wallet, X, Trash2, Printer, Check, Pencil, Building2, Receipt, CircleDollarSign, LogOut } from "lucide-react";
 
 type Status = "Draft" | "Sent" | "Partially paid" | "Paid" | "Overdue";
@@ -16,8 +18,8 @@ type Payment = { id:string; invoiceId:string; clientId:string; date:string; amou
 type Quote = {id:string;number:string;customerName:string;customerEmail:string;customerCompany:string;issueDate:string;validUntil:string;description:string;quantity:number;unitPriceMinor:number;lineItems?:DocumentLineItem[];currency:string;status:"Draft"|"Sent"|"Accepted"|"Declined"|"Converted";convertedInvoiceId?:string|null;createdAt:string};
 type CreateDocumentPrefill = { customerName?:string; customerEmail?:string; customerCompany?:string; clientId?:string; description?:string; quantity?:number; unitPriceMinor?:number; lineItems?:DocumentLineItem[]; currency?:string; validUntil?:string; dueDate?:string };
 type Expense = { id:string; vendor:string; category:string; date:string; amountMinor:number; currency:string; notes:string; receiptObjectKey?:string|null };
-type Store = { clients:Client[]; invoices:Invoice[]; payments:Payment[]; quotes:Quote[]; expenses:Expense[]; businessName:string; currency:string; locale:string; vatRegistered:boolean; vatNumber:string; businessAddress:string };
-const seed:Store = { businessName:"Your business",currency:"ZAR",locale:"en-ZA",vatRegistered:false,vatNumber:"",businessAddress:"",clients:[],invoices:[],payments:[],quotes:[],expenses:[] };
+type Store = { clients:Client[]; invoices:Invoice[]; payments:Payment[]; quotes:Quote[]; expenses:Expense[]; businessName:string; currency:string; locale:string; vatRegistered:boolean; vatNumber:string; businessAddress:string; openingCashBalanceMinor:number|null; cashReserveMinor:number };
+const seed:Store = { businessName:"Your business",currency:"ZAR",locale:"en-ZA",vatRegistered:false,vatNumber:"",businessAddress:"",openingCashBalanceMinor:null,cashReserveMinor:0,clients:[],invoices:[],payments:[],quotes:[],expenses:[] };
 type GuestBackup = { importId?:string; businessName:string; currency:string; clients:{id:string;name:string;email:string;company:string}[]; invoices:{id:string;clientId?:string;customerName?:string;customerEmail?:string;customerCompany?:string;issueDate:string;dueDate:string;description:string;quantity:number;unitPriceMinor:number;lineItems?:Array<{description:string;quantity:number;unitPriceMinor:number}>;currency:string;status:"Draft"|"Sent"|"Paid";paidAt?:string}[]; quotes?:{id:string;number:string;customerName:string;customerEmail:string;customerCompany:string;description:string;issueDate:string;validUntil:string;quantity:number;unitPriceMinor:number;lineItems?:Array<{description:string;quantity:number;unitPriceMinor:number}>;currency:string;status:"Draft"|"Sent"|"Accepted"|"Declined"|"Converted"}[]; expenses:{id?:string;vendor:string;category:string;date:string;amountMinor:number;currency:string}[] };
 const GUEST_STORAGE_KEY="invoqly.guest.workspace.v1";
 const GUEST_PENDING_IMPORT_KEY="invoqly.guest.import.pending.v1";
