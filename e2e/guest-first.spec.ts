@@ -48,7 +48,7 @@ test("anonymous visitor can invoice without contacts and complete a quotation", 
     }));
     expect(dimensions.document, "guest workspace overflows at "+width+"px").toBeLessThanOrEqual(dimensions.viewport);
     if(width<=560){
-      const targets=await page.locator(".side nav button:visible").evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {width:r.width,height:r.height}}));
+      const targets=await page.locator("nav button:visible").evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {width:r.width,height:r.height}}));
       expect(targets.length).toBeGreaterThanOrEqual(5);
       for(const target of targets){expect(target.width).toBeGreaterThanOrEqual(40);expect(target.height).toBeGreaterThanOrEqual(44);}
     }
