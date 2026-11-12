@@ -27,12 +27,12 @@ test("guest can create and print multi-line invoices and quotations without an a
   const invoiceRow = page.getByText("Guest Multi Customer").locator("xpath=../..");
   await expect(invoiceRow).toContainText("Labour +1 more line");
   await expect(invoiceRow).toContainText(/2[\s\u00a0,]?900/);
-  const invoicePopupPromise = page.waitForEvent("popup");
-  await invoiceRow.getByRole("button", { name: "Print / PDF" }).click();
-  const invoicePopup = await invoicePopupPromise;
-  await expect(invoicePopup.locator("body")).toContainText("Labour");
-  await expect(invoicePopup.locator("body")).toContainText("Materials");
-  await invoicePopup.close();
+  await invoiceRow.getByRole("button", { name: "Preview / PDF" }).click();
+  const invoicePreview = page.getByRole("dialog", { name: /Invoice ·/ });
+  await expect(invoicePreview).toBeVisible();
+  await expect(invoicePreview.locator("iframe")).toBeVisible();
+  await expect(invoicePreview.getByLabel("Document style")).toHaveValue("modern");
+  await invoicePreview.getByRole("button", { name: "Close PDF preview" }).click();
 
   await page.getByRole("button", { name: "Quotes" }).click();
   await page.getByRole("button", { name: "New quote" }).click();
@@ -46,12 +46,13 @@ test("guest can create and print multi-line invoices and quotations without an a
   await page.getByRole("button", { name: "Create quotation" }).click();
   const quoteRow = page.getByText("Guest Multi Quote").locator("xpath=../..");
   await expect(quoteRow).toContainText("R");
-  const quotePopupPromise = page.waitForEvent("popup");
-  await quoteRow.getByRole("button", { name: "Print / PDF" }).click();
-  const quotePopup = await quotePopupPromise;
-  await expect(quotePopup.locator("body")).toContainText("Labour");
-  await expect(quotePopup.locator("body")).toContainText("Materials");
-  await quotePopup.close();
+  await quoteRow.getByRole("button", { name: "Preview / PDF" }).click();
+  const quotePreview = page.getByRole("dialog", { name: /Quotation ·/ });
+  await expect(quotePreview).toBeVisible();
+  await expect(quotePreview.locator("iframe")).toBeVisible();
+  await quotePreview.getByLabel("Document style").selectOption("classic");
+  await expect(quotePreview.getByLabel("Document style")).toHaveValue("classic");
+  await quotePreview.getByRole("button", { name: "Close PDF preview" }).click();
 
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("invoqly.guest.workspace.v1") || "{}"));
   expect(stored.invoices[0].lineItems).toHaveLength(2);
@@ -76,12 +77,11 @@ test("signed-in workspace creates, converts and reloads a multi-line quotation",
   const quoteRow = page.locator("tbody tr").filter({ hasText: "Cloud Multi Quote" });
   await expect(quoteRow).toContainText("Labour +1 more line");
   await expect(quoteRow).toContainText(/6[\s\u00a0,]?400/);
-  const printPromise = page.waitForEvent("popup");
   await quoteRow.getByTitle("Print quotation").click();
-  const popup = await printPromise;
-  await expect(popup.locator("body")).toContainText("Labour");
-  await expect(popup.locator("body")).toContainText("Materials");
-  await popup.close();
+  const popup = page.getByRole("dialog", { name: /Quotation ·/ });
+  await expect(popup).toBeVisible();
+  await expect(popup.locator("iframe")).toBeVisible();
+  await popup.getByRole("button", { name: "Close PDF preview" }).click();
 
   await quoteRow.getByTitle("Mark as sent").click();
   await quoteRow.getByTitle("Accept quotation").click();
