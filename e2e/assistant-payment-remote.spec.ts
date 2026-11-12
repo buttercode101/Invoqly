@@ -14,7 +14,7 @@ test("AI invoice draft is reviewed, issued and paid", async ({ page }) => {
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByRole("heading", { name: "Invoice draft" })).toBeVisible({ timeout: 75_000 });
   await page.getByRole("button", { name: "Edit details" }).click();
-  await expect(page.getByRole("heading", { name: "Edit invoice draft" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review invoice draft" })).toBeVisible();
   await page.getByLabel("Unit price").fill("275.00");
   await page.getByRole("button", { name: "Create invoice" }).click();
   await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
