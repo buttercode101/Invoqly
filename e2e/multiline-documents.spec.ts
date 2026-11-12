@@ -25,7 +25,7 @@ test("guest can create and print multi-line invoices and quotations without an a
   await page.locator('input[name="extraPrice"]').fill("2400.00");
   await page.getByRole("button", { name: "Create invoice" }).click();
   const invoiceRow = page.locator(".row").filter({ hasText: "Guest Multi Customer" });
-  await expect(invoiceRow).toContainText("Labour +1 more lines");
+  await expect(invoiceRow).toContainText("Labour +1 more line");
   await expect(invoiceRow).toContainText(/2[\s\u00a0,]?900/);
   const invoicePopupPromise = page.waitForEvent("popup");
   await invoiceRow.getByRole("button", { name: "Print / PDF" }).click();
@@ -74,7 +74,7 @@ test("signed-in workspace creates, converts and reloads a multi-line quotation",
   await page.getByRole("button", { name: "Create quotation" }).click();
 
   const quoteRow = page.locator("tbody tr").filter({ hasText: "Cloud Multi Quote" });
-  await expect(quoteRow).toContainText("Labour +1 more lines");
+  await expect(quoteRow).toContainText("Labour +1 more line");
   await expect(quoteRow).toContainText(/6[\s\u00a0,]?400/);
   const printPromise = page.waitForEvent("popup");
   await quoteRow.getByTitle("Print quotation").click();
@@ -88,8 +88,8 @@ test("signed-in workspace creates, converts and reloads a multi-line quotation",
   await quoteRow.getByTitle("Convert to invoice").click();
   await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
   const invoiceRow = page.locator("tbody tr").filter({ hasText: "Cloud Multi Quote" });
-  await expect(invoiceRow).toContainText("Labour +1 more lines");
+  await expect(invoiceRow).toContainText("Labour +1 more line");
   await page.reload();
   await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
-  await expect(page.locator("tbody tr").filter({ hasText: "Cloud Multi Quote" })).toContainText("Labour +1 more lines");
+  await expect(page.locator("tbody tr").filter({ hasText: "Cloud Multi Quote" })).toContainText("Labour +1 more line");
 });
