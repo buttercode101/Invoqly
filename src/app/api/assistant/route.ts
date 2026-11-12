@@ -289,10 +289,7 @@ ${JSON.stringify(modelContext)}`;
           invoiceDelayDays: scenarioFields.data.invoiceDelayDays,
           supplierDelayDays: scenarioFields.data.supplierDelayDays,
           weeks: projected.weeks,
-          months: projected.months,
-          lowestProjectedBalanceMinor: projected.lowestProjectedBalanceMinor,
-          lowestProjectedBalanceDate: projected.lowestProjectedBalanceDate,
-          safeToSpendMinor: projected.safeToSpendMinor
+          months: projected.months
         }
       }, { headers: { "Cache-Control": "private, no-store" } });
     }
