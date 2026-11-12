@@ -34,10 +34,10 @@ const payload = z.discriminatedUnion("action", [
 function fail(message:string,status=400){return NextResponse.json({error:message},{status});}
 function today(){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Johannesburg",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const part=(type:string)=>parts.find(item=>item.type===type)?.value??"";return part("year")+"-"+part("month")+"-"+part("day");}
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     return await withDb(async db => {
-      const user = await getCurrentUser(db);
+      const user = await getCurrentUser(db, request.headers);
       if (!user) return fail("Sign in to access your workspace.",401);
       const workspace = await getOrCreateWorkspace(db,user.id);
       return NextResponse.json({ workspace: await loadWorkspace(db,workspace.id) }, { headers: { "Cache-Control":"private, no-store" } });
