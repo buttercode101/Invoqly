@@ -60,7 +60,7 @@ export default function WorkspaceClient({user}:{user:{id:string;name:string;emai
    return (minor/(10**exponent)).toFixed(exponent);
   };
   const treatmentLabel=(value:string)=>({standard:"Standard-rated",zero_rated:"Zero-rated",exempt:"Exempt",out_of_scope:"Out of scope"} as Record<string,string>)[value]??value;
-  const documentRow=(type:string,doc:any,name:string,due:string,status:string)=>{
+  const documentRow=(type:"Invoice"|"Quote",doc:Invoice|Quote,name:string,due:string,status:string)=>{
    const lines:DocumentLineItem[]=doc.lineItems?.length?doc.lineItems:[{description:doc.description,quantity:doc.quantity,unitPriceMinor:doc.unitPriceMinor}];
    const tax=calculateDocumentTax(lines);
    const treatments=[...new Set(lines.map(line=>line.taxTreatment??"out_of_scope"))];
