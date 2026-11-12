@@ -206,8 +206,13 @@ test("real account, client, invoice, partial payments, expense and reload",async
       await expect(page.getByLabel("Due date")).toBeVisible();
       await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-320.png",fullPage:true});
       const mobileInvoiceSubmit = page.getByRole("button",{name:"Create invoice"});
-      await mobileInvoiceSubmit.scrollIntoViewIfNeeded();
+      await page.locator(".form-modal").evaluate(el => { el.scrollTop = el.scrollHeight; });
       await expect(mobileInvoiceSubmit).toBeVisible();
+      const dueDateBox = await page.getByLabel("Due date").boundingBox();
+      const submitBox = await mobileInvoiceSubmit.boundingBox();
+      expect(dueDateBox).not.toBeNull();
+      expect(submitBox).not.toBeNull();
+      expect(dueDateBox!.y + dueDateBox!.height).toBeLessThan(submitBox!.y);
       await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-320-bottom.png",fullPage:true});
       await page.getByRole("button",{name:"Close"}).click();
     }
@@ -230,8 +235,13 @@ test("real account, client, invoice, partial payments, expense and reload",async
       await expect(page.getByLabel("Due date")).toBeVisible();
       await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-390.png",fullPage:true});
       const mobileInvoiceSubmit = page.getByRole("button",{name:"Create invoice"});
-      await mobileInvoiceSubmit.scrollIntoViewIfNeeded();
+      await page.locator(".form-modal").evaluate(el => { el.scrollTop = el.scrollHeight; });
       await expect(mobileInvoiceSubmit).toBeVisible();
+      const dueDateBox = await page.getByLabel("Due date").boundingBox();
+      const submitBox = await mobileInvoiceSubmit.boundingBox();
+      expect(dueDateBox).not.toBeNull();
+      expect(submitBox).not.toBeNull();
+      expect(dueDateBox!.y + dueDateBox!.height).toBeLessThan(submitBox!.y);
       await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-390-bottom.png",fullPage:true});
       await page.getByRole("button",{name:"Close"}).click();
       await goTo(page,"Quotes");
