@@ -28,9 +28,9 @@ function detectImage(bytes: Uint8Array): { type: string; extension: string } | n
   return null;
 }
 
-async function workspaceId() {
+async function workspaceId(request: Request) {
   return withDb(async db => {
-    const user = await getCurrentUser(db);
+    const user = await getCurrentUser(db, request.headers);
     if (!user) return null;
     const workspace = await getOrCreateWorkspace(db, user.id);
     return workspace.id;
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   if (!image || image.type !== file.type) return NextResponse.json({ error: "The selected file is not a valid JPEG, PNG or WebP image." }, { status: 415 });
 
   try {
-    const workspace = await workspaceId();
+    const workspace = await workspaceId(request);
     if (!workspace) return NextResponse.json({ error: "Sign in to attach receipt photos to cloud expenses." }, { status: 401 });
     const key = workspace + "/expenses/" + crypto.randomUUID() + "." + image.extension;
     await putReceiptObject(key, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), image.type, workspace);
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   if (!sameOrigin(request)) return new Response("Forbidden", { status: 403 });
   try {
-    const workspace = await workspaceId();
+    const workspace = await workspaceId(request);
     if (!workspace) return new Response("Sign in required", { status: 401 });
     const key = new URL(request.url).searchParams.get("key") ?? "";
     if (!key.startsWith(workspace + "/expenses/") || key.includes("..")) return new Response("Not found", { status: 404 });
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
 export async function DELETE(request: Request) {
   if (!sameOrigin(request)) return new Response("Forbidden", { status: 403 });
   try {
-    const workspace = await workspaceId();
+    const workspace = await workspaceId(request);
     if (!workspace) return new Response("Sign in required", { status: 401 });
     const key = new URL(request.url).searchParams.get("key") ?? "";
     if (!key.startsWith(workspace + "/expenses/") || key.includes("..")) return new Response(null, { status: 404 });
