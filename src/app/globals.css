@@ -190,3 +190,11 @@
 .add-line-button{display:inline-flex;align-items:center;gap:6px;padding:8px 0;border:0;background:transparent;color:#426b50;font-size:12px;font-weight:600;cursor:pointer}
 .remove-line-button{justify-self:start;padding:4px 0;border:0;background:transparent;color:#9a6158;font-size:11px;cursor:pointer}
 .assistant-line-item{min-width:0}
+
+.settings-check{display:flex;align-items:center;gap:9px;font-size:12px;color:#344238}
+.settings-check input{width:16px;height:16px;accent-color:#315b43}
+.settings-help{display:block;margin-top:-5px;color:#7b857d;font-size:11px;line-height:1.5}
+.vat-controls small{grid-column:1/-1;color:#7b857d;font-size:10px;line-height:1.5}
+.vat-note{display:block;padding:9px 0;color:#7b857d;font-size:11px;line-height:1.5}
+.invoice-total-preview{flex-wrap:wrap}
+.invoice-total-preview small{flex-basis:100%;text-align:right;color:#7b857d;font-size:10px}
