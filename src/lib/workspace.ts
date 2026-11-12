@@ -28,7 +28,9 @@ export async function writeAudit(db: Database, workspaceId: string, actorUserId:
 }
 
 export async function loadWorkspace(db: Database, workspaceId: string) {
-  const today = new Date().toISOString().slice(0, 10);
+  const dateParts = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+  const part = (type: string) => dateParts.find(item => item.type === type)?.value ?? "";
+  const today = part("year") + "-" + part("month") + "-" + part("day");
   await db.update(invoices).set({ status: "Overdue", updatedAt: new Date() })
     .where(and(eq(invoices.workspaceId, workspaceId), lt(invoices.dueDate, today), inArray(invoices.status, ["Sent", "Partially paid"])));
   const [clientRows, invoiceRows, paymentRows, expenseRows, quoteRows, workspaceRows] = await Promise.all([
