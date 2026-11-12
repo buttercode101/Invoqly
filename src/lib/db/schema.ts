@@ -55,6 +55,9 @@ export const workspaces = pgTable("workspaces", {
   defaultCurrency: char("default_currency", { length: 3 }).notNull().default("ZAR"),
   locale: varchar("locale", { length: 20 }).notNull().default("en-ZA"),
   countryCode: char("country_code", { length: 2 }).notNull().default("ZA"),
+  vatRegistered: boolean("vat_registered").notNull().default(false),
+  vatNumber: varchar("vat_number", { length: 10 }).notNull().default(""),
+  businessAddress: varchar("business_address", { length: 250 }).notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

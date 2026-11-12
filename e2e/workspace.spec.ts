@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 function identity(label:string) {
   const suffix=`${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
@@ -45,6 +46,15 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await expect(invoiceRow).toContainText("Acme Services");
   await invoiceRow.getByTitle("Issue invoice").click();
   await expect(invoiceRow).toContainText("Sent");
+  const csvDownloadPromise=page.waitForEvent("download");
+  await page.getByRole("button",{name:"Export CSV"}).click();
+  const csvDownload=await csvDownloadPromise;
+  const csvPath=await csvDownload.path();
+  expect(csvPath).toBeTruthy();
+  const csvContent=await readFile(csvPath!,"utf8");
+  expect(csvContent).toContain("Acme Services");
+  expect(csvContent).toContain("2501.00");
+  expect(csvContent.split(/\r?\n/).length).toBeGreaterThan(1);
 
   await goTo(page,"Quotes");
   await page.getByRole("button",{name:"New quotation"}).click();
@@ -99,7 +109,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await page.getByLabel("Currency").selectOption("ZAR");
   await page.getByLabel("Category").selectOption("Software");
   await page.getByRole("button",{name:"Save expense"}).click();
-  await expect(page.getByText("Cloud hosting")).toBeVisible();
+  await expect(page.locator(".expense-table-desktop").getByText("Cloud hosting")).toBeVisible();
 
   await page.reload();
   await goTo(page,"Clients");
@@ -109,12 +119,87 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await goTo(page,"Payments");
   await expect(page.locator("tbody tr")).toHaveCount(2);
   await goTo(page,"Expenses");
-  await expect(page.getByText("Cloud hosting")).toBeVisible();
-  for (const width of [320,375,768,1120]) {
+  await expect(page.locator(".expense-table-desktop").getByText("Cloud hosting")).toBeVisible();
+  for (const width of [320,360,375,390,560,768,820,1120,1440]) {
     await page.setViewportSize({width,height:900});
-    const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
-    expect(dimensions.document,`workspace overflows at ${width}px`).toBeLessThanOrEqual(dimensions.viewport);
-    await expect(page.locator("main.shell")).toBeVisible();
+    for (const section of ["Overview","Invoices","Quotes","Clients","Expenses","Payments","Reports","Settings"]) {
+      if(width<=560&&["Payments","Reports","Settings"].includes(section)){
+        await page.locator(".mobile-more-trigger").click();
+        await page.getByRole("menuitem",{name:section}).click();
+      }else{
+        await goTo(page,section);
+      }
+      const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
+      expect(dimensions.document,"workspace overflows at "+width+"px in "+section).toBeLessThanOrEqual(dimensions.viewport);
+      await expect(page.locator("main.shell")).toBeVisible();
+      if(width<=560){
+        if(section==="Overview"||section==="Invoices"){await expect(page.locator(".invoice-card-list")).toBeVisible();await expect(page.locator(".invoice-table-desktop")).toBeHidden();}
+        if(section==="Quotes"){await expect(page.locator(".quote-card-list")).toBeVisible();await expect(page.locator(".quote-table-desktop")).toBeHidden();}
+        if(section==="Expenses"){await expect(page.locator(".expense-card-list")).toBeVisible();await expect(page.locator(".expense-table-desktop")).toBeHidden();}
+        if(section==="Payments"){await expect(page.locator(".payment-card-list")).toBeVisible();await expect(page.locator(".payment-table-desktop")).toBeHidden();}
+      }
+      if(width===390&&section==="Invoices")await page.screenshot({path:"test-results/invoqly-invoices-mobile-390.png",fullPage:true});
+      if(width===390&&section==="Quotes")await page.screenshot({path:"test-results/invoqly-quotes-mobile-390.png",fullPage:true});
+      if(width===390&&section==="Expenses")await page.screenshot({path:"test-results/invoqly-expenses-mobile-390.png",fullPage:true});
+      if(width===390&&section==="Payments")await page.screenshot({path:"test-results/invoqly-payments-mobile-390.png",fullPage:true});
+    }
+    if(width<=560){
+      const targets=await page.locator(".side-nav .nav-item:visible").evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {width:r.width,height:r.height}}));
+      expect(targets).toHaveLength(6);
+      for(const target of targets){expect(target.width).toBeGreaterThanOrEqual(44);expect(target.height).toBeGreaterThanOrEqual(44);}
+      await page.locator(".mobile-more-trigger").click();
+      await expect(page.getByRole("menu")).toBeVisible();
+      await expect(page.getByRole("menuitem",{name:"AI Co-pilot"})).toBeVisible();
+      const menuTargets=await page.getByRole("menu").getByRole("menuitem").evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {width:r.width,height:r.height}}));
+      expect(menuTargets).toHaveLength(4);
+      for(const target of menuTargets){expect(target.width).toBeGreaterThanOrEqual(44);expect(target.height).toBeGreaterThanOrEqual(44);}
+      await page.getByRole("menuitem",{name:"Settings"}).click();
+    }
+    if(width===768){await goTo(page,"Invoices");await page.screenshot({path:"test-results/invoqly-invoices-tablet-768.png",fullPage:true});}
+    if(width===1120){await goTo(page,"Invoices");await page.screenshot({path:"test-results/invoqly-invoices-desktop-1120.png",fullPage:true});}
+    if(width===320){
+      await goTo(page,"Overview");
+      await page.screenshot({path:"test-results/invoqly-workspace-mobile-320.png",fullPage:true});
+      await goTo(page,"Invoices");
+      await page.getByRole("button",{name:"New invoice"}).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await expect(page.getByRole("button",{name:"Create invoice"})).toBeInViewport();
+      await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-320.png",fullPage:true});
+      await page.getByRole("button",{name:"Close"}).click();
+    }
+    if(width===390){
+      await goTo(page,"Overview");
+      await page.screenshot({path:"test-results/invoqly-workspace-mobile-390.png",fullPage:true});
+      await page.locator(".mobile-search-trigger").click();
+      await expect(page.locator(".mobile-search-overlay")).toBeVisible();
+      await page.locator(".mobile-search-overlay input").fill("Acme");
+      await expect(page.locator(".mobile-search-overlay input")).toHaveValue("Acme");
+      await expect(page.locator(".invoice-card-list .register-card")).toHaveCount(1);
+      await page.getByRole("button",{name:"Clear search"}).click();
+      await page.getByRole("button",{name:"Close search"}).click();
+      await expect(page.locator(".mobile-search-overlay")).toHaveCount(0);
+      await goTo(page,"Invoices");
+      await page.getByRole("button",{name:"New invoice"}).click();
+      await expect(page.getByRole("heading",{name:"Create an invoice"})).toBeVisible();
+      await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-390.png",fullPage:true});
+      await page.getByRole("button",{name:"Close"}).click();
+      await goTo(page,"Quotes");
+      await page.getByRole("button",{name:"New quotation"}).click();
+      await expect(page.getByRole("heading",{name:"Create a quotation"})).toBeVisible();
+      await expect(page.getByRole("button",{name:"Create quotation"})).toBeInViewport();
+      await page.screenshot({path:"test-results/invoqly-quote-form-mobile-390.png",fullPage:true});
+      await page.getByRole("button",{name:"Close"}).click();
+    }
+    if(width===1440){
+      await goTo(page,"Overview");
+      await page.screenshot({path:"test-results/invoqly-workspace-desktop-1440.png",fullPage:true});
+      await goTo(page,"Invoices");
+      await page.getByRole("button",{name:"New invoice"}).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await expect(page.getByRole("button",{name:"Create invoice"})).toBeInViewport();
+      await page.screenshot({path:"test-results/invoqly-invoice-form-desktop-1440.png",fullPage:true});
+      await page.getByRole("button",{name:"Close"}).click();
+    }
   }
 });
 
@@ -142,13 +227,18 @@ test("workspace data is isolated between separate accounts",async({page,browser}
   }
 });
 
-for(const width of [320,375,768,1120]){
+for(const width of [320,360,375,390,560,768,820,1120,1440]){
   test(`account screens have no horizontal overflow at ${width}px`,async({page})=>{
     await page.setViewportSize({width,height:900});
     await page.goto("/");
     await expect(page.getByRole("heading",{name:/Spend less time/})).toBeVisible();
     const publicDimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
     expect(publicDimensions.document).toBeLessThanOrEqual(publicDimensions.viewport);
+    if(width===320)await page.screenshot({path:"test-results/invoqly-public-mobile-320.png",fullPage:true});
+    if(width===390)await page.screenshot({path:"test-results/invoqly-public-mobile-390.png",fullPage:true});
+    if(width===768)await page.screenshot({path:"test-results/invoqly-public-tablet-768.png",fullPage:true});
+    if(width===1120)await page.screenshot({path:"test-results/invoqly-public-desktop-1120.png",fullPage:true});
+    if(width===1440)await page.screenshot({path:"test-results/invoqly-public-desktop-1440.png",fullPage:true});
     await page.goto("/sign-in");
     await expect(page.locator(".auth-shell")).toBeVisible();
     const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));

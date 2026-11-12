@@ -96,12 +96,14 @@ jobs:
           exit 1
       - name: Install Playwright Chromium
         if: steps.credentials.outputs.ready == 'true'
-        run: npx playwright install chromium
-      - name: Run authenticated browser acceptance against remote preview
+        run: npx playwright install chromium --with-deps
+      - name: Run guest, VAT and live AI browser acceptance against remote preview
         if: steps.credentials.outputs.ready == 'true'
         env:
           PLAYWRIGHT_BASE_URL: https://invoqly-preview.buttercoder-dev.workers.dev
-        run: npx playwright test e2e/guest-remote.spec.ts
+          RUN_REMOTE_AI_E2E: "1"
+          CI: "true"
+        run: npx playwright test e2e/guest-remote.spec.ts e2e/vat-documents.spec.ts e2e/assistant-remote.spec.ts --workers=1
       - name: Upload browser acceptance diagnostics
         if: always() && steps.credentials.outputs.ready == 'true'
         uses: actions/upload-artifact@v4

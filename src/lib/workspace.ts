@@ -28,7 +28,9 @@ export async function writeAudit(db: Database, workspaceId: string, actorUserId:
 }
 
 export async function loadWorkspace(db: Database, workspaceId: string) {
-  const today = new Date().toISOString().slice(0, 10);
+  const dateParts = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+  const part = (type: string) => dateParts.find(item => item.type === type)?.value ?? "";
+  const today = part("year") + "-" + part("month") + "-" + part("day");
   await db.update(invoices).set({ status: "Overdue", updatedAt: new Date() })
     .where(and(eq(invoices.workspaceId, workspaceId), lt(invoices.dueDate, today), inArray(invoices.status, ["Sent", "Partially paid"])));
   const [clientRows, invoiceRows, paymentRows, expenseRows, quoteRows, workspaceRows] = await Promise.all([
@@ -44,6 +46,9 @@ export async function loadWorkspace(db: Database, workspaceId: string) {
     businessName: workspace?.businessName ?? "Your business",
     currency: workspace?.defaultCurrency ?? "ZAR",
     locale: workspace?.locale ?? "en-ZA",
+    vatRegistered: workspace?.vatRegistered ?? false,
+    vatNumber: workspace?.vatNumber ?? "",
+    businessAddress: workspace?.businessAddress ?? "",
     clients: clientRows.filter(c=>!c.isOneOff).map(c => ({ id:c.id, name:c.name, email:c.email, company:c.company, currency:c.currency, createdAt:c.createdAt.toISOString() })),
     invoices: invoiceRows.map(i => {const customer=clientRows.find(c=>c.id===i.clientId);return { id:i.id, clientId:i.clientId, customerName:customer?.name??"Customer", customerEmail:customer?.email??"", customerCompany:customer?.company??"", number:i.number, issueDate:i.issueDate, dueDate:i.dueDate, description:i.description, quantity:i.quantity, unitPriceMinor:i.unitPriceMinor, lineItems:i.lineItems?.length?i.lineItems:[{description:i.description,quantity:i.quantity,unitPriceMinor:i.unitPriceMinor}], currency:i.currency, status:i.status, createdAt:i.createdAt.toISOString() }}),
     payments: paymentRows.map(p => ({ id:p.id, invoiceId:p.invoiceId, clientId:p.clientId, date:p.date, amountMinor:p.amountMinor, currency:p.currency, method:p.method, reference:p.reference, notes:p.notes, createdAt:p.createdAt.toISOString() })),

@@ -25,6 +25,8 @@ export default defineConfig({
       ...(enableWorkersAiBinding ? { AI: bindings.ai() } : {}),
       BETTER_AUTH_SECRET: bindings.secret(),
       AUTH_EMAIL_VERIFICATION: bindings.text(process.env.AUTH_EMAIL_VERIFICATION || "false"),
+      AUTH_RATE_LIMIT_ENABLED: bindings.text(process.env.AUTH_RATE_LIMIT_ENABLED || "true"),
+      AUTH_RATE_LIMIT_MAX: bindings.text(process.env.AUTH_RATE_LIMIT_MAX || "10"),
       BETTER_AUTH_URL: bindings.text(process.env.BETTER_AUTH_URL || "https://invoqly-preview.buttercoder-dev.workers.dev"),
       NEXT_PUBLIC_APP_URL: bindings.text(process.env.NEXT_PUBLIC_APP_URL || "https://invoqly-preview.buttercoder-dev.workers.dev"),
       HYPERDRIVE: bindings.hyperdrive({

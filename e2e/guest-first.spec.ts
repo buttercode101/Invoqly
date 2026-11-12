@@ -20,6 +20,7 @@ test("anonymous visitor can invoice without contacts and complete a quotation", 
 
   await page.getByRole("button", { name: "Quotes" }).click();
   await page.getByRole("button", { name: "New quote" }).click();
+  await expect(page.getByRole("heading", { name: "Create a quotation" })).toBeVisible();
   await page.getByLabel("Customer name").fill("Quote QA Customer");
   await page.getByLabel("Email address").fill("quote@example.com");
   await page.getByLabel("Description").fill("Consulting scope");
@@ -39,12 +40,21 @@ test("anonymous visitor can invoice without contacts and complete a quotation", 
   await expect(page.getByText(/Anonymous QA Customer/)).toBeVisible();
   await expect(page.getByText(/Quote QA Customer/)).toBeVisible();
 
-  for (const width of [320, 375, 768, 1120]) {
+  for (const width of [320,360,375,390,560,768,820,1120,1440]) {
     await page.setViewportSize({ width, height: 900 });
     const dimensions = await page.evaluate(() => ({
       viewport: document.documentElement.clientWidth,
       document: document.documentElement.scrollWidth
     }));
-    expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport);
+    expect(dimensions.document, "guest workspace overflows at "+width+"px").toBeLessThanOrEqual(dimensions.viewport);
+    if(width<=560){
+      const targets=await page.locator("nav button:visible").evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {width:r.width,height:r.height}}));
+      expect(targets.length).toBeGreaterThanOrEqual(5);
+      for(const target of targets){expect(target.width).toBeGreaterThanOrEqual(40);expect(target.height).toBeGreaterThanOrEqual(44);}
+    }
+    if(width===390||width===1440){
+      await page.getByRole("button",{name:"Overview"}).click();
+      await page.screenshot({path:width===390?"test-results/invoqly-guest-mobile-390.png":"test-results/invoqly-guest-desktop-1440.png",fullPage:true});
+    }
   }
 });
