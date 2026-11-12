@@ -132,6 +132,16 @@ test("real account, client, invoice, partial payments, expense and reload",async
       const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
       expect(dimensions.document,"workspace overflows at "+width+"px in "+section).toBeLessThanOrEqual(dimensions.viewport);
       await expect(page.locator("main.shell")).toBeVisible();
+      if(width<=560){
+        if(section==="Overview"||section==="Invoices"){await expect(page.locator(".invoice-card-list")).toBeVisible();await expect(page.locator(".invoice-table-desktop")).toBeHidden();}
+        if(section==="Quotes"){await expect(page.locator(".quote-card-list")).toBeVisible();await expect(page.locator(".quote-table-desktop")).toBeHidden();}
+        if(section==="Expenses"){await expect(page.locator(".expense-card-list")).toBeVisible();await expect(page.locator(".expense-table-desktop")).toBeHidden();}
+        if(section==="Payments"){await expect(page.locator(".payment-card-list")).toBeVisible();await expect(page.locator(".payment-table-desktop")).toBeHidden();}
+      }
+      if(width===390&&section==="Invoices")await page.screenshot({path:"test-results/invoqly-invoices-mobile-390.png",fullPage:true});
+      if(width===390&&section==="Quotes")await page.screenshot({path:"test-results/invoqly-quotes-mobile-390.png",fullPage:true});
+      if(width===390&&section==="Expenses")await page.screenshot({path:"test-results/invoqly-expenses-mobile-390.png",fullPage:true});
+      if(width===390&&section==="Payments")await page.screenshot({path:"test-results/invoqly-payments-mobile-390.png",fullPage:true});
     }
     if(width<=560){
       const targets=await page.locator(".side-nav .nav-item:visible").evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {width:r.width,height:r.height}}));
@@ -145,7 +155,17 @@ test("real account, client, invoice, partial payments, expense and reload",async
       for(const target of menuTargets){expect(target.width).toBeGreaterThanOrEqual(44);expect(target.height).toBeGreaterThanOrEqual(44);}
       await page.getByRole("menuitem",{name:"Settings"}).click();
     }
-    if(width===390){await goTo(page,"Overview");await page.screenshot({path:"test-results/invoqly-workspace-mobile-390.png",fullPage:true});}
+    if(width===390){
+      await goTo(page,"Overview");
+      await page.screenshot({path:"test-results/invoqly-workspace-mobile-390.png",fullPage:true});
+      await page.locator(".mobile-search-trigger").click();
+      await expect(page.locator(".mobile-search-overlay")).toBeVisible();
+      await page.locator(".mobile-search-overlay input").fill("Acme");
+      await expect(page.locator(".mobile-search-overlay input")).toHaveValue("Acme");
+      await page.getByRole("button",{name:"Clear search"}).click();
+      await page.getByRole("button",{name:"Close search"}).click();
+      await expect(page.locator(".mobile-search-overlay")).toHaveCount(0);
+    }
     if(width===1440){await goTo(page,"Overview");await page.screenshot({path:"test-results/invoqly-workspace-desktop-1440.png",fullPage:true});}
   }
 });
