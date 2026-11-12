@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,9 +23,15 @@ function isSameOriginRequest(request: Request): boolean {
 }
 
 
-export async function GET() {
-  const store = await cookies();
-  return NextResponse.json({ accepted: store.get(COOKIE)?.value === VERSION }, { headers: { "Cache-Control": "private, no-store" } });
+function cookieValue(request: Request, name: string): string | null {
+  const prefix = name + "=";
+  const item = (request.headers.get("cookie") ?? "").split(";").map(part => part.trim()).find(part => part.startsWith(prefix));
+  if (!item) return null;
+  try { return decodeURIComponent(item.slice(prefix.length)); } catch { return item.slice(prefix.length); }
+}
+
+export async function GET(request: Request) {
+  return NextResponse.json({ accepted: cookieValue(request, COOKIE) === VERSION }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 export async function POST(request: Request) {
