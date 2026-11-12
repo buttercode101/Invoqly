@@ -258,3 +258,24 @@
 
 .pwa-install{position:fixed;right:16px;bottom:16px;z-index:50;min-height:44px;padding:10px 15px;border:1px solid #245b49;border-radius:8px;background:#245b49;color:#fff;font-size:12px;font-weight:700;box-shadow:0 8px 24px rgba(25,69,53,.2)}
 .pwa-install:hover{background:#194535}
+
+.theme-toggle{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line);border-radius:9px;background:#fff;color:#43554a;cursor:pointer;flex:none}
+.theme-toggle:hover{background:#f1f5f1}
+html[data-theme="dark"]{color-scheme:dark;--bg:#111813;--paper:#18221b;--ink:#e8efe9;--muted:#a2ada5;--line:#2c3a30;--green:#85b596;--green2:#5c8d6d}
+html[data-theme="dark"] body{background:#111813;color:#e8efe9}
+html[data-theme="dark"] :is(.sidebar,.topbar,.panel,.register-card,.create-modal,.form-modal,.metrics article,.cards article,.top,.side,.modal,.assistant-main,.assistant-side,.assistant-consent,.document-preview-sheet,.mobile-search-overlay,.search-box,.notification,.workspace-switch){background-color:#18221b;color:#e8efe9;border-color:#2c3a30}
+html[data-theme="dark"] :is(.shell,.public-home,.content,.guest-workspace,.layout,.assistant-layout){background-color:#111813;color:#e8efe9}
+html[data-theme="dark"] :is(h1,h2,h3,b,strong,label,.brand,.breadcrumb b,.register-card-head b,.document-preview-parties strong){color:#e8efe9}
+html[data-theme="dark"] :is(p,small,.subtitle,.muted-inline,.table-sub,.register-card-head small,.register-card-grid small,.assistant-confidence,.assistant-client-profile-foot){color:#a2ada5}
+html[data-theme="dark"] :is(input,select,textarea){background:#121a15!important;color:#e8efe9!important;border-color:#35453a!important}
+html[data-theme="dark"] :is(.table-wrap table,.invoice-table-desktop,.payment-table-desktop,.quote-table-desktop,.expense-table-desktop){background:#18221b;color:#e8efe9}
+html[data-theme="dark"] :is(th,td,.table-wrap tr,.register-card-grid,.register-card-actions,.document-preview-line,.document-preview-totals>div){border-color:#2c3a30}
+html[data-theme="dark"] :is(.assistant-message,.assistant-reply,.assistant-consent,.settings-note,.draft-prefill-note,.extra-line-editor,.document-preview){background:#1d2a21;color:#dfe9e1;border-color:#34473a}
+html[data-theme="dark"] :is(.btn-secondary,.register-card-actions button,.quick button,.theme-toggle,.mobile-search-trigger){background:#1d2a21;color:#dce8df;border-color:#35483a}
+html[data-theme="dark"] :is(.sidebar,.side){background:#141d17}
+html[data-theme="dark"] .notice{background:#1d2b21;border-color:#344b39}
+html[data-theme="dark"] .notice b{color:#d9e8dc}
+html[data-theme="dark"] .modal-backdrop{background:#0009}
+html[data-theme="dark"] .form-submit{box-shadow:0 -8px 14px #18221b}
+html[data-theme="dark"] .document-preview-sheet{background:#141d17}
+html[data-theme="dark"] .pwa-install{background:#477b58;border-color:#477b58}
