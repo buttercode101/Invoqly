@@ -1,4 +1,5 @@
 import { desc } from "drizzle-orm";
+import type { DocumentLineItem } from "@/lib/documents";
 import { boolean, bigint, char, date, foreignKey, index, jsonb, numeric, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -89,6 +90,7 @@ export const invoices = pgTable("invoices", {
   quantity: numeric("quantity", { precision: 12, scale: 3, mode: "number" }).notNull(),
   unitPriceMinor: bigint("unit_price_minor", { mode: "number" }).notNull(),
   currency: char("currency", { length: 3 }).notNull(),
+  lineItems: jsonb("line_items").$type<DocumentLineItem[]>().notNull().default([]),
   status: varchar("status", { length: 24 }).notNull().default("Draft"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -138,4 +140,4 @@ export const auditEvents = pgTable("audit_events", {
 
 export const quoteCounters = pgTable("quote_counters", { workspaceId: uuid("workspace_id").primaryKey().references(() => workspaces.id, { onDelete: "cascade" }), nextNumber: bigint("next_number", { mode: "number" }).notNull().default(0) });
 
-export const quotes = pgTable("quotes", { id: uuid("id").defaultRandom().primaryKey(), workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }), number: varchar("number", { length: 40 }).notNull(), customerName: varchar("customer_name", { length: 120 }).notNull(), customerEmail: varchar("customer_email", { length: 254 }).notNull().default(""), customerCompany: varchar("customer_company", { length: 120 }).notNull().default(""), issueDate: date("issue_date", { mode: "string" }).notNull(), validUntil: date("valid_until", { mode: "string" }).notNull(), description: varchar("description", { length: 500 }).notNull(), quantity: numeric("quantity", { precision: 12, scale: 3, mode: "number" }).notNull(), unitPriceMinor: bigint("unit_price_minor", { mode: "number" }).notNull(), currency: char("currency", { length: 3 }).notNull(), status: varchar("status", { length: 24 }).notNull().default("Draft"), convertedInvoiceId: uuid("converted_invoice_id"), createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(), updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow() }, (t) => [unique("quotes_workspace_id_number_key").on(t.workspaceId, t.number), index("quotes_workspace_created_idx").on(t.workspaceId, desc(t.createdAt))]);
+export const quotes = pgTable("quotes", { id: uuid("id").defaultRandom().primaryKey(), workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }), number: varchar("number", { length: 40 }).notNull(), customerName: varchar("customer_name", { length: 120 }).notNull(), customerEmail: varchar("customer_email", { length: 254 }).notNull().default(""), customerCompany: varchar("customer_company", { length: 120 }).notNull().default(""), issueDate: date("issue_date", { mode: "string" }).notNull(), validUntil: date("valid_until", { mode: "string" }).notNull(), description: varchar("description", { length: 500 }).notNull(), quantity: numeric("quantity", { precision: 12, scale: 3, mode: "number" }).notNull(), unitPriceMinor: bigint("unit_price_minor", { mode: "number" }).notNull(), currency: char("currency", { length: 3 }).notNull(), lineItems: jsonb("line_items").$type<DocumentLineItem[]>().notNull().default([]), status: varchar("status", { length: 24 }).notNull().default("Draft"), convertedInvoiceId: uuid("converted_invoice_id"), createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(), updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow() }, (t) => [unique("quotes_workspace_id_number_key").on(t.workspaceId, t.number), index("quotes_workspace_created_idx").on(t.workspaceId, desc(t.createdAt))]);
