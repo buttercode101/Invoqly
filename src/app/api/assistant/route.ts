@@ -10,7 +10,6 @@ import { calculateCashflow, rankReceivablesToChase, totalChaseImpactMinor, type 
 import { runBusinessAssistant } from "@/lib/ai";
 import { buildClientPaymentProfiles } from "@/lib/client-insights";
 import { calculateDocumentTotal, resolveDocumentLineItems, type DocumentLineItem } from "@/lib/documents";
-import { prepareAssistantDocumentDraft } from "@/lib/assistant-drafts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -218,21 +217,40 @@ ${JSON.stringify(modelContext)}`;
         return NextResponse.json({ reply: "What should the document describe?", draft: null });
       }
       const hoursAddition = explicitHoursAddition(message);
-      let resolvedLines: DocumentLineItem[];
-      let totalMinor: number;
-      try {
-        const prepared = prepareAssistantDocumentDraft({
-          proposedLines, sourceLineItems, explicitAmounts: statedAmounts, currency,
-          hoursAddition, mentionsHours: /\bhours?\b/i.test(message)
-        });
-        resolvedLines = prepared.lineItems;
-        totalMinor = prepared.totalMinor;
-      } catch (error) {
-        return NextResponse.json({
-          reply: reply + " " + (error instanceof Error ? error.message : "I couldn't safely resolve the proposed prices."),
-          draft: null
-        });
+      const hourlySourceIndices = sourceLineItems.map((item, index) => /\b(hours?|labou?r)\b/i.test(item.description) ? index : -1).filter(index => index >= 0);
+      if (hoursAddition !== null && hourlySourceIndices.length !== 1) {
+        return NextResponse.json({ reply: "I couldn't identify one unambiguous hourly labour line in the source document. Please confirm the hourly rate and which line should receive the additional hours.", draft: null });
       }
+      const resolvedLines: DocumentLineItem[] = [];
+      let hoursAdditionApplied = false;
+      for (const line of proposedLines) {
+        if (line.priceSource.type === "source") {
+          const sourceLine = sourceLineItems[line.priceSource.index];
+          if (!sourceLine || sourceLine.description.toLowerCase() !== line.description.toLowerCase()) {
+            return NextResponse.json({ reply: "I couldn't verify a historical price for one of these lines. Use the exact source line description or provide its price.", draft: null });
+          }
+          if (/\bhours?\b/i.test(message) && !/\b(hours?|labou?r)\b/i.test(sourceLine.description)) {
+            return NextResponse.json({ reply: "The previous document doesn't identify this line as hourly labour. Please confirm the hourly rate before I add hours.", draft: null });
+          }
+          let quantity = line.quantity;
+          if (hoursAddition !== null && line.priceSource.index === hourlySourceIndices[0]) {
+            quantity = sourceLine.quantity + hoursAddition;
+            if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1_000_000) return errorResponse("The adjusted labour quantity is outside the supported range.", 422);
+            hoursAdditionApplied = true;
+          }
+          resolvedLines.push({ description: line.description, quantity, unitPriceMinor: sourceLine.unitPriceMinor });
+        } else {
+          const stated = statedAmounts[line.priceSource.index];
+          if (!stated || stated.currency !== currency) {
+            return NextResponse.json({ reply: "I couldn't match a user-stated price to one of these lines. Please state its price and currency explicitly.", draft: null });
+          }
+          resolvedLines.push({ description: line.description, quantity: line.quantity, unitPriceMinor: stated.amountMinor });
+        }
+      }
+      if (hoursAddition !== null && !hoursAdditionApplied) return NextResponse.json({ reply: "I couldn't safely apply the additional hours to a verified hourly source line. Please confirm the hourly rate and source line.", draft: null });
+      let totalMinor: number;
+      try { totalMinor = calculateDocumentTotal(resolvedLines); }
+      catch (error) { return errorResponse(error instanceof Error ? error.message : "The document total is outside the supported range.", 422); }
       const proposedName = fields.data.customerName ?? source?.customerName;
       const matchedClient = snapshot.clients.find(c => c.name.toLowerCase() === (proposedName ?? "").toLowerCase());
       const customerName = matchedClient?.name ?? proposedName;
@@ -316,7 +334,7 @@ ${JSON.stringify(modelContext)}`;
       }
       const invoices: CashflowInvoice[] = snapshot.invoices.filter(i => i.currency === snapshot.currency).map(i => ({
         id: i.id, number: i.number, customerName: i.customerName ?? "Customer", dueDate: i.dueDate,
-        amountMinor: calculateDocumentTotal(resolveDocumentLineItems(i.lineItems, { description: i.description, quantity: i.quantity, unitPriceMinor: i.unitPriceMinor })),
+        amountMinor: i.quantity * i.unitPriceMinor,
         paidMinor: sum(snapshot.payments.filter(p => p.invoiceId === i.id).map(p => p.amountMinor)),
         status: i.status as CashflowInvoice["status"], currency: i.currency
       }));

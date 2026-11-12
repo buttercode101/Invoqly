@@ -119,6 +119,10 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       setError("Add a customer name and a valid document date before saving.");
       return;
     }
+    if (draftReview.customerEmail && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(draftReview.customerEmail.trim())) {
+      setError("Enter a valid customer email address or leave it blank.");
+      return;
+    }
     const first = draftPreview.lineItems[0];
     if (!first) return;
     const baseData = {
@@ -143,6 +147,8 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
         setDraftReview(null);
         setMessages(current => [...current, { role: "assistant", content: "Approved and saved. The reviewed document is now in your workspace." }]);
       }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The reviewed document could not be saved. Your draft is still available.");
     } finally {
       setSavingDraft(false);
     }

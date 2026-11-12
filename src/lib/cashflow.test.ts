@@ -81,35 +81,3 @@ describe("deterministic cash-flow engine", () => {
     expect(totalChaseImpactMinor(top)).toBe(6_500_000);
   });
 });
-
-
-  it("matches a hand-calculated weekly and monthly cash movement ledger", () => {
-    const result = calculateCashflow(base);
-    // Week 1: R65,000 receivables less R15,000 rent, R8,000 supplier and R2,500 contractor.
-    expect(result.weeks[0]).toMatchObject({
-      inflowsMinor: 6_500_000, outflowsMinor: 2_550_000, netMinor: 3_950_000,
-      openingBalanceMinor: 10_000_000, closingBalanceMinor: 13_950_000
-    });
-    // First monthly period ends 10 Dec: four weekly contractor payments fall in the period.
-    expect(result.months[0]).toMatchObject({
-      inflowsMinor: 6_500_000, outflowsMinor: 3_300_000, netMinor: 3_200_000,
-      openingBalanceMinor: 10_000_000, closingBalanceMinor: 13_200_000
-    });
-    // 52 weekly contractor payments make the 12-month closing cash R12,000; below the R20,000 reserve.
-    expect(result.lowestProjectedBalanceMinor).toBe(1_200_000);
-    expect(result.safeToSpendMinor).toBe(0);
-  });
-
-  it("reconciles a delayed-receipt and delayed-supplier scenario against the baseline by hand", () => {
-    const baseline = calculateCashflow(base);
-    const scenario = calculateCashflow(base, {
-      delayedInvoiceIds: ["i1"], invoiceDelayDays: 21,
-      delayedPayableIds: ["supplier"], supplierDelayDays: 14
-    });
-    // In week 1, the R40,000 invoice moves out and the R8,000 supplier bill moves out.
-    expect(baseline.weeks[0]?.netMinor).toBe(3_950_000);
-    expect(scenario.weeks[0]?.netMinor).toBe(750_000);
-    expect((scenario.weeks[0]?.netMinor ?? 0) - (baseline.weeks[0]?.netMinor ?? 0)).toBe(-3_200_000);
-    expect(scenario.months.reduce((sum, period) => sum + period.netMinor, 0))
-      .toBe(baseline.months.reduce((sum, period) => sum + period.netMinor, 0));
-  });

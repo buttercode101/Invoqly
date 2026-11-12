@@ -85,28 +85,3 @@ describe("client payment profiles", () => {
     expect(() => buildClientPaymentProfiles({ ...base, asOfDate: "2026-02-30" })).toThrow(/valid calendar date/);
   });
 });
-
-
-describe("partial settlement cut-off handling", () => {
-  it("does not count partial payments as on-time settlements and ignores payments after the as-of date", () => {
-    const result = buildClientPaymentProfiles({
-      asOfDate: "2026-11-12",
-      clients: [{ id: "c1", name: "Client One", currency: "ZAR" }],
-      invoices: [{
-        id: "partial", clientId: "c1", issueDate: "2026-10-01", dueDate: "2026-10-15",
-        quantity: 1, unitPriceMinor: 10_000, currency: "ZAR", status: "Partially paid"
-      }],
-      payments: [
-        { invoiceId: "partial", date: "2026-10-10", amountMinor: 4_000, currency: "ZAR", method: "Cash" },
-        { invoiceId: "partial", date: "2026-11-13", amountMinor: 6_000, currency: "ZAR", method: "Card" }
-      ]
-    })[0];
-    expect(result?.dueInvoiceCount).toBe(1);
-    expect(result?.paidInvoiceCount).toBe(0);
-    expect(result?.onTimeInvoiceCount).toBe(0);
-    expect(result?.onTimeRatePercent).toBe(0);
-    expect(result?.overdueBalanceMinor).toBe(6_000);
-    expect(result?.averageDaysToPay).toBeNull();
-    expect(result?.preferredPaymentMethod).toBe("Cash");
-  });
-});

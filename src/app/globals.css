@@ -190,3 +190,24 @@
 .add-line-button{display:inline-flex;align-items:center;gap:6px;padding:8px 0;border:0;background:transparent;color:#426b50;font-size:12px;font-weight:600;cursor:pointer}
 .remove-line-button{justify-self:start;padding:4px 0;border:0;background:transparent;color:#9a6158;font-size:11px;cursor:pointer}
 .assistant-line-item{min-width:0}
+
+
+/* Editable AI document review */
+.assistant-draft-editor{display:grid;gap:12px;margin:16px 0}
+.assistant-draft-editor>label,.assistant-draft-editor-two>label,.assistant-draft-line-editor>label{display:grid;gap:6px;min-width:0;color:#657168;font-size:10px;font-weight:650}
+.assistant-draft-editor label span{font-weight:400;color:#89928b}
+.assistant-draft-editor input{width:100%;min-width:0;height:38px;border:1px solid #dfe6df;border-radius:7px;background:#fff;color:#25352b;padding:0 10px;font:inherit;font-size:12px}
+.assistant-draft-editor input:focus{outline:2px solid #6d947b;outline-offset:2px;border-color:#6d947b}
+.assistant-draft-editor-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.assistant-draft-lines-heading{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid #e9ede8;color:#334238;font-size:11px}
+.assistant-draft-lines-heading span{color:#78847b;font-size:10px}
+.assistant-draft-line-editor{display:grid;gap:8px;padding:11px;border:1px solid #e4e9e4;border-radius:8px;background:#fafbf9;min-width:0}
+.assistant-draft-line-description{grid-column:1/-1}
+.assistant-draft-remove,.assistant-draft-add{justify-self:start;border:0;background:transparent;padding:3px 0;color:#6c7d70;font-size:10px;font-weight:650;cursor:pointer}
+.assistant-draft-remove{color:#98665e}
+.assistant-draft-add:disabled{opacity:.45;cursor:not-allowed}
+.assistant-draft-actions{display:flex;align-items:center;gap:9px;margin-top:12px}
+.assistant-draft-actions .assistant-approve{flex:1;justify-content:center}
+.assistant-draft-actions .btn{min-height:40px}
+@media(max-width:480px){.assistant-draft-editor-two{grid-template-columns:1fr}.assistant-draft-actions{align-items:stretch}.assistant-draft-actions .btn{padding-inline:10px}}
+@media(prefers-reduced-motion:reduce){.assistant-draft-editor input{transition:none}}
