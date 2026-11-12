@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { deleteReceiptObject, getReceiptObject, putReceiptObject } from "@/lib/receipts";
 import { NextResponse } from "next/server";
 import { withDb } from "@/lib/db";
 import { getCurrentUser, getOrCreateWorkspace } from "@/lib/workspace";
@@ -11,17 +11,6 @@ type StoredReceipt = {
   httpEtag: string;
   writeHttpMetadata(headers: Headers): void;
 };
-type ReceiptBucket = {
-  put(key: string, value: ArrayBuffer, options?: { httpMetadata?: { contentType?: string; cacheControl?: string }; customMetadata?: Record<string, string> }): Promise<unknown>;
-  get(key: string): Promise<StoredReceipt | null>;
-  head(key: string): Promise<unknown | null>;
-  delete(key: string): Promise<void>;
-};
-
-function bucket() {
-  return (env as unknown as { R2_RECEIPTS: ReceiptBucket }).R2_RECEIPTS;
-}
-
 function sameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
   if (!origin) return request.headers.get("sec-fetch-site") === "same-origin";
@@ -63,10 +52,7 @@ export async function POST(request: Request) {
     const workspace = await workspaceId();
     if (!workspace) return NextResponse.json({ error: "Sign in to attach receipt photos to cloud expenses." }, { status: 401 });
     const key = workspace + "/expenses/" + crypto.randomUUID() + "." + image.extension;
-    await bucket().put(key, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), {
-      httpMetadata: { contentType: image.type, cacheControl: "private, no-store" },
-      customMetadata: { workspaceId: workspace, kind: "expense-receipt" }
-    });
+    await putReceiptObject(key, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), image.type, workspace);
     return NextResponse.json({ objectKey: key }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return NextResponse.json({ error: "The receipt image could not be saved. Your expense has not been created." }, { status: 503 });
@@ -80,7 +66,7 @@ export async function GET(request: Request) {
     if (!workspace) return new Response("Sign in required", { status: 401 });
     const key = new URL(request.url).searchParams.get("key") ?? "";
     if (!key.startsWith(workspace + "/expenses/") || key.includes("..")) return new Response("Not found", { status: 404 });
-    const object = await bucket().get(key);
+    const object = await getReceiptObject(key);
     if (!object) return new Response("Not found", { status: 404 });
     const headers = new Headers();
     object.writeHttpMetadata(headers);
@@ -101,7 +87,7 @@ export async function DELETE(request: Request) {
     if (!workspace) return new Response("Sign in required", { status: 401 });
     const key = new URL(request.url).searchParams.get("key") ?? "";
     if (!key.startsWith(workspace + "/expenses/") || key.includes("..")) return new Response(null, { status: 404 });
-    await bucket().delete(key);
+    await deleteReceiptObject(key);
     return new Response(null, { status: 204 });
   } catch {
     return new Response(null, { status: 503 });
