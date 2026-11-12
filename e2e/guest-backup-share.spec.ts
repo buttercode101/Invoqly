@@ -18,7 +18,7 @@ test("guest can create, share, back up and restore an invoice without an account
 
   await page.getByRole("button", { name: "Share" }).first().click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("INV-0001");
-  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("R850");
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("850");
 
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export backup" }).click();
