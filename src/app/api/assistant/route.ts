@@ -11,6 +11,7 @@ import { runBusinessAssistant } from "@/lib/ai";
 import { buildClientPaymentProfiles } from "@/lib/client-insights";
 import { calculateDocumentTotal, resolveDocumentLineItems, type DocumentLineItem } from "@/lib/documents";
 import { prepareAssistantDocumentDraft } from "@/lib/assistant-drafts";
+import { resolveAssistantCustomerContact } from "@/lib/assistant-contact";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -242,8 +243,10 @@ ${JSON.stringify(modelContext)}`;
       const firstLine = resolvedLines[0]!;
       const explicitDate = explicitDocumentDate(message);
       const dueDate = explicitDate ?? dateAfterDays(14);
-      const customerEmail = matchedClient?.email ?? fields.data.customerEmail ?? "";
-      const customerCompany = matchedClient?.company ?? fields.data.customerCompany ?? "";
+      // Saved client data is trusted; otherwise only use contact details the user explicitly supplied.
+      const contact = resolveAssistantCustomerContact({ message, proposedCompany: fields.data.customerCompany, savedClient: matchedClient });
+      const customerEmail = contact.email;
+      const customerCompany = contact.company;
       const documentData = {
         ...(matchedClient && action.type === "create_invoice" ? { clientId: matchedClient.id } : {}),
         customerName, customerEmail, customerCompany, description: firstLine.description, quantity: firstLine.quantity, unitPriceMinor: firstLine.unitPriceMinor, lineItems: resolvedLines, currency,
