@@ -94,7 +94,7 @@ export async function POST(request:Request) {
           }
         }
         for (const quote of input.quotes) {
-          if (quote.currency !== input.currency || !Number.isSafeInteger(quote.quantity * quote.unitPriceMinor)) throw new Error("An imported quotation contains an invalid currency or total.");
+          if (quote.currency !== input.currency) throw new Error("An imported quotation contains an invalid currency.");const validatedQuoteLines=resolveDocumentLineItems(quote.lineItems,{description:quote.description,quantity:quote.quantity,unitPriceMinor:quote.unitPriceMinor});calculateDocumentTotal(validatedQuoteLines);
           const [counter]=await tx.insert(quoteCounters).values({workspaceId:workspace.id,nextNumber:1}).onConflictDoUpdate({target:quoteCounters.workspaceId,set:{nextNumber:sql`${quoteCounters.nextNumber} + 1`}}).returning({nextNumber:quoteCounters.nextNumber});
           const number="QUO-"+String(counter.nextNumber).padStart(4,"0");
           const lineItems=resolveDocumentLineItems(quote.lineItems,{description:quote.description,quantity:quote.quantity,unitPriceMinor:quote.unitPriceMinor});const first=lineItems[0]!;await tx.insert(quotes).values({workspaceId:workspace.id,number,customerName:quote.customerName,customerEmail:quote.customerEmail,customerCompany:quote.customerCompany,description:first.description,issueDate:quote.issueDate,validUntil:quote.validUntil,quantity:first.quantity,unitPriceMinor:first.unitPriceMinor,lineItems,currency:quote.currency,status:quote.status});
