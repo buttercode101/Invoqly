@@ -2,7 +2,7 @@ name: Deploy Cloudflare preview
 
 on:
   push:
-    branches: [feat/cloudflare-invoqly-production, feat/invoqly-production]
+    branches: [main, feat/cloudflare-invoqly-production, feat/invoqly-production]
   workflow_dispatch:
 
 permissions:
