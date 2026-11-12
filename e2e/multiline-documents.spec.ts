@@ -91,5 +91,29 @@ test("signed-in workspace creates, converts and reloads a multi-line quotation",
   await expect(invoiceRow).toContainText("Labour +1 more line");
   await page.reload();
   await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
-  await expect(page.locator("tbody tr").filter({ hasText: "Cloud Multi Quote" })).toContainText("Labour +1 more line");
+  const persistedInvoice = page.locator("tbody tr").filter({ hasText: "Cloud Multi Quote" });
+  await expect(persistedInvoice).toContainText("Labour +1 more line");
+  await expect(persistedInvoice).toContainText(/6[\s\u00a0,]?400/);
+
+  // Issue the converted invoice, then prove payment validation uses all lines.
+  await persistedInvoice.getByTitle("Issue invoice").click();
+  await expect(persistedInvoice).toContainText("Sent");
+  await page.locator(".nav-item").filter({ hasText: "Payments" }).first().click();
+  await page.getByRole("button", { name: "Record payment" }).click();
+  await page.getByLabel("Amount received").fill("5000.00");
+  await page.getByRole("button", { name: "Save payment" }).click();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
+  const partiallyPaid = page.locator("tbody tr").filter({ hasText: "Cloud Multi Quote" });
+  await expect(partiallyPaid).toContainText("Partially paid");
+  await expect(partiallyPaid).toContainText(/1[\s\u00a0,]?400/);
+  await page.locator(".nav-item").filter({ hasText: "Payments" }).first().click();
+  await page.getByRole("button", { name: "Record payment" }).click();
+  await page.getByLabel("Amount received").fill("1400.00");
+  await page.getByRole("button", { name: "Save payment" }).click();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
+  const fullyPaid = page.locator("tbody tr").filter({ hasText: "Cloud Multi Quote" });
+  await expect(fullyPaid).toContainText("Paid");
+  await expect(fullyPaid).toContainText(/R?0[.,]00/);
 });

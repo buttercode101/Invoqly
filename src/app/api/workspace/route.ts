@@ -185,7 +185,7 @@ export async function POST(request:Request) {
         const existing = await tx.select({amount:sql<string>`coalesce(sum(${payments.amountMinor}),0)::text`}).from(payments).where(and(eq(payments.invoiceId,invoice.id),eq(payments.workspaceId,workspace.id)));
         const paid = Number(existing[0]?.amount ?? "0");
         if (!Number.isSafeInteger(paid)) throw new Error("The existing payment total exceeds the supported amount.");
-        const invoiceTotal = invoice.quantity * invoice.unitPriceMinor;
+        const invoiceTotal = calculateDocumentTotal(resolveDocumentLineItems(invoice.lineItems, { description: invoice.description, quantity: invoice.quantity, unitPriceMinor: invoice.unitPriceMinor }));
         if (!Number.isSafeInteger(invoiceTotal)) throw new Error("The invoice total exceeds the supported amount range.");
         const balance = outstandingBalanceMinor(invoiceTotal, [paid]);
         if (input.amountMinor > balance) throw new Error("Payment cannot exceed the outstanding invoice balance.");
