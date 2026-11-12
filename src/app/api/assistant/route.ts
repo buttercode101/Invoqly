@@ -206,7 +206,7 @@ ${JSON.stringify(modelContext)}`;
           if (!sourceLine || sourceLine.description.toLowerCase() !== line.description.toLowerCase()) {
             return NextResponse.json({ reply: "I couldn't verify a historical price for one of these lines. Use the exact source line description or provide its price.", draft: null });
           }
-          if (/\\bhours?\\b/i.test(message) && !/\\b(hours?|labou?r)\\b/i.test(sourceLine.description)) {
+          if (/\bhours?\b/i.test(message) && !/\b(hours?|labou?r)\b/i.test(sourceLine.description)) {
             return NextResponse.json({ reply: "The previous document doesn't identify this line as hourly labour. Please confirm the hourly rate before I add hours.", draft: null });
           }
           resolvedLines.push({ description: line.description, quantity: line.quantity, unitPriceMinor: sourceLine.unitPriceMinor });
@@ -369,7 +369,7 @@ ${JSON.stringify(modelContext)}`;
       }, { headers: { "Cache-Control": "private, no-store" } });
     }
 
-    const safeReply = /\\b(sent|scheduled|created|saved|updated|deleted|paid|filed)\\b/i.test(reply)
+    const safeReply = /\b(sent|scheduled|created|saved|updated|deleted|paid|filed)\b/i.test(reply)
       ? "I haven't changed or sent anything. Tell me which record you want me to review or prepare as a draft."
       : reply;
     return NextResponse.json({ reply: safeReply, draft: null }, { headers: { "Cache-Control": "private, no-store" } });
