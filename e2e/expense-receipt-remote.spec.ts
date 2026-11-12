@@ -9,7 +9,7 @@ test("expense receipt photo uploads and remains available after reload", async (
   await page.getByLabel("Email address").fill("receipt-qa-" + Date.now() + "@example.com");
   await page.locator('input[type="password"]').first().fill("Invoqly-Receipt-QA-2026!");
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\\/app$/);
+  await expect(page).toHaveURL(/\/app$/);
   await page.locator(".sidebar .nav-item").filter({ hasText: "Expenses" }).first().click();
   await page.getByRole("button", { name: "Record expense" }).click();
   await page.getByLabel("Vendor or supplier").fill("Receipt photo test supplier");
