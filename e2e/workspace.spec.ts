@@ -84,11 +84,11 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await page.getByRole("button",{name:"Create quotation"}).click();
   const quoteRow=page.locator("tbody tr").filter({hasText:"Quote Customer"});
   await expect(quoteRow).toContainText("Draft");
-  const quotePrintPromise=page.waitForEvent("popup");
   await quoteRow.getByTitle("Print quotation").click();
-  const quotePrint=await quotePrintPromise;
-  await expect(quotePrint.locator("body")).toContainText("Quote Customer");
-  await quotePrint.close();
+  const quotePrint=page.getByRole("dialog", { name: /Quotation ·/ });
+  await expect(quotePrint).toBeVisible();
+  await expect(quotePrint.locator("iframe")).toBeVisible();
+  await quotePrint.getByRole("button", { name: "Close PDF preview" }).click();
   await quoteRow.getByTitle("Mark as sent").click();
   await expect(quoteRow).toContainText("Sent");
   await quoteRow.getByTitle("Accept quotation").click();
