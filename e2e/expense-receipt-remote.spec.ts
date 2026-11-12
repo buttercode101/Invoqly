@@ -23,10 +23,10 @@ test("expense receipt photo uploads and remains available after reload", async (
   });
   await expect(page.getByRole("img", { name: "Receipt preview" })).toBeVisible();
   await page.getByRole("button", { name: "Save expense" }).click();
-  await expect(page.getByRole("link", { name: "View photo" }).first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("link", { name: /View (?:receipt )?photo/ }).first()).toBeVisible({ timeout: 20_000 });
   await page.reload();
   await page.locator(".nav-item").filter({ hasText: "Expenses" }).first().click();
-  const receiptLink = page.getByRole("link", { name: "View photo" }).first();
+  const receiptLink = page.getByRole("link", { name: /View (?:receipt )?photo/ }).first();
   await expect(receiptLink).toBeVisible();
   const href = await receiptLink.getAttribute("href");
   expect(href).toContain("/api/expenses/receipt?key=");
@@ -42,5 +42,5 @@ test("expense receipt photo uploads and remains available after reload", async (
   await page.getByLabel("Category").selectOption("Office");
   await page.getByRole("button", { name: "Save expense" }).click();
   await expect(page.getByText("Manual entry QA supplier")).toBeVisible();
-  await expect(page.getByRole("link", { name: "View photo" })).toHaveCount(1);
+  await expect(page.getByRole("link", { name: /View (?:receipt )?photo/ })).toHaveCount(1);
 });
