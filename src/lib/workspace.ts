@@ -49,6 +49,8 @@ export async function loadWorkspace(db: Database, workspaceId: string) {
     vatRegistered: workspace?.vatRegistered ?? false,
     vatNumber: workspace?.vatNumber ?? "",
     businessAddress: workspace?.businessAddress ?? "",
+    openingCashBalanceMinor: workspace?.openingCashBalanceMinor ?? null,
+    cashReserveMinor: workspace?.cashReserveMinor ?? 0,
     clients: clientRows.filter(c=>!c.isOneOff).map(c => ({ id:c.id, name:c.name, email:c.email, company:c.company, currency:c.currency, createdAt:c.createdAt.toISOString() })),
     invoices: invoiceRows.map(i => {const customer=clientRows.find(c=>c.id===i.clientId);return { id:i.id, clientId:i.clientId, customerName:customer?.name??"Customer", customerEmail:customer?.email??"", customerCompany:customer?.company??"", number:i.number, issueDate:i.issueDate, dueDate:i.dueDate, description:i.description, quantity:i.quantity, unitPriceMinor:i.unitPriceMinor, lineItems:i.lineItems?.length?i.lineItems:[{description:i.description,quantity:i.quantity,unitPriceMinor:i.unitPriceMinor}], currency:i.currency, status:i.status, createdAt:i.createdAt.toISOString() }}),
     payments: paymentRows.map(p => ({ id:p.id, invoiceId:p.invoiceId, clientId:p.clientId, date:p.date, amountMinor:p.amountMinor, currency:p.currency, method:p.method, reference:p.reference, notes:p.notes, createdAt:p.createdAt.toISOString() })),
