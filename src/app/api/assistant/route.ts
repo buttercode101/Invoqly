@@ -6,7 +6,7 @@ import { withDb } from "@/lib/db";
 import { auditEvents, workspaces } from "@/lib/db/schema";
 import { getCurrentUser, getOrCreateWorkspace, loadWorkspace } from "@/lib/workspace";
 import { decimalToMinor, formatMinor } from "@/lib/money";
-import { calculateCashflow, rankReceivablesToChase, totalChaseImpactMinor, type CashflowInvoice, type CashflowPayable } from "@/lib/cashflow";
+import { calculateCashflow, cashflowInvoiceFromDocument, rankReceivablesToChase, totalChaseImpactMinor, type CashflowInvoice, type CashflowPayable } from "@/lib/cashflow";
 import { runBusinessAssistant } from "@/lib/ai";
 import { buildClientPaymentProfiles } from "@/lib/client-insights";
 import { applyDocumentTaxProfile, calculateDocumentTax, calculateDocumentTotal, resolveDocumentLineItems, type DocumentLineItem } from "@/lib/documents";
@@ -336,9 +336,9 @@ ${JSON.stringify(modelContext)}`;
       if (selectedInvoices.some(i => i.currency !== snapshot.currency) || selectedPayables.some(e => e.currency !== snapshot.currency)) {
         return NextResponse.json({ reply: "This scenario includes more than one currency. I won't combine currencies without an explicit exchange-rate source.", scenario: null });
       }
-      const invoices: CashflowInvoice[] = snapshot.invoices.filter(i => i.currency === snapshot.currency).map(i => ({
+      const invoices: CashflowInvoice[] = snapshot.invoices.filter(i => i.currency === snapshot.currency).map(i => cashflowInvoiceFromDocument({
         id: i.id, number: i.number, customerName: i.customerName ?? "Customer", dueDate: i.dueDate,
-        amountMinor: i.quantity * i.unitPriceMinor,
+        description: i.description, quantity: i.quantity, unitPriceMinor: i.unitPriceMinor, lineItems: i.lineItems,
         paidMinor: sum(snapshot.payments.filter(p => p.invoiceId === i.id).map(p => p.amountMinor)),
         status: i.status as CashflowInvoice["status"], currency: i.currency
       }));
