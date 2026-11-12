@@ -345,8 +345,6 @@ html[data-theme="dark"] .assistant-line-item>strong{color:#e8efe9}
 html[data-theme="dark"] .assistant-draft-actions .assistant-edit{background:#1d2a21;color:#dce8df;border-color:#35483a}
 
 
-/* Keep the invoice and quotation form's final action in normal flow on small screens.
-   A sticky submit button was visually covering the last currency/date fields at 320px. */
-@media(max-width:560px){
-  .form-modal .form-submit{position:static;bottom:auto;box-shadow:none}
-}
+/* Keep the final action in normal flow. Sticky positioning covered the last
+   currency/date fields in both desktop and narrow mobile document dialogs. */
+.form-modal .form-submit{position:static;bottom:auto;box-shadow:none}
