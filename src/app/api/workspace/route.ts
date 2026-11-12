@@ -107,8 +107,13 @@ export async function POST(request:Request) {
     }
 
     if (input.action === "update-settings") {
-      if ((input.vatRegistered ?? workspace.vatRegistered) && !/^\\d{10}$/.test(input.vatNumber ?? workspace.vatNumber ?? "")) {
-        return fail("Enter the 10-digit SARS VAT registration number before enabling VAT invoicing.", 422);
+      if (input.vatRegistered ?? workspace.vatRegistered) {
+        if (!/^\\d{10}$/.test(input.vatNumber ?? workspace.vatNumber ?? "")) {
+          return fail("Enter the 10-digit SARS VAT registration number before enabling VAT invoicing.", 422);
+        }
+        if (!(input.businessAddress ?? workspace.businessAddress ?? "").trim()) {
+          return fail("Enter your business address before enabling VAT tax-invoice details.", 422);
+        }
       }
       await db.transaction(async tx => {
         await tx.update(workspaces).set({
