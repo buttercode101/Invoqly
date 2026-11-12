@@ -88,10 +88,21 @@ test("AI invoice draft can be edited, saved, issued and paid without bypassing r
     };
   });
   expect(darkDraft.background).toBe("rgb(28, 38, 32)");
-  for (const [name, value] of Object.entries(darkDraft)) {
-    if (name === "background" || !value) continue;
-    const threshold = name === "heading" || name === "total" || name === "input" ? 7 : 4.5;
-    expect(contrastRatio(value.color, value.background === "rgba(0, 0, 0, 0)" ? darkDraft.background : value.background), `${name} contrast`).toBeGreaterThanOrEqual(threshold);
+  const contrastSamples: Array<[string, { color: string; background: string } | null, number]> = [
+    ["heading", darkDraft.heading, 7],
+    ["label", darkDraft.label, 4.5],
+    ["line heading", darkDraft.lineHeading, 7],
+    ["field label", darkDraft.fieldLabel, 4.5],
+    ["line label", darkDraft.lineLabel, 4.5],
+    ["total label", darkDraft.totalLabel, 4.5],
+    ["total", darkDraft.total, 7],
+    ["footnote", darkDraft.footnote, 4.5],
+    ["input", darkDraft.input, 7]
+  ];
+  for (const [name, value, threshold] of contrastSamples) {
+    expect(value, `${name} exists`).not.toBeNull();
+    const background = value!.background === "rgba(0, 0, 0, 0)" ? darkDraft.background : value!.background;
+    expect(contrastRatio(value!.color, background), `${name} contrast`).toBeGreaterThanOrEqual(threshold);
   }
   await page.screenshot({ path: "test-results/ai-draft-review-dark.png", fullPage: true });
   await page.getByRole("button", { name: "Switch to light mode" }).click();
