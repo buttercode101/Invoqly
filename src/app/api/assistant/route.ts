@@ -48,6 +48,15 @@ function validIsoDate(value: string | undefined): string | null {
   const parsed = Date.parse(value + "T00:00:00.000Z");
   return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 10) === value ? value : null;
 }
+function explicitDocumentDate(message: string): string | null {
+  const iso = message.match(/\\b20\\d{2}-\\d{2}-\\d{2}\\b/)?.[0];
+  if (iso) return validIsoDate(iso);
+  const relative = message.match(/\\b(?:due|valid|expires?)\\s+(?:in|for|after)\\s+(\\d{1,3})\\s+days?\\b/i) ?? message.match(/\\b(?:in|after)\\s+(\\d{1,3})\\s+days?\\b/i);
+  if (!relative) return null;
+  const days = Number(relative[1]);
+  return Number.isSafeInteger(days) && days >= 0 && days <= 3650 ? dateAfterDays(days) : null;
+}
+
 function safeTotal(quantity: number, unitPriceMinor: number): number | null {
   const total = quantity * unitPriceMinor;
   return Number.isSafeInteger(quantity) && quantity > 0 && Number.isSafeInteger(unitPriceMinor) && unitPriceMinor > 0 && Number.isSafeInteger(total) ? total : null;
@@ -249,7 +258,8 @@ ${JSON.stringify(modelContext)}`;
         return NextResponse.json({ reply: "Which customer should this document be for? I couldn't safely match the name to your client list or the request.", draft: null });
       }
       const firstLine = resolvedLines[0]!;
-      const dueDate = validIsoDate(action.type === "create_quote" ? fields.data.validUntil : fields.data.dueDate) ?? dateAfterDays(14);
+      const explicitDate = explicitDocumentDate(message);
+      const dueDate = explicitDate ?? dateAfterDays(14);
       const customerEmail = matchedClient?.email ?? fields.data.customerEmail ?? "";
       const customerCompany = matchedClient?.company ?? fields.data.customerCompany ?? "";
       const documentData = {
@@ -259,7 +269,7 @@ ${JSON.stringify(modelContext)}`;
       };
       const documentLabel = action.type === "create_quote" ? "quotation" : "invoice";
       return NextResponse.json({
-        reply: "Draft prepared for " + customerName + " with " + resolvedLines.length + " line item(s). Review each line and the server-calculated total. Nothing is saved until you approve it.",
+        reply: "Draft prepared for " + customerName + " with " + resolvedLines.length + " line item(s). " + (explicitDate ? "I used the date you specified." : "I applied the standard 14-day date; review it before approval.") + " Review each line and the server-calculated total. Nothing is saved until you approve it.",
         draft: { type: action.type === "create_quote" ? "create_quote" : "create_invoice", data: documentData, lineItems: resolvedLines.map(item => ({ ...item, lineTotalMinor: item.quantity * item.unitPriceMinor })), sourceDocumentNumber: source?.number ?? null, totalMinor, currency }
       }, { headers: { "Cache-Control": "private, no-store" } });
     }
