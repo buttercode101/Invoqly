@@ -115,6 +115,7 @@ export const payments = pgTable("payments", {
   method: varchar("method", { length: 40 }).notNull(),
   reference: varchar("reference", { length: 100 }).notNull().default(""),
   notes: varchar("notes", { length: 500 }).notNull().default(""),
+  receiptObjectKey: text("receipt_object_key"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("payments_workspace_date_idx").on(t.workspaceId, t.date), index("payments_invoice_idx").on(t.invoiceId), foreignKey({columns:[t.invoiceId,t.workspaceId],foreignColumns:[invoices.id,invoices.workspaceId]}).onDelete("restrict"), foreignKey({columns:[t.clientId,t.workspaceId],foreignColumns:[clients.id,clients.workspaceId]}).onDelete("restrict")]);
 
