@@ -7,7 +7,7 @@ test("AI invoice draft is reviewed, issued and paid", async ({ page }) => {
   await page.getByLabel("Email address").fill("ai-payment-" + Date.now() + "@example.com");
   await page.locator('input[type="password"]').first().fill("Invoqly-Preview-QA-2026!");
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\\/app$/);
+  await expect(page).toHaveURL(/\/app$/);
   await page.locator(".sidebar .nav-item").filter({ hasText: "AI Co-pilot" }).first().click();
   await page.getByRole("button", { name: "I understand — enable AI" }).click();
   await page.getByLabel("Ask your business co-pilot").fill("Prepare an invoice for customer Invoqly AI Payment QA. One line: One-off consulting, quantity 1, unit price ZAR 250.00, due 2026-12-12. Prepare the draft.");
@@ -40,7 +40,7 @@ test("execution mode requires explicit approval and records exactly one full set
   await page.getByLabel("Email address").fill("execution-qa-" + Date.now() + "@example.com");
   await page.locator('input[type="password"]').first().fill("Invoqly-Execution-QA-2026!");
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\\/app$/);
+  await expect(page).toHaveURL(/\/app$/);
 
   await page.locator(".sidebar .nav-item").filter({ hasText: "Invoices" }).first().click();
   await page.getByRole("button", { name: "New invoice" }).click();
@@ -52,7 +52,7 @@ test("execution mode requires explicit approval and records exactly one full set
   await page.getByRole("button", { name: "Create invoice" }).click();
   const invoice = page.locator("tbody tr").filter({ hasText: customer });
   await expect(invoice).toContainText("Draft");
-  const invoiceNumber = (await invoice.locator("td").first().innerText()).trim().split(/\\s+/)[0]!;
+  const invoiceNumber = (await invoice.locator("td").first().innerText()).trim().split(/\s+/)[0]!;
   await invoice.getByTitle("Issue invoice").click();
   await expect(invoice).toContainText("Sent");
 
