@@ -5,6 +5,7 @@ The tax engine is deliberately separate from AI. AI may extract or suggest trans
 ## South African VAT
 
 - Standard VAT is 15% from 1 April 2018; the engine also recognises the historic 14% rate before that date.
+- VAT registration eligibility is not inferred by the app. SARS currently describes compulsory registration above R2.3 million of taxable supplies in any prior 12-month period and voluntary registration above R120,000; users must confirm their actual registration status and applicable rules with SARS or a practitioner.
 - Zero-rated, exempt and out-of-scope treatments remain distinct.
 - Prices can be tax-exclusive or tax-inclusive. All arithmetic uses integer minor currency units and half-up rounding.
 - VAT201 preparation is a working summary, not a return submission or tax opinion.
