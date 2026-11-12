@@ -255,3 +255,6 @@
 .document-preview-totals .document-preview-grand{padding-top:8px;border-top:1px solid #e7ece6;color:#25352a;font-size:13px}
 .document-preview-note{display:block;margin-top:12px;color:#89938b;font-size:9px;line-height:1.45}
 @media(max-width:560px){.form-modal .form-submit{position:sticky;bottom:0;z-index:2;box-shadow:0 -8px 14px #fff}.document-preview-sheet{padding:11px}.document-preview-parties{gap:8px}.document-preview-line{grid-template-columns:minmax(0,1fr) 28px minmax(65px,auto)}}
+
+.pwa-install{position:fixed;right:16px;bottom:16px;z-index:50;min-height:44px;padding:10px 15px;border:1px solid #245b49;border-radius:8px;background:#245b49;color:#fff;font-size:12px;font-weight:700;box-shadow:0 8px 24px rgba(25,69,53,.2)}
+.pwa-install:hover{background:#194535}
