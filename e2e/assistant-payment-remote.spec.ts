@@ -9,8 +9,7 @@ test("AI invoice draft is reviewed, issued and paid", async ({ page }) => {
   const signupPromise = page.waitForResponse(response => response.url().includes("/api/auth/sign-up/email") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Create account" }).click();
   const signup = await signupPromise;
-  const signupData = await signup.json() as { error?: string };
-  expect(signup.status(), signupData.error ?? "signup request must succeed").toBe(200);
+  expect(signup.status(), "account signup must succeed").toBe(200);
   await expect(page).toHaveURL(/\/app$/, { timeout: 20_000 });
   await page.locator(".sidebar .nav-item").filter({ hasText: "AI Co-pilot" }).first().click();
   await page.getByRole("button", { name: "I understand — enable AI" }).click();
@@ -51,8 +50,7 @@ test("execution mode requires explicit approval and records exactly one full set
   const signupPromise = page.waitForResponse(response => response.url().includes("/api/auth/sign-up/email") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Create account" }).click();
   const signup = await signupPromise;
-  const signupData = await signup.json() as { error?: string };
-  expect(signup.status(), signupData.error ?? "signup request must succeed").toBe(200);
+  expect(signup.status(), "account signup must succeed").toBe(200);
   await expect(page).toHaveURL(/\/app$/, { timeout: 20_000 });
 
   await page.locator(".sidebar .nav-item").filter({ hasText: "Invoices" }).first().click();
