@@ -19,3 +19,34 @@
 .backupActions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .success{font-size:12px;color:#2f6b45;background:#eef6ef;border:1px solid #dcebdc;padding:10px 12px;border-radius:7px}
 @media(max-width:620px){.restore{min-height:44px}.backupActions{align-items:stretch}.backupActions>*{flex:1;justify-content:center}}
+
+
+/* Dark mode for this CSS-module workspace. Global selectors cannot target its hashed classes. */
+:global(html[data-theme="dark"]) .shell{background:#111813;color:#e8efe9}
+:global(html[data-theme="dark"]) .top,:global(html[data-theme="dark"]) .side{background:#141d17;border-color:#2c3a30}
+:global(html[data-theme="dark"]) .brand,:global(html[data-theme="dark"]) .business b,:global(html[data-theme="dark"]) .heading h1,:global(html[data-theme="dark"]) .metrics b,:global(html[data-theme="dark"]) .panelHead h2,:global(html[data-theme="dark"]) .row b,:global(html[data-theme="dark"]) .rowRight strong,:global(html[data-theme="dark"]) .cards b,:global(html[data-theme="dark"]) .modalHead h2{color:#e8efe9}
+:global(html[data-theme="dark"]) .guest,:global(html[data-theme="dark"]) .signin,:global(html[data-theme="dark"]) .business small,:global(html[data-theme="dark"]) .sideFoot p,:global(html[data-theme="dark"]) .heading p,:global(html[data-theme="dark"]) .metrics small,:global(html[data-theme="dark"]) .metrics span,:global(html[data-theme="dark"]) .panelHead p,:global(html[data-theme="dark"]) .row small,:global(html[data-theme="dark"]) .cards small,:global(html[data-theme="dark"]) .cards a,:global(html[data-theme="dark"]) .hint,:global(html[data-theme="dark"]) .footer{color:#a2ada5}
+:global(html[data-theme="dark"]) .layout,:global(html[data-theme="dark"]) .content{background:#111813;color:#e8efe9}
+:global(html[data-theme="dark"]) .business,:global(html[data-theme="dark"]) .sideFoot,:global(html[data-theme="dark"]) .footer,:global(html[data-theme="dark"]) .row{border-color:#2c3a30}
+:global(html[data-theme="dark"]) .avatar{background:#24382b;color:#c9e2cf}
+:global(html[data-theme="dark"]) .side nav button{color:#b0bdb3}
+:global(html[data-theme="dark"]) .side nav button.active{background:#23352a;color:#e8efe9}
+:global(html[data-theme="dark"]) .sideFoot button,:global(html[data-theme="dark"]) .footer button,:global(html[data-theme="dark"]) .notice a,:global(html[data-theme="dark"]) .addLine{color:#a5d0b1}
+:global(html[data-theme="dark"]) .eyebrow{color:#a5c8ac}
+:global(html[data-theme="dark"]) .notice{background:#1d2b21;border-color:#344b39}
+:global(html[data-theme="dark"]) .notice>span{background:#294632;color:#d6e9d8}
+:global(html[data-theme="dark"]) .notice b{color:#d9e8dc}
+:global(html[data-theme="dark"]) .notice small{color:#b4c3b8}
+:global(html[data-theme="dark"]) .metrics article,:global(html[data-theme="dark"]) .panel,:global(html[data-theme="dark"]) .cards article,:global(html[data-theme="dark"]) .modal{background:#18221b;color:#e8efe9;border-color:#2c3a30}
+:global(html[data-theme="dark"]) .rowRight button,:global(html[data-theme="dark"]) .quick button,:global(html[data-theme="dark"]) .restore{background:#1d2a21;color:#dce8df;border-color:#35483a}
+:global(html[data-theme="dark"]) .empty{color:#a2ada5}
+:global(html[data-theme="dark"]) .empty span{background:#1d2a21;color:#a5d0b1}
+:global(html[data-theme="dark"]) .modalHead>button{color:#b7c3ba}
+:global(html[data-theme="dark"]) .modal label,:global(html[data-theme="dark"]) .settingsForm label{color:#d5dfd7}
+:global(html[data-theme="dark"]) .modal input,:global(html[data-theme="dark"]) .modal select,:global(html[data-theme="dark"]) .settingsForm input{background:#121a15;color:#e8efe9;border-color:#35453a}
+:global(html[data-theme="dark"]) .lineItem,:global(html[data-theme="dark"]) .receipt-preview{background:#1d2a21;border-color:#34473a}
+:global(html[data-theme="dark"]) .checkLabel input{accent-color:#85b596}
+:global(html[data-theme="dark"]) .removeLine{color:#e6a39a}
+:global(html[data-theme="dark"]) .success{background:#1d2b21;border-color:#344b39;color:#bfe0c6}
+:global(html[data-theme="dark"]) .error{color:#ffb4a9}
+:global(html[data-theme="dark"]) .shell :is(a,button,input,select):focus-visible{outline-color:#a5d0b1}
