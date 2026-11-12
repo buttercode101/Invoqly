@@ -107,9 +107,24 @@ export async function POST(request:Request) {
     }
 
     if (input.action === "update-settings") {
-      await db.transaction(async tx=>{
-        if ((input.vatRegistered ?? workspace.vatRegistered) && !/^\\d{10}$/.test(input.vatNumber ?? workspace.vatNumber ?? "")) return fail("Enter the 10-digit SARS VAT registration number before enabling VAT invoicing.",422);\n        await tx.update(workspaces).set({ businessName:input.businessName, defaultCurrency:input.currency, locale:input.locale, vatRegistered:input.vatRegistered ?? workspace.vatRegistered, vatNumber:input.vatNumber ?? workspace.vatNumber, businessAddress:input.businessAddress ?? workspace.businessAddress, updatedAt:new Date() }).where(eq(workspaces.id,workspace.id));
-        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"workspace.updated",entityType:"workspace",entityId:workspace.id,metadata:{currency:input.currency}});
+      if ((input.vatRegistered ?? workspace.vatRegistered) && !/^\\d{10}$/.test(input.vatNumber ?? workspace.vatNumber ?? "")) {
+        return fail("Enter the 10-digit SARS VAT registration number before enabling VAT invoicing.", 422);
+      }
+      await db.transaction(async tx => {
+        await tx.update(workspaces).set({
+          businessName: input.businessName,
+          defaultCurrency: input.currency,
+          locale: input.locale,
+          vatRegistered: input.vatRegistered ?? workspace.vatRegistered,
+          vatNumber: input.vatNumber ?? workspace.vatNumber,
+          businessAddress: input.businessAddress ?? workspace.businessAddress,
+          updatedAt: new Date()
+        }).where(eq(workspaces.id, workspace.id));
+        await tx.insert(auditEvents).values({
+          workspaceId: workspace.id, actorUserId: user.id, action: "workspace.updated",
+          entityType: "workspace", entityId: workspace.id,
+          metadata: { currency: input.currency, vatRegistered: input.vatRegistered ?? workspace.vatRegistered }
+        });
       });
     }
 
