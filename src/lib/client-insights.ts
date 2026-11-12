@@ -6,6 +6,7 @@ export type ClientInsightInvoice = {
   dueDate: string;
   quantity: number;
   unitPriceMinor: number;
+  lineItems?: DocumentLineItem[];
   currency: string;
   status: string;
 };
@@ -31,6 +32,8 @@ export type ClientPaymentProfile = {
   lateInvoiceCount: number;
   confidence: "low" | "medium" | "high" | "none";
 };
+
+import { calculateDocumentTotal, resolveDocumentLineItems, type DocumentLineItem } from "./documents";
 
 const DAY_MS = 86_400_000;
 
@@ -79,7 +82,7 @@ export function buildClientPaymentProfiles(input: {
     const methods = new Map<string, { count: number; latestDate: string }>();
 
     for (const invoice of clientInvoices) {
-      const total = invoice.quantity * invoice.unitPriceMinor;
+      const total = calculateDocumentTotal(resolveDocumentLineItems(invoice.lineItems, { description: "Legacy invoice line", quantity: invoice.quantity, unitPriceMinor: invoice.unitPriceMinor }));
       if (!Number.isSafeInteger(total) || total <= 0) throw new Error("Invoice total is invalid for client payment analysis.");
       const rows = (paymentByInvoice.get(invoice.id) ?? []).filter(payment =>
         payment.currency === invoice.currency && payment.date <= input.asOfDate
