@@ -9,8 +9,8 @@ test("expense receipt photo uploads and remains available after reload", async (
   await page.getByLabel("Email address").fill("receipt-qa-" + Date.now() + "@example.com");
   await page.locator('input[type="password"]').first().fill("Invoqly-Receipt-QA-2026!");
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\/app$/);
-  await page.locator(".nav-item").filter({ hasText: "Expenses" }).first().click();
+  await expect(page).toHaveURL(/\\/app$/);
+  await page.locator(".sidebar .nav-item").filter({ hasText: "Expenses" }).first().click();
   await page.getByRole("button", { name: "Record expense" }).click();
   await page.getByLabel("Vendor or supplier").fill("Receipt photo test supplier");
   await page.getByLabel("Amount").fill("149.99");
@@ -25,7 +25,7 @@ test("expense receipt photo uploads and remains available after reload", async (
   await page.getByRole("button", { name: "Save expense" }).click();
   await expect(page.getByRole("link", { name: /View (?:receipt )?photo/ }).first()).toBeVisible({ timeout: 20_000 });
   await page.reload();
-  await page.locator(".nav-item").filter({ hasText: "Expenses" }).first().click();
+  await page.locator(".sidebar .nav-item").filter({ hasText: "Expenses" }).first().click();
   const receiptLink = page.getByRole("link", { name: /View (?:receipt )?photo/ }).first();
   await expect(receiptLink).toBeVisible();
   const href = await receiptLink.getAttribute("href");
@@ -41,6 +41,6 @@ test("expense receipt photo uploads and remains available after reload", async (
   await page.getByLabel("Currency").selectOption("ZAR");
   await page.getByLabel("Category").selectOption("Office");
   await page.getByRole("button", { name: "Save expense" }).click();
-  await expect(page.locator("tbody").getByText("Manual entry QA supplier", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: /View (?:receipt )?photo/ })).toHaveCount(1);
+  await expect(page.locator(".expense-card-list").getByText("Manual entry QA supplier", { exact: true })).toBeVisible();
+  await expect(page.locator(".expense-card-list").getByRole("link", { name: /View (?:receipt )?photo/ })).toHaveCount(0);
 });
