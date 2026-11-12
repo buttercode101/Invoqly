@@ -5,16 +5,16 @@ import { withDb } from "@/lib/db";
 import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, quoteCounters, quotes, workspaces } from "@/lib/db/schema";
 import { getCurrentUser, getOrCreateWorkspace, loadWorkspace } from "@/lib/workspace";
 import { deriveInvoiceStatus, outstandingBalanceMinor } from "@/lib/billing";
-import { calculateDocumentTotal, resolveDocumentLineItems, type DocumentLineItem } from "@/lib/documents";
+import { applyDocumentTaxProfile, calculateDocumentTotal, resolveDocumentLineItems, type DocumentLineItem } from "@/lib/documents";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const currency = z.string().regex(/^[A-Z]{3}$/).refine(value=>{try{new Intl.NumberFormat("en",{style:"currency",currency:value}).format(0);return true}catch{return false}},"Choose a supported ISO currency code.");
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>{const [year,month,day]=value.split("-").map(Number);const parsed=new Date(Date.UTC(year,month-1,day));return parsed.getUTCFullYear()===year&&parsed.getUTCMonth()===month-1&&parsed.getUTCDate()===day},"Enter a real calendar date.");
-const lineItem = z.object({description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER)});
+const lineItem = z.object({description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),taxTreatment:z.enum(["standard","zero_rated","exempt","out_of_scope"]).optional(),priceMode:z.enum(["inclusive","exclusive"]).optional()});
 const payload = z.discriminatedUnion("action", [
-  z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20) }),
+  z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20), vatRegistered:z.boolean().optional(), vatNumber:z.string().trim().max(10).optional(), businessAddress:z.string().trim().max(250).optional() }),
   z.object({ action:z.literal("create-client"), name:z.string().trim().min(1).max(120), email:z.string().trim().email().max(254).toLowerCase(), company:z.string().max(120).default(""), currency }),
   z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid().optional(), customerName:z.string().trim().min(1).max(120).optional(), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), saveContact:z.boolean().default(false), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), currency, dueDate:date }),
   z.object({ action:z.literal("create-quote"), customerName:z.string().trim().min(1).max(120), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), currency, validUntil:date }),
@@ -108,7 +108,7 @@ export async function POST(request:Request) {
 
     if (input.action === "update-settings") {
       await db.transaction(async tx=>{
-        await tx.update(workspaces).set({ businessName:input.businessName, defaultCurrency:input.currency, locale:input.locale, updatedAt:new Date() }).where(eq(workspaces.id,workspace.id));
+        if ((input.vatRegistered ?? workspace.vatRegistered) && !/^\\d{10}$/.test(input.vatNumber ?? workspace.vatNumber ?? "")) return fail("Enter the 10-digit SARS VAT registration number before enabling VAT invoicing.",422);\n        await tx.update(workspaces).set({ businessName:input.businessName, defaultCurrency:input.currency, locale:input.locale, vatRegistered:input.vatRegistered ?? workspace.vatRegistered, vatNumber:input.vatNumber ?? workspace.vatNumber, businessAddress:input.businessAddress ?? workspace.businessAddress, updatedAt:new Date() }).where(eq(workspaces.id,workspace.id));
         await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"workspace.updated",entityType:"workspace",entityId:workspace.id,metadata:{currency:input.currency}});
       });
     }
