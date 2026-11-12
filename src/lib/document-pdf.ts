@@ -114,5 +114,5 @@ export function createDocumentPdf(input: DocumentPdfInput): Blob {
   output += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
   offsets.slice(1).forEach(offset => { output += String(offset).padStart(10, "0") + " 00000 n \n"; });
   output += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return new Blob([new TextEncoder().encode(output)], { type: "application/pdf" });
+  return new Blob([output], { type: "application/pdf" });
 }
