@@ -212,7 +212,8 @@ test("real account, client, invoice, partial payments, expense and reload",async
       await page.locator(".mobile-search-overlay input").fill("Acme");
       await expect(page.locator(".mobile-search-overlay input")).toHaveValue("Acme");
       await expect(page.locator(".invoice-card-list .register-card")).toHaveCount(1);
-      await page.getByRole("button",{name:"Clear search"}).click();
+      await page.locator(".mobile-search-overlay input").fill("");
+      await expect(page.locator(".mobile-search-overlay input")).toHaveValue("");
       await page.getByRole("button",{name:"Close search"}).click();
       await expect(page.locator(".mobile-search-overlay")).toHaveCount(0);
       await goTo(page,"Invoices");
