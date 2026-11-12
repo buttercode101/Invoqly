@@ -138,6 +138,7 @@
 .assistant-status i.is-enabled{background:#4b8a62}
 .assistant-status i.is-idle{background:#b0b8b1}
 .assistant-disable{border:0;background:transparent;color:#758078;font-size:11px;text-decoration:underline;cursor:pointer}
+.assistant-disable.is-execution{padding:6px 9px;border:1px solid #cbdccf;border-radius:6px;background:#edf4ee;color:#28543a;font-weight:650;text-decoration:none}
 .assistant-consent{max-width:540px;margin:auto;padding:26px 22px;border:1px solid #e1e8e1;border-radius:12px;background:#fafbf9;text-align:left}
 .assistant-consent-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:#edf3ed;color:#41664d}
 .assistant-consent h2{margin:14px 0 8px;font-size:19px;color:#202923}
