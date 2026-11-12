@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import AssistantPanel from "@/app/assistant-panel";
 import { deriveInvoiceStatus, outstandingBalanceMinor } from "@/lib/billing";
 import { applyDocumentTaxProfile, calculateDocumentTax, calculateDocumentTotal, type DocumentLineItem } from "@/lib/documents";
-import { decimalToMinor, formatMinor } from "@/lib/money";
+import { currencyExponent, decimalToMinor, formatMinor } from "@/lib/money";
 import { ArrowDownLeft, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, ChevronDown, ChevronRight, CircleHelp, Command, CreditCard, Download, FileCheck2, FilePlus2, FileText, Home, LifeBuoy, MoreHorizontal, Plus, Search, Settings2, Sparkles, Users, Wallet, X, Trash2, Printer, Check, Pencil, Building2, Receipt, CircleDollarSign, LogOut } from "lucide-react";
 
 type Status = "Draft" | "Sent" | "Partially paid" | "Paid" | "Overdue";
@@ -49,19 +49,30 @@ export default function WorkspaceClient({user}:{user:{id:string;name:string;emai
  const importGuestBackup=async()=>{if(!guestBackup)return;const storageKey=guestBackupSource==="file"?GUEST_PENDING_IMPORT_KEY:GUEST_STORAGE_KEY;if(!window.confirm("Import this guest backup into your signed-in cloud workspace? Existing cloud records will be kept. The selected backup will be cleared from temporary browser storage only after the server confirms the import."))return;const importId=guestBackup.importId??await stableGuestImportId(guestBackup);const pendingBackup={...guestBackup,importId};localStorage.setItem(storageKey,JSON.stringify(pendingBackup));setGuestBackup(pendingBackup);const ok=await mutate({action:"import-guest-workspace",importId,businessName:guestBackup.businessName,currency:guestBackup.currency,clients:guestBackup.clients,invoices:guestBackup.invoices,expenses:guestBackup.expenses});if(ok){localStorage.removeItem(storageKey);setGuestBackup(null);setGuestBackupError("");setActionError("")}};
  const exportData=()=>{const blob=new Blob([JSON.stringify(store,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="invoqly-workspace-backup.json";a.click();URL.revokeObjectURL(url)};
  const exportCsv=()=>{
-  const headers=["Type","Reference","Name","Date","Due date","Status","Currency","Net minor units","VAT minor units","Gross minor units","VAT treatment","Price mode","VAT rate basis points"];
+  const headers=["Type","Reference","Name","Date","Due date","Status","Currency","Net amount","VAT amount","Gross amount","VAT treatment","Price mode","VAT rate"];
+  const csvAmount=(minor:number,currency:string)=>{
+   const exponent=currencyExponent(currency);
+   return (minor/(10**exponent)).toFixed(exponent);
+  };
+  const treatmentLabel=(value:string)=>({standard:"Standard-rated",zero_rated:"Zero-rated",exempt:"Exempt",out_of_scope:"Out of scope"} as Record<string,string>)[value]??value;
   const documentRow=(type:string,doc:any,name:string,due:string,status:string)=>{
    const lines:DocumentLineItem[]=doc.lineItems?.length?doc.lineItems:[{description:doc.description,quantity:doc.quantity,unitPriceMinor:doc.unitPriceMinor}];
    const tax=calculateDocumentTax(lines);
-   return [type,doc.number,name,doc.issueDate,due,status,doc.currency,String(tax.netMinor),String(tax.taxMinor),String(tax.grossMinor),lines[0]?.taxTreatment??"out_of_scope",lines[0]?.priceMode??"exclusive",String(lines[0]?.taxRateBasisPoints??0)];
+   const treatments=[...new Set(lines.map(line=>line.taxTreatment??"out_of_scope"))];
+   const modes=[...new Set(lines.map(line=>line.priceMode??"exclusive"))];
+   const rates=[...new Set(lines.map(line=>line.taxRateBasisPoints??0))];
+   const treatment=treatments.length===1?treatmentLabel(treatments[0]):"Mixed";
+   const priceMode=treatments.length===1&&treatments[0]==="out_of_scope"?"Not applicable":modes.length===1?(modes[0]==="inclusive"?"VAT inclusive":"VAT exclusive"):"Mixed";
+   const rate=rates.length===1?`${rates[0]/100}%`:"Mixed";
+   return [type,doc.number,name,doc.issueDate,due,status,doc.currency,csvAmount(tax.netMinor,doc.currency),csvAmount(tax.taxMinor,doc.currency),csvAmount(tax.grossMinor,doc.currency),treatment,priceMode,rate];
   };
   const rows=[headers,
    ...store.invoices.map(i=>documentRow("Invoice",i,i.customerName??store.clients.find(c=>c.id===i.clientId)?.name??"",i.dueDate,i.status)),
    ...store.quotes.map(q=>documentRow("Quote",q,q.customerName,q.validUntil,q.status)),
-   ...store.payments.map(p=>["Payment",p.reference||p.id,store.invoices.find(i=>i.id===p.invoiceId)?.customerName??store.clients.find(c=>c.id===p.clientId)?.name??"",p.date,"","Recorded",p.currency,"","",String(p.amountMinor),"","",""]),
-   ...store.expenses.map(e=>["Expense",e.id,e.vendor,e.date,"","Recorded",e.currency,"","",String(e.amountMinor),"","",""])
+   ...store.payments.map(p=>["Payment",p.reference||p.id,store.invoices.find(i=>i.id===p.invoiceId)?.customerName??store.clients.find(c=>c.id===p.clientId)?.name??"",p.date,"","Recorded",p.currency,"","",csvAmount(p.amountMinor,p.currency),"","",""]),
+   ...store.expenses.map(e=>["Expense",e.id,e.vendor,e.date,"","Recorded",e.currency,"","",csvAmount(e.amountMinor,e.currency),"","",""])
   ];
-  const csv=rows.map(row=>row.map(value=>{const raw=String(value);const safe=/^\s*[=+\-@]/.test(raw)?"'"+raw:raw;return '"'+safe.replaceAll('"','""')+'"'}).join(",")).join("\r\n");
+  const csv=rows.map(row=>row.map(value=>{const raw=String(value??"");const safe=/^\\s*[=+\\-@]/.test(raw)?"'"+raw:raw;return '"'+safe.replaceAll('"','""')+'"'}).join(",")).join("\\r\\n");
   const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=url;a.download="invoqly-accountant-export.csv";a.click();URL.revokeObjectURL(url);
  };
  const createInvoice=async(data:{clientId?:string;customerName?:string;customerEmail?:string;customerCompany?:string;saveContact?:boolean;description:string;quantity:number;unitPriceMinor:number;lineItems?:Array<{description:string;quantity:number;unitPriceMinor:number}>;currency:string;dueDate:string})=>{const ok=await mutate({action:"create-invoice",...data});if(ok){setActive("Invoices");setCreate("")}return ok};
