@@ -48,8 +48,12 @@ test("execution mode requires explicit approval and records exactly one full set
   await page.getByLabel("Your name").fill("Execution QA");
   await page.getByLabel("Email address").fill("execution-qa-" + Date.now() + "@example.com");
   await page.locator('input[type="password"]').first().fill("Invoqly-Execution-QA-2026!");
+  const signupPromise = page.waitForResponse(response => response.url().includes("/api/auth/sign-up/email") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\/app$/);
+  const signup = await signupPromise;
+  const signupData = await signup.json() as { error?: string };
+  expect(signup.status(), signupData.error ?? "signup request must succeed").toBe(200);
+  await expect(page).toHaveURL(/\/app$/, { timeout: 20_000 });
 
   await page.locator(".sidebar .nav-item").filter({ hasText: "Invoices" }).first().click();
   await page.getByRole("button", { name: "New invoice" }).click();
