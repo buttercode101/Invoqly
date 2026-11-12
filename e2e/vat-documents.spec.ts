@@ -36,6 +36,11 @@ test("VAT-registered workspace calculates and preserves VAT on a quotation conve
   await page.getByLabel("Entered prices").selectOption("inclusive");
   await expect(page.locator(".invoice-total-preview")).toContainText(/Net.*100.*VAT.*15/);
   await expect(page.locator(".invoice-total-preview")).toContainText(/115/);
+  await page.getByText("Preview document before saving").click();
+  await expect(page.locator(".document-preview-sheet")).toContainText("VAT Test Customer");
+  await expect(page.locator(".document-preview-sheet")).toContainText("Net amount");
+  await expect(page.locator(".document-preview-sheet")).toContainText("VAT");
+  await expect(page.locator(".document-preview-sheet")).toContainText("Total");
   await page.getByRole("button", { name: "Create quotation" }).click();
 
   const quoteRow = page.locator("tbody tr").filter({ hasText: "VAT Test Customer" });
