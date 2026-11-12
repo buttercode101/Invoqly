@@ -155,7 +155,15 @@ test("real account, client, invoice, partial payments, expense and reload",async
       for(const target of menuTargets){expect(target.width).toBeGreaterThanOrEqual(44);expect(target.height).toBeGreaterThanOrEqual(44);}
       await page.getByRole("menuitem",{name:"Settings"}).click();
     }
-    if(width===320){await goTo(page,"Overview");await page.screenshot({path:"test-results/invoqly-workspace-mobile-320.png",fullPage:true});}
+    if(width===320){
+      await goTo(page,"Overview");
+      await page.screenshot({path:"test-results/invoqly-workspace-mobile-320.png",fullPage:true});
+      await goTo(page,"Invoices");
+      await page.getByRole("button",{name:"New invoice"}).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-320.png",fullPage:true});
+      await page.getByRole("button",{name:"Close"}).click();
+    }
     if(width===390){
       await goTo(page,"Overview");
       await page.screenshot({path:"test-results/invoqly-workspace-mobile-390.png",fullPage:true});
@@ -167,8 +175,26 @@ test("real account, client, invoice, partial payments, expense and reload",async
       await page.getByRole("button",{name:"Clear search"}).click();
       await page.getByRole("button",{name:"Close search"}).click();
       await expect(page.locator(".mobile-search-overlay")).toHaveCount(0);
+      await goTo(page,"Invoices");
+      await page.getByRole("button",{name:"New invoice"}).click();
+      await expect(page.getByRole("heading",{name:"Create an invoice"})).toBeVisible();
+      await page.screenshot({path:"test-results/invoqly-invoice-form-mobile-390.png",fullPage:true});
+      await page.getByRole("button",{name:"Close"}).click();
+      await goTo(page,"Quotes");
+      await page.getByRole("button",{name:"New quotation"}).click();
+      await expect(page.getByRole("heading",{name:"Create a quotation"})).toBeVisible();
+      await page.screenshot({path:"test-results/invoqly-quote-form-mobile-390.png",fullPage:true});
+      await page.getByRole("button",{name:"Close"}).click();
     }
-    if(width===1440){await goTo(page,"Overview");await page.screenshot({path:"test-results/invoqly-workspace-desktop-1440.png",fullPage:true});}
+    if(width===1440){
+      await goTo(page,"Overview");
+      await page.screenshot({path:"test-results/invoqly-workspace-desktop-1440.png",fullPage:true});
+      await goTo(page,"Invoices");
+      await page.getByRole("button",{name:"New invoice"}).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await page.screenshot({path:"test-results/invoqly-invoice-form-desktop-1440.png",fullPage:true});
+      await page.getByRole("button",{name:"Close"}).click();
+    }
   }
 });
 
