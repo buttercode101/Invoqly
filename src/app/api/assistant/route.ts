@@ -246,7 +246,7 @@ ${JSON.stringify(modelContext)}`;
         clients: snapshot.clients.map(client => ({ id: client.id, name: client.name, currency: client.currency })),
         invoices: snapshot.invoices.map(invoice => ({
           id: invoice.id, clientId: invoice.clientId, issueDate: invoice.issueDate, dueDate: invoice.dueDate,
-          quantity: invoice.quantity, unitPriceMinor: invoice.unitPriceMinor, currency: invoice.currency, status: invoice.status
+          quantity: invoice.quantity, unitPriceMinor: invoice.unitPriceMinor, lineItems: invoice.lineItems, currency: invoice.currency, status: invoice.status
         })),
         payments: snapshot.payments.map(payment => ({
           invoiceId: payment.invoiceId, date: payment.date, amountMinor: payment.amountMinor, currency: payment.currency, method: payment.method
@@ -261,7 +261,7 @@ ${JSON.stringify(modelContext)}`;
     if (action.type === "chase_priorities") {
       const receivables = snapshot.invoices.filter(i => i.currency === snapshot.currency && i.status !== "Draft" && i.status !== "Paid" && i.dueDate < today()).map(i => ({
         id: i.id, number: i.number, customerName: i.customerName ?? "Customer", dueDate: i.dueDate,
-        amountMinor: i.quantity * i.unitPriceMinor,
+        amountMinor: calculateDocumentTotal(resolveDocumentLineItems(i.lineItems, { description: i.description, quantity: i.quantity, unitPriceMinor: i.unitPriceMinor })),
         paidMinor: sum(snapshot.payments.filter(p => p.invoiceId === i.id).map(p => p.amountMinor)),
         status: i.status as CashflowInvoice["status"], currency: i.currency
       }));
@@ -350,7 +350,7 @@ ${JSON.stringify(modelContext)}`;
       });
       const reminders = overdue.map(invoice => {
         const paid = sum(snapshot.payments.filter(p => p.invoiceId === invoice.id).map(p => p.amountMinor));
-        const total = invoice.quantity * invoice.unitPriceMinor;
+        const total = calculateDocumentTotal(resolveDocumentLineItems(invoice.lineItems, { description: invoice.description, quantity: invoice.quantity, unitPriceMinor: invoice.unitPriceMinor }));
         const balance = Math.max(0, total - paid);
         const bodyText = reminderFields.data.body ?? "This is a friendly reminder that the invoice below is overdue. Please let us know if payment has already been arranged or if you need another copy.";
         return {
