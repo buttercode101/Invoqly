@@ -44,7 +44,7 @@ test("VAT-registered workspace calculates and preserves VAT on a quotation conve
 
   const snapshot = await page.evaluate(async () => {
     const response = await fetch("/api/workspace", { cache: "no-store" });
-    return (await response.json()).workspace;
+    return (await response.json() as { workspace: any }).workspace;
   });
   const savedQuote = snapshot.quotes.find((quote: any) => quote.customerName === "VAT Test Customer");
   expect(snapshot.vatRegistered).toBe(true);
