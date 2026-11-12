@@ -126,6 +126,8 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await expect(page.locator('.side-nav .nav-item[data-nav="AI Co-pilot"]')).toBeHidden();
   await expect(page.getByRole("button",{name:"More workspace sections"})).toBeVisible();
   await page.getByRole("button",{name:"More workspace sections"}).click();
+  await page.screenshot({path:"test-results/workspace-mobile-more-menu.png",fullPage:true});
+
   await expect(page.locator(".mobile-more-menu")).toBeVisible();
   await page.locator(".mobile-more-menu").getByRole("button",{name:"Settings"}).click();
   await expect(page.locator(".mobile-more-menu")).toHaveCount(0);

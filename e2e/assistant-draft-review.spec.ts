@@ -51,6 +51,12 @@ test("AI invoice draft can be edited, saved, issued and paid without bypassing r
   await expect(page.locator(".assistant-draft-total")).toContainText(/2[\s\u00a0]?500/);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.screenshot({ path: "test-results/ai-draft-review-desktop.png", fullPage: true });
+  await page.getByRole("button", { name: "Switch to dark mode" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme","dark");
+  await page.screenshot({ path: "test-results/ai-draft-review-dark.png", fullPage: true });
+  await page.getByRole("button", { name: "Switch to light mode" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme","light");
+
   await page.setViewportSize({ width: 390, height: 844 });
   const reviewDimensions = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, document: document.documentElement.scrollWidth }));
   expect(reviewDimensions.document).toBeLessThanOrEqual(reviewDimensions.viewport);
