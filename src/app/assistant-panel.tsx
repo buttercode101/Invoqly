@@ -160,6 +160,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
           <h2>{result.draft.type === "create_quote" ? "Quotation draft" : "Invoice draft"}</h2>
           {result.draft.sourceDocumentNumber && <p className="assistant-source">Based on {result.draft.sourceDocumentNumber}</p>}
           <div className="assistant-draft-row"><span>Customer</span><b>{result.draft.data.customerName}</b></div>
+          <div className="assistant-draft-row"><span>{"dueDate" in result.draft.data ? "Due date" : "Valid until"}</span><b>{"dueDate" in result.draft.data ? result.draft.data.dueDate : result.draft.data.validUntil}</b></div>
           {result.draft.lineItems.map((item, index) => <div className="assistant-line-item" key={index}>
             <div><b>{item.description}</b><span>{item.quantity} × {fmt(item.unitPriceMinor, result.draft!.currency)}</span></div>
             <strong>{fmt(item.lineTotalMinor, result.draft!.currency)}</strong>
