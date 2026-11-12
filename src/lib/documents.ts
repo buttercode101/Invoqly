@@ -27,7 +27,6 @@ export function validateDocumentLineItems(items: DocumentLineItem[]): DocumentLi
     if (item.taxTreatment && !["standard", "zero_rated", "exempt", "out_of_scope"].includes(item.taxTreatment)) throw new Error("Line " + (index + 1) + " has an unsupported tax treatment.");
     if (item.priceMode && item.priceMode !== "inclusive" && item.priceMode !== "exclusive") throw new Error("Line " + (index + 1) + " has an unsupported price mode.");
     if (item.taxRateBasisPoints !== undefined && (!Number.isInteger(item.taxRateBasisPoints) || item.taxRateBasisPoints < 0 || item.taxRateBasisPoints > 10_000)) throw new Error("Line " + (index + 1) + " has an invalid tax rate.");
-    if (item.taxTreatment === "standard" && item.taxRateBasisPoints === undefined) throw new Error("Standard-rated lines must store the tax rate used when the document was prepared.");
     return {
       description: item.description.trim(),
       quantity: item.quantity,
@@ -68,6 +67,7 @@ export function calculateDocumentTax(items: DocumentLineItem[]): DocumentTaxBrea
   let grossMinor = 0;
   const lines = valid.map(item => {
     const treatment = item.taxTreatment ?? "out_of_scope";
+    if (treatment === "standard" && item.taxRateBasisPoints === undefined) throw new Error("Standard-rated lines must store the tax rate used when the document was prepared.");
     const rate = treatment === "standard" ? item.taxRateBasisPoints! : 0;
     const mode = item.priceMode ?? "exclusive";
     const amountMinor = item.quantity * item.unitPriceMinor;
