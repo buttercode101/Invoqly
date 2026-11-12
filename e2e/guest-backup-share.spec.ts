@@ -35,6 +35,7 @@ test("guest can create, share a PDF, back up and restore an invoice without an a
 
   await page.evaluate(() => localStorage.removeItem("invoqly.guest.workspace.v1"));
   await page.reload();
+  await page.getByRole("button", { name: "Invoices" }).click();
   await expect(page.getByText("No invoices yet. Create one when you're ready.")).toBeVisible();
   await page.getByRole("button", { name: "Settings" }).click();
   page.once("dialog", dialog => dialog.accept());
