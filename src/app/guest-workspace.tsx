@@ -32,7 +32,7 @@ const readFormLines=(form:FormData):LineItem[]=>{
 const localDate=(value=new Date())=>{const local=new Date(value.getTime()-value.getTimezoneOffset()*60000);return local.toISOString().slice(0,10)};
 const date=()=>localDate();
 const defaultDueDate=()=>{const value=new Date();value.setDate(value.getDate()+14);return localDate(value)};
-const validDate=(value:string)=>/^\\d{4}-\\d{2}-\\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+"T00:00:00.000Z"))&&new Date(Date.parse(value+"T00:00:00.000Z")).toISOString().slice(0,10)===value;
+const validDate=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+"T00:00:00.000Z"))&&new Date(Date.parse(value+"T00:00:00.000Z")).toISOString().slice(0,10)===value;
 function validateGuestBackup(value:unknown):Store{
  if(!value||typeof value!=="object"||Array.isArray(value))throw new Error("This file is not an Invoqly backup.");
  const data=value as Record<string,unknown>;
