@@ -8,6 +8,7 @@ if (!configuredHyperdriveId && !localHyperdriveConnection) {
 const hyperdriveId = configuredHyperdriveId || "00000000-0000-0000-0000-000000000000";
 // Workers AI has no local workerd simulation; CI exercises auth/consent gates without opening a remote AI session.
 const enableWorkersAiBinding = process.env.CI_COMPATIBILITY_RUNTIME !== "true";
+const receiptsBucket = process.env.INVOQLY_RECEIPTS_BUCKET || (process.env.INVOQLY_WORKER_NAME === "invoqly-production" ? "invoqly-receipts-prod" : "invoqly-receipts-preview");
 
 export default defineConfig({
   worker: defineWorker({
@@ -22,6 +23,7 @@ export default defineConfig({
     },
     env: {
       ASSETS: bindings.assets(),
+      R2_RECEIPTS: bindings.r2({ name: receiptsBucket }),
       ...(enableWorkersAiBinding ? { AI: bindings.ai() } : {}),
       BETTER_AUTH_SECRET: bindings.secret(),
       AUTH_EMAIL_VERIFICATION: bindings.text(process.env.AUTH_EMAIL_VERIFICATION || "false"),
