@@ -1,4 +1,5 @@
 import { calculateDocumentTax, type DocumentLineItem } from "@/lib/documents";
+import { currencyExponent } from "@/lib/money";
 
 export type DocumentPdfInput = {
   type: "invoice" | "quotation";
@@ -18,7 +19,7 @@ export type DocumentPdfInput = {
   template?: "modern" | "minimal" | "classic";
 };
 
-const money = (minor: number, currency: string) => new Intl.NumberFormat("en-ZA", { style: "currency", currency }).format(minor / 100);
+const money = (minor: number, currency: string) => currency + " " + (minor / (10 ** currencyExponent(currency))).toFixed(currencyExponent(currency));
 const clean = (value: unknown) => String(value ?? "").normalize("NFKD").replace(/[^\x20-\x7E]/g, " ").replace(/\s+/g, " ").trim();
 const esc = (value: string) => clean(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 const wrap = (value: string, max = 72) => {
