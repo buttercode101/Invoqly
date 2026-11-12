@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 function contrastRatio(foreground: string, background: string) {
   const luminance = (value: string) => {
-    const channels = value.match(/[\\d.]+/g)?.slice(0, 3).map(Number);
+    const channels = value.match(/[\d.]+/g)?.slice(0, 3).map(Number);
     if (!channels || channels.length !== 3) throw new Error("Unexpected computed colour: " + value);
     const [r, g, b] = channels.map(channel => {
       const normalized = channel / 255;
