@@ -155,6 +155,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
       for(const target of menuTargets){expect(target.width).toBeGreaterThanOrEqual(44);expect(target.height).toBeGreaterThanOrEqual(44);}
       await page.getByRole("menuitem",{name:"Settings"}).click();
     }
+    if(width===320){await goTo(page,"Overview");await page.screenshot({path:"test-results/invoqly-workspace-mobile-320.png",fullPage:true});}
     if(width===390){
       await goTo(page,"Overview");
       await page.screenshot({path:"test-results/invoqly-workspace-mobile-390.png",fullPage:true});
@@ -202,6 +203,7 @@ for(const width of [320,360,375,390,560,768,820,1120,1440]){
     await expect(page.getByRole("heading",{name:/Spend less time/})).toBeVisible();
     const publicDimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
     expect(publicDimensions.document).toBeLessThanOrEqual(publicDimensions.viewport);
+    if(width===320)await page.screenshot({path:"test-results/invoqly-public-mobile-320.png",fullPage:true});
     if(width===390)await page.screenshot({path:"test-results/invoqly-public-mobile-390.png",fullPage:true});
     if(width===1440)await page.screenshot({path:"test-results/invoqly-public-desktop-1440.png",fullPage:true});
     await page.goto("/sign-in");
