@@ -234,3 +234,32 @@
  .nav-item span{font-size:9px;white-space:nowrap}
  .nav-item svg{width:18px;height:18px}
 }
+
+/* Dark workspace theme — a deliberate low-glare palette, not a global inversion. */
+html[data-theme="dark"] .shell{--bg:#121915;--paper:#1c2620;--ink:#e7eee8;--muted:#a4afa7;--line:#344239;background:var(--bg);color:var(--ink);color-scheme:dark}
+html[data-theme="dark"] .sidebar,html[data-theme="dark"] .topbar,html[data-theme="dark"] .panel,html[data-theme="dark"] .metric-card,html[data-theme="dark"] .client-card,html[data-theme="dark"] .create-modal,html[data-theme="dark"] .notice-pop,html[data-theme="dark"] .mobile-more-menu,html[data-theme="dark"] .assistant-main,html[data-theme="dark"] .assistant-draft,html[data-theme="dark"] .assistant-boundary{background:#1c2620;border-color:#344239;color:#e7eee8}
+html[data-theme="dark"] .topbar{background:#18211ce8}
+html[data-theme="dark"] .workspace-switch,html[data-theme="dark"] .search-box,html[data-theme="dark"] .btn-light,html[data-theme="dark"] .quick-actions button,html[data-theme="dark"] .assistant-suggestions button,html[data-theme="dark"] .settings-form input,html[data-theme="dark"] .settings-form select,html[data-theme="dark"] .form-modal input,html[data-theme="dark"] .form-modal select,html[data-theme="dark"] .assistant-draft-editor input,html[data-theme="dark"] .assistant-composer textarea{background:#141d17;border-color:#3b4b40;color:#e7eee8}
+html[data-theme="dark"] .nav-item{color:#b3beb6}
+html[data-theme="dark"] .nav-item.active,html[data-theme="dark"] .mobile-more-menu button.active{background:#293b30;color:#b7d3be}
+html[data-theme="dark"] .upgrade-card,html[data-theme="dark"] .settings-note,html[data-theme="dark"] .invoice-total-preview,html[data-theme="dark"] .assistant-message p,html[data-theme="dark"] .assistant-draft-line-editor,html[data-theme="dark"] .assistant-client-profile,html[data-theme="dark"] .assistant-reminder,html[data-theme="dark"] .assistant-consent,html[data-theme="dark"] .assistant-welcome{background:#202d25;border-color:#38483d;color:#dce7df}
+html[data-theme="dark"] .assistant-suggestions button,html[data-theme="dark"] .mobile-more-menu button{color:#d7e2da}
+html[data-theme="dark"] .assistant-welcome h2,html[data-theme="dark"] .assistant-client-profile-top b,html[data-theme="dark"] .assistant-draft-editor label,html[data-theme="dark"] .panel-head h2,html[data-theme="dark"] .section-heading h2,html[data-theme="dark"] .client-card h3,html[data-theme="dark"] .empty-state b,html[data-theme="dark"] .welcome-row h1{color:#e7eee8}
+html[data-theme="dark"] .assistant-client-profile-foot,html[data-theme="dark"] .assistant-footnote,html[data-theme="dark"] .subtitle,html[data-theme="dark"] .panel-head p,html[data-theme="dark"] .client-card p,html[data-theme="dark"] .table-sub,html[data-theme="dark"] .empty-state p,html[data-theme="dark"] .page-footer,html[data-theme="dark"] .muted{color:#a3afa6}
+html[data-theme="dark"] .demo-banner,html[data-theme="dark"] .cloud-banner{background:#24352a;border-color:#3b5141;color:#c1d2c5}
+html[data-theme="dark"] thead{background:#202c24}
+html[data-theme="dark"] th{color:#a7b3aa}
+html[data-theme="dark"] td{color:#c2cdc4;border-color:#2e3b32}
+html[data-theme="dark"] .table-actions button{background:#202d25;border-color:#3a4a3e;color:#c1cec4}
+html[data-theme="dark"] .status.paid{background:#263a2c;color:#b8d9bf}
+html[data-theme="dark"] .status.overdue{background:#3a3028;color:#e3c2a4}
+html[data-theme="dark"] .status.sent,html[data-theme="dark"] .status.partially-paid{background:#3a3728;color:#e3d39d}
+html[data-theme="dark"] .status.draft{background:#2b342d;color:#c3cec5}
+html[data-theme="dark"] .receipt-preview{background:#202d25;border-color:#3b4b40}
+html[data-theme="dark"] .receipt-preview img{background:#fff}
+html[data-theme="dark"] .page-footer{border-color:#344239}
+html[data-theme="dark"] .assistant-topline,html[data-theme="dark"] .assistant-period-heading{border-color:#344239}
+html[data-theme="dark"] .assistant-draft-total{border-color:#3b4b40;background:#202d25}
+html[data-theme="dark"] .theme-toggle{color:#e7eee8}
+html[data-theme="dark"] .form-error{background:#3a2826;border-color:#63423c;color:#f1b7ad}
+html[data-theme="dark"] .sidebar-bottom .profile-row{border-color:#344239}

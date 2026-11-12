@@ -115,6 +115,12 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await goTo(page,"Expenses");
   await expect(page.getByText("Cloud hosting")).toBeVisible();
   await expect(page.getByRole("link",{name:"View receipt photo for Cloud hosting"})).toBeVisible();
+  await page.getByRole("button",{name:"Switch to dark mode"}).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme","dark");
+  const darkPanelBackground=await page.locator(".panel").first().evaluate(el=>getComputedStyle(el).backgroundColor);
+  expect(darkPanelBackground).not.toBe("rgb(255, 255, 255)");
+  await page.getByRole("button",{name:"Switch to light mode"}).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme","light");
   await page.setViewportSize({width:390,height:844});
   await expect(page.locator(".side-nav .nav-item[data-nav]")).toHaveCount(9);
   await expect(page.locator('.side-nav .nav-item[data-nav="AI Co-pilot"]')).toBeHidden();
