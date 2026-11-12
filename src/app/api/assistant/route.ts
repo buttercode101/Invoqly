@@ -37,7 +37,7 @@ function isSameOriginRequest(request: Request): boolean {
   return request.headers.get("sec-fetch-site") === "same-origin";
 }
 
-function today(): string { return new Date().toISOString().slice(0, 10); }
+function today(): string { const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()); const part = (type: string) => parts.find(item => item.type === type)?.value ?? ""; return part("year") + "-" + part("month") + "-" + part("day"); }
 function dateAfterDays(days: number): string {
   const date = new Date();
   date.setUTCDate(date.getUTCDate() + days);
