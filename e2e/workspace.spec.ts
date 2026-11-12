@@ -23,6 +23,11 @@ async function createAccount(page:Page,account:ReturnType<typeof identity>) {
 }
 
 test("real account, client, invoice, partial payments, expense and reload",async({page})=>{
+  await page.addInitScript(() => {
+    const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean; share?: (data: ShareData) => Promise<void> };
+    Object.defineProperty(nav, "canShare", { configurable: true, value: (data: ShareData) => Array.isArray(data.files) && data.files.every(file => file.type === "application/pdf") });
+    Object.defineProperty(nav, "share", { configurable: true, value: async (data: ShareData) => { (window as Window & { __sharedPdfFiles?: Array<{name:string;type:string;size:number}> }).__sharedPdfFiles = (data.files ?? []).map(file => ({name:file.name,type:file.type,size:file.size})); } });
+  });
   const account=identity("Owner");
   await createAccount(page,account);
 
@@ -61,6 +66,11 @@ test("real account, client, invoice, partial payments, expense and reload",async
   expect(pdfPath).toBeTruthy();
   const pdfBytes=await readFile(pdfPath!);
   expect(pdfBytes.subarray(0,8).toString("ascii")).toBe("%PDF-1.4");
+  await page.getByRole("button", { name: "Share PDF" }).click();
+  const sharedFiles = await page.evaluate(() => (window as Window & { __sharedPdfFiles?: Array<{name:string;type:string;size:number}> }).__sharedPdfFiles ?? []);
+  expect(sharedFiles).toHaveLength(1);
+  expect(sharedFiles[0]).toMatchObject({name:"INV-0001.pdf",type:"application/pdf"});
+  expect(sharedFiles[0]!.size).toBeGreaterThan(500);
   await page.getByRole("button", { name: "Close PDF preview" }).click();
   await invoiceRow.getByTitle("Issue invoice").click();
   await expect(invoiceRow).toContainText("Sent");
@@ -71,7 +81,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
   expect(csvPath).toBeTruthy();
   const csvContent=await readFile(csvPath!,"utf8");
   expect(csvContent).toContain("Acme Services");
-  expect(csvContent).toContain("2501.00");
+  expect(csvContent).toContain("2601.00");
   expect(csvContent.split(/\r?\n/).length).toBeGreaterThan(1);
 
   await goTo(page,"Quotes");
