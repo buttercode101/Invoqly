@@ -162,7 +162,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
           <div className="assistant-draft-row"><span>Customer</span><b>{result.draft.data.customerName}</b></div>
           {result.draft.lineItems.map((item, index) => <div className="assistant-line-item" key={index}>
             <div><b>{item.description}</b><span>{item.quantity} × {fmt(item.unitPriceMinor, result.draft!.currency)}</span></div>
-            <strong>{fmt(item.lineTotalMinor, result.draft.currency)}</strong>
+            <strong>{fmt(item.lineTotalMinor, result.draft!.currency)}</strong>
           </div>)}
           <div className="assistant-draft-row"><span>{"validUntil" in result.draft.data ? "Valid until" : "Due date"}</span><b>{"validUntil" in result.draft.data ? result.draft.data.validUntil : result.draft.data.dueDate}</b></div>
           <div className="assistant-draft-total"><span>Calculated total</span><strong>{fmt(result.draft.totalMinor, result.draft.currency)}</strong></div>
