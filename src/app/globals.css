@@ -320,3 +320,17 @@ html[data-theme="dark"] .receipt-preview .text-link,html[data-theme="dark"] .tex
 }
 html[data-theme="dark"] .pdf-modal{background:#18221b;color:#e8efe9;border-color:#2c3a30}
 html[data-theme="dark"] .pdf-preview-frame{background:#111813}
+
+
+/* Keep the AI approval card readable when the workspace uses dark mode. */
+html[data-theme="dark"] .assistant-draft h2{color:#e8efe9}
+html[data-theme="dark"] .assistant-source{color:#a2ada5}
+html[data-theme="dark"] .assistant-draft-row{border-color:#2c3a30}
+html[data-theme="dark"] .assistant-draft-row span{color:#a2ada5}
+html[data-theme="dark"] .assistant-draft-row b{color:#e8efe9}
+html[data-theme="dark"] .assistant-draft-total{color:#b7c3ba}
+html[data-theme="dark"] .assistant-draft-total strong{color:#e8efe9}
+html[data-theme="dark"] .assistant-draft .assistant-footnote{color:#a2ada5}
+html[data-theme="dark"] .assistant-reminder{border-color:#2c3a30}
+html[data-theme="dark"] .assistant-reminder>div span{color:#a2ada5}
+html[data-theme="dark"] .assistant-reminder pre{background:#121a15;color:#d7e1d9;border-color:#34473a}
