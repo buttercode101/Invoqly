@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./guest-workspace.module.css";
+import ThemeToggle from "./theme-toggle";
 
 type Client={id:string;name:string;email:string;company:string;currency:string;createdAt:string};
 type LineItem={description:string;quantity:number;unitPriceMinor:number};
@@ -78,7 +79,7 @@ export default function GuestWorkspaceClient(){
  const nav=["Overview","Invoices","Quotes","Clients","Expenses","Settings"];
  if(!ready)return <main className={styles.loading}>Opening your workspace…</main>;
  return <main className={styles.shell}>
-  <header className={styles.top}><Link href="/" className={styles.brand}><span>i.</span> invoqly</Link><div className={styles.topRight}><span className={styles.guest}>Guest workspace</span><Link className={styles.signin} href="/sign-in">Sign in</Link><Link className={styles.account} href="/sign-up">Create free account <span>↗</span></Link></div></header>
+  <header className={styles.top}><Link href="/" className={styles.brand}><span>i.</span> invoqly</Link><div className={styles.topRight}><ThemeToggle/><span className={styles.guest}>Guest workspace</span><Link className={styles.signin} href="/sign-in">Sign in</Link><Link className={styles.account} href="/sign-up">Create free account <span>↗</span></Link></div></header>
   <div className={styles.layout}><aside className={styles.side}><div className={styles.business}><span className={styles.avatar}>YB</span><span><b>{store.businessName}</b><small>Saved on this device</small></span></div><nav>{nav.map(n=><button key={n} onClick={()=>setTab(n)} className={tab===n?styles.active:""}>{n}</button>)}</nav><div className={styles.sideFoot}><p>Your records stay in this browser. Export a backup regularly.</p><button onClick={exportBackup}>↓ Export backup</button><label className={styles.restore}>Restore backup<input type="file" accept="application/json,.json" onChange={e=>{void restoreBackup(e.target.files?.[0]??null);e.currentTarget.value=""}}/></label></div></aside>
   <section className={styles.content}><div className={styles.heading}><div><span className={styles.eyebrow}>NO ACCOUNT REQUIRED</span><h1>{tab==="Overview"?"Your business, in good order.":tab}</h1><p>{tab==="Overview"?"A simple view of your invoices, clients and expenses.":tab==="Invoices"?"Create and track invoices for your clients.":tab==="Quotes"?"Prepare quotations and convert accepted work into invoices.":tab==="Clients"?"Keep your customer details together.":"Record the costs of running your business."}</p></div><div className={styles.actions}>{tab!=="Overview"&&<button className={styles.primary} onClick={()=>{setExtraLines([]);setModal(tab==="Clients"?"client":tab==="Invoices"?"invoice":tab==="Quotes"?"quote":"expense")}}>＋ {tab==="Clients"?"Add client":tab==="Invoices"?"New invoice":tab==="Quotes"?"New quote":"Add expense"}</button>}{tab==="Overview"&&<button className={styles.primary} onClick={()=>{setExtraLines([]);setModal("invoice")}}>＋ Create invoice</button>}</div></div>
   <div className={styles.notice}><span>✓</span><div><b>You're using Invoqly for free, without signing up.</b><small>Your work is saved locally on this device. Create an account when you're ready for cloud backup and sync.</small></div><Link href="/sign-up">Why create an account? →</Link></div>
