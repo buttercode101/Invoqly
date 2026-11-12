@@ -139,7 +139,7 @@ export async function POST(request:Request) {
       let lineItems: DocumentLineItem[];
       let documentTotal: number;
       try {
-        lineItems = resolveDocumentLineItems(input.lineItems, { description: input.description, quantity: input.quantity, unitPriceMinor: input.unitPriceMinor });
+        lineItems = applyDocumentTaxProfile(resolveDocumentLineItems(input.lineItems, { description: input.description, quantity: input.quantity, unitPriceMinor: input.unitPriceMinor }), { vatRegistered: workspace.vatRegistered, taxDate: today(), priceMode: "inclusive" });
         documentTotal = calculateDocumentTotal(lineItems);
       } catch (error) { return fail(error instanceof Error ? error.message : "Invoice line items are invalid.",422); }
       if (!Number.isSafeInteger(documentTotal)) return fail("The invoice total exceeds the supported amount range.",422);
@@ -168,7 +168,7 @@ export async function POST(request:Request) {
       let lineItems: DocumentLineItem[];
       let documentTotal: number;
       try {
-        lineItems = resolveDocumentLineItems(input.lineItems, { description: input.description, quantity: input.quantity, unitPriceMinor: input.unitPriceMinor });
+        lineItems = applyDocumentTaxProfile(resolveDocumentLineItems(input.lineItems, { description: input.description, quantity: input.quantity, unitPriceMinor: input.unitPriceMinor }), { vatRegistered: workspace.vatRegistered, taxDate: today(), priceMode: "inclusive" });
         documentTotal = calculateDocumentTotal(lineItems);
       } catch (error) { return fail(error instanceof Error ? error.message : "Quotation line items are invalid.",422); }
       if (!Number.isSafeInteger(documentTotal)) return fail("The quotation total exceeds the supported amount range.",422);
