@@ -55,7 +55,9 @@ test("VAT-registered workspace calculates and preserves VAT on a quotation conve
   });
 
   await quoteRow.getByTitle("Mark as sent").click();
+  await expect(quoteRow).toContainText("Sent");
   await quoteRow.getByTitle("Accept quotation").click();
+  await expect(quoteRow).toContainText("Accepted");
   await quoteRow.getByTitle("Convert to invoice").click();
   await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
   const invoiceRow = page.locator("tbody tr").filter({ hasText: "VAT Test Customer" });
