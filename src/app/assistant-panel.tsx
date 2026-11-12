@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, Copy, LoaderCircle, Send, Sparkles } from "lucide-react";
-import { formatMinor } from "@/lib/money";
+import { currencyExponent, decimalToMinor, formatMinor } from "@/lib/money";
+import { calculateDocumentTotal, type DocumentLineItem } from "@/lib/documents";
 
 type QuoteData = {
   customerName: string; customerEmail: string; customerCompany: string; description: string;
@@ -25,6 +26,30 @@ type AssistantResult = {
   error?: string;
 };
 type Message = { role: "user" | "assistant"; content: string };
+type DraftReview = {
+  customerName: string;
+  customerEmail: string;
+  customerCompany: string;
+  documentDate: string;
+  lineItems: Array<{ description: string; quantity: string; unitPrice: string }>;
+};
+function minorToInput(amountMinor: number, currency: string): string {
+  const exponent = currencyExponent(currency);
+  return (amountMinor / (10 ** exponent)).toFixed(exponent);
+}
+function createDraftReview(draft: NonNullable<AssistantResult["draft"]>): DraftReview {
+  return {
+    customerName: draft.data.customerName,
+    customerEmail: draft.data.customerEmail ?? "",
+    customerCompany: draft.data.customerCompany ?? "",
+    documentDate: "dueDate" in draft.data ? draft.data.dueDate : draft.data.validUntil,
+    lineItems: draft.lineItems.map(item => ({
+      description: item.description,
+      quantity: String(item.quantity),
+      unitPrice: minorToInput(item.unitPriceMinor, draft.currency)
+    }))
+  };
+}
 type Props = {
   workspace: { businessName: string; currency: string; clients: Array<{ id: string; name: string }>; invoices: Array<{ id: string }>; quotes: Array<{ id: string }> };
   onCreateQuote: (data: QuoteData) => Promise<boolean>;
@@ -37,6 +62,8 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
   const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState<AssistantResult | null>(null);
+  const [draftReview, setDraftReview] = useState<DraftReview | null>(null);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
@@ -49,6 +76,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
     setPrompt("");
     setError("");
     setResult(null);
+    setDraftReview(null);
     setMessages(current => [...current, { role: "user", content: text }]);
     setBusy(true);
     try {
@@ -60,6 +88,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       const payload = await response.json() as AssistantResult;
       if (!response.ok) throw new Error(payload.error || "The co-pilot couldn't complete that request.");
       setResult(payload);
+      setDraftReview(payload.draft ? createDraftReview(payload.draft) : null);
       setMessages(current => [...current, { role: "assistant", content: payload.reply }]);
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "The co-pilot couldn't complete that request.";
@@ -70,15 +99,59 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
     }
   };
 
-  const approve = async () => {
-    if (!result?.draft) return;
-    const ok = result.draft.type === "create_quote"
-      ? await onCreateQuote(result.draft.data as QuoteData)
-      : await onCreateInvoice(result.draft.data as InvoiceData);
-    if (ok) {
-      setResult(null);
-      setMessages(current => [...current, { role: "assistant", content: "Approved and saved. The new document is now in your workspace." }]);
+  const draftPreview = (() => {
+    if (!result?.draft || !draftReview) return null;
+    try {
+      const lineItems: DocumentLineItem[] = draftReview.lineItems.map(line => ({
+        description: line.description.trim(),
+        quantity: Number(line.quantity),
+        unitPriceMinor: decimalToMinor(line.unitPrice, result.draft!.currency)
+      }));
+      return { lineItems, totalMinor: calculateDocumentTotal(lineItems) };
+    } catch {
+      return null;
     }
+  })();
+
+  const approve = async () => {
+    if (!result?.draft || !draftReview || !draftPreview || savingDraft) return;
+    if (!draftReview.customerName.trim() || !draftReview.documentDate) {
+      setError("Add a customer name and a valid document date before saving.");
+      return;
+    }
+    const first = draftPreview.lineItems[0];
+    if (!first) return;
+    const baseData = {
+      ...result.draft.data,
+      customerName: draftReview.customerName.trim(),
+      customerEmail: draftReview.customerEmail.trim(),
+      customerCompany: draftReview.customerCompany.trim(),
+      description: first.description,
+      quantity: first.quantity,
+      unitPriceMinor: first.unitPriceMinor,
+      lineItems: draftPreview.lineItems,
+      currency: result.draft.currency
+    };
+    setSavingDraft(true);
+    setError("");
+    try {
+      const ok = result.draft.type === "create_quote"
+        ? await onCreateQuote({ ...baseData, validUntil: draftReview.documentDate } as QuoteData)
+        : await onCreateInvoice({ ...baseData, dueDate: draftReview.documentDate, saveContact: false } as InvoiceData);
+      if (ok) {
+        setResult(null);
+        setDraftReview(null);
+        setMessages(current => [...current, { role: "assistant", content: "Approved and saved. The reviewed document is now in your workspace." }]);
+      }
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
+  const discardDraft = () => {
+    setResult(null);
+    setDraftReview(null);
+    setMessages(current => [...current, { role: "assistant", content: "Draft discarded. No document was saved." }]);
   };
 
   const copyReminder = async (reminder: Reminder) => {
@@ -100,7 +173,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
       const response = await fetch("/api/assistant/consent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accepted }) });
       if (!response.ok) throw new Error("Could not update the AI privacy preference.");
       setConsent(accepted);
-      if (!accepted) { setMessages([]); setResult(null); }
+      if (!accepted) { setMessages([]); setResult(null); setDraftReview(null); }
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not update the AI privacy preference."); }
   };
 
@@ -149,26 +222,40 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
         </div>
         {error && <p className="assistant-error" role="alert">{error}</p>}
         {consent && <form className="assistant-composer" onSubmit={event => { event.preventDefault(); void submit(); }}>
-          <textarea value={prompt} onChange={event => setPrompt(event.target.value)} placeholder="Ask Invoqly to prepare, analyse or follow up…" rows={2} maxLength={2000} disabled={busy}/>
+          <textarea aria-label="Ask the Invoqly co-pilot" value={prompt} onChange={event => setPrompt(event.target.value)} placeholder="Ask Invoqly to prepare, analyse or follow up…" rows={2} maxLength={2000} disabled={busy}/>
           <button className="btn btn-primary" disabled={busy || !prompt.trim()} aria-label="Send message"><Send size={16}/> Send</button>
         </form>}
         {consent && <p className="assistant-footnote">20 AI requests per workspace per day. Turn off AI at any time. Your records are never changed or messages sent without approval.</p>}
       </div>
       <aside className="assistant-side">
-        {result?.draft && <div className="panel assistant-draft">
+        {result?.draft && draftReview && <div className="panel assistant-draft">
           <div className="assistant-card-label"><span><Check size={14}/></span> READY FOR REVIEW</div>
           <h2>{result.draft.type === "create_quote" ? "Quotation draft" : "Invoice draft"}</h2>
           {result.draft.sourceDocumentNumber && <p className="assistant-source">Based on {result.draft.sourceDocumentNumber}</p>}
-          <div className="assistant-draft-row"><span>Customer</span><b>{result.draft.data.customerName}</b></div>
-          <div className="assistant-draft-row"><span>{"dueDate" in result.draft.data ? "Due date" : "Valid until"}</span><b>{"dueDate" in result.draft.data ? result.draft.data.dueDate : result.draft.data.validUntil}</b></div>
-          {result.draft.lineItems.map((item, index) => <div className="assistant-line-item" key={index}>
-            <div><b>{item.description}</b><span>{item.quantity} × {fmt(item.unitPriceMinor, result.draft!.currency)}</span></div>
-            <strong>{fmt(item.lineTotalMinor, result.draft!.currency)}</strong>
-          </div>)}
-          <div className="assistant-draft-row"><span>{"validUntil" in result.draft.data ? "Valid until" : "Due date"}</span><b>{"validUntil" in result.draft.data ? result.draft.data.validUntil : result.draft.data.dueDate}</b></div>
-          <div className="assistant-draft-total"><span>Calculated total</span><strong>{fmt(result.draft.totalMinor, result.draft.currency)}</strong></div>
-          <button className="btn btn-primary assistant-approve" onClick={() => void approve()}><Check size={16}/> Approve and create</button>
-          <p className="assistant-footnote">The total is calculated by Invoqly's money engine, not generated by AI.</p>
+          <div className="assistant-draft-editor">
+            <label>Customer name<input aria-label="Review customer name" value={draftReview.customerName} onChange={event => setDraftReview(current => current ? { ...current, customerName: event.target.value } : current)} maxLength={120}/></label>
+            <div className="assistant-draft-editor-two">
+              <label>Email <span>(optional)</span><input aria-label="Review customer email" type="email" value={draftReview.customerEmail} onChange={event => setDraftReview(current => current ? { ...current, customerEmail: event.target.value } : current)} maxLength={254}/></label>
+              <label>Business <span>(optional)</span><input aria-label="Review customer business" value={draftReview.customerCompany} onChange={event => setDraftReview(current => current ? { ...current, customerCompany: event.target.value } : current)} maxLength={120}/></label>
+            </div>
+            <label>{result.draft.type === "create_quote" ? "Valid until" : "Due date"}<input aria-label="Review document date" type="date" value={draftReview.documentDate} onChange={event => setDraftReview(current => current ? { ...current, documentDate: event.target.value } : current)}/></label>
+            <div className="assistant-draft-lines-heading"><b>Line items</b><span>{result.draft.currency}</span></div>
+            {draftReview.lineItems.map((line, index) => <div className="assistant-draft-line-editor" key={index}>
+              <label className="assistant-draft-line-description">Description<input aria-label={`Review line ${index + 1} description`} value={line.description} onChange={event => setDraftReview(current => current ? { ...current, lineItems: current.lineItems.map((item, i) => i === index ? { ...item, description: event.target.value } : item) } : current)} maxLength={500}/></label>
+              <div className="assistant-draft-editor-two">
+                <label>Quantity<input aria-label={`Review line ${index + 1} quantity`} type="number" min="1" max="1000000" step="1" value={line.quantity} onChange={event => setDraftReview(current => current ? { ...current, lineItems: current.lineItems.map((item, i) => i === index ? { ...item, quantity: event.target.value } : item) } : current)}/></label>
+                <label>Unit price<input aria-label={`Review line ${index + 1} unit price`} type="number" min="0.01" step="any" value={line.unitPrice} onChange={event => setDraftReview(current => current ? { ...current, lineItems: current.lineItems.map((item, i) => i === index ? { ...item, unitPrice: event.target.value } : item) } : current)}/></label>
+              </div>
+              {draftReview.lineItems.length > 1 && <button type="button" className="assistant-draft-remove" onClick={() => setDraftReview(current => current ? { ...current, lineItems: current.lineItems.filter((_, i) => i !== index) } : current)}>Remove line</button>}
+            </div>)}
+            <button type="button" className="assistant-draft-add" disabled={draftReview.lineItems.length >= 50} onClick={() => setDraftReview(current => current ? { ...current, lineItems: [...current.lineItems, { description: "", quantity: "1", unitPrice: "" }] } : current)}>＋ Add line item</button>
+          </div>
+          <div className="assistant-draft-total"><span>Recalculated total</span><strong>{draftPreview ? fmt(draftPreview.totalMinor, result.draft.currency) : "Check line items"}</strong></div>
+          <div className="assistant-draft-actions">
+            <button type="button" className="btn btn-light" onClick={discardDraft} disabled={savingDraft}>Discard</button>
+            <button type="button" className="btn btn-primary assistant-approve" onClick={() => void approve()} disabled={!draftPreview || savingDraft || !draftReview.customerName.trim() || !draftReview.documentDate}><Check size={16}/>{savingDraft ? "Saving…" : "Approve and create"}</button>
+          </div>
+          <p className="assistant-footnote">Edit every field before saving. Totals are recalculated by Invoqly's deterministic money engine, not generated by AI. Nothing is saved until you approve.</p>
         </div>}
         {result?.scenario && <div className="panel assistant-draft">
           <div className="assistant-card-label"><span><Check size={14}/></span> SCENARIO MODEL</div>
