@@ -60,7 +60,7 @@ export default function WorkspaceClient({user}:{user:{id:string;name:string;emai
    ...store.payments.map(p=>["Payment",p.reference||p.id,store.invoices.find(i=>i.id===p.invoiceId)?.customerName??store.clients.find(c=>c.id===p.clientId)?.name??"",p.date,"","Recorded",p.currency,"","",String(p.amountMinor),"","",""]),
    ...store.expenses.map(e=>["Expense",e.id,e.vendor,e.date,"","Recorded",e.currency,"","",String(e.amountMinor),"","",""])
   ];
-  const csv=rows.map(row=>row.map(value=>{const raw=String(value);const safe=/^\\s*[=+\\-@]/.test(raw)?"'"+raw:raw;return '"'+safe.replaceAll('"','""')+'"'}).join(",")).join("\\r\\n");
+  const csv=rows.map(row=>row.map(value=>{const raw=String(value);const safe=/^\s*[=+\-@]/.test(raw)?"'"+raw:raw;return '"'+safe.replaceAll('"','""')+'"'}).join(",")).join("\\r\\n");
   const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=url;a.download="invoqly-accountant-export.csv";a.click();URL.revokeObjectURL(url);
  };
  const createInvoice=async(data:{clientId?:string;customerName?:string;customerEmail?:string;customerCompany?:string;saveContact?:boolean;description:string;quantity:number;unitPriceMinor:number;lineItems?:Array<{description:string;quantity:number;unitPriceMinor:number}>;currency:string;dueDate:string})=>{const ok=await mutate({action:"create-invoice",...data});if(ok){setActive("Invoices");setCreate("")}return ok};
