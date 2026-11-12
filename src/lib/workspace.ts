@@ -5,8 +5,12 @@ import { createAuth } from "@/lib/auth";
 import type { Database } from "@/lib/db";
 import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, quotes, workspaceMembers, workspaces } from "@/lib/db/schema";
 
-export async function getCurrentUser(db: Database) {
-  const session = await createAuth(db).api.getSession({ headers: await headers() });
+export async function getCurrentUser(db: Database, requestHeaders?: Headers) {
+  // Route handlers must use the headers from their own Request. In Worker
+  // runtimes, next/headers can be unavailable outside the framework request
+  // context even though the incoming request contains a valid auth cookie.
+  const sessionHeaders = requestHeaders ?? await headers();
+  const session = await createAuth(db).api.getSession({ headers: sessionHeaders });
   return session?.user ?? null;
 }
 
