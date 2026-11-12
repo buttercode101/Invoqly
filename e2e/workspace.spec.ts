@@ -53,6 +53,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
   expect(csvPath).toBeTruthy();
   const csvContent=await readFile(csvPath!,"utf8");
   expect(csvContent).toContain("Acme Services");
+  expect(csvContent).toContain("2501.00");
   expect(csvContent.split(/\r?\n/).length).toBeGreaterThan(1);
 
   await goTo(page,"Quotes");
