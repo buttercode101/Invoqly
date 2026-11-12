@@ -60,7 +60,7 @@ export async function POST(request:Request) {
   if(length>1500000) return fail("The submitted data is too large. Export a smaller guest workspace backup and try again.",413);
   try {
     return await withDb(async db => {
-    const user = await getCurrentUser(db);
+    const user = await getCurrentUser(db, request.headers);
     if (!user) return fail("Sign in to make changes.",401);
     const parsed = payload.safeParse(await request.json());
     if (!parsed.success) return fail("Check the submitted details and try again.",422);
