@@ -52,7 +52,7 @@ test("execution mode requires explicit approval and records exactly one full set
   await page.getByRole("button", { name: "Create invoice" }).click();
   const invoice = page.locator("tbody tr").filter({ hasText: customer });
   await expect(invoice).toContainText("Draft");
-  const invoiceNumber = (await invoice.locator("td").first().innerText()).trim().split(/\\s+/)[0]!;
+  const invoiceNumber = (await invoice.locator("td").first().innerText()).trim().split(/\s+/)[0]!;
   await invoice.getByTitle("Issue invoice").click();
   await expect(invoice).toContainText("Sent");
 
