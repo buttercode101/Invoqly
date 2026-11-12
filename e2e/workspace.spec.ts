@@ -174,13 +174,15 @@ test("workspace data is isolated between separate accounts",async({page,browser}
   }
 });
 
-for(const width of [320,375,768,1120]){
+for(const width of [320,360,375,390,560,768,820,1120,1440]){
   test(`account screens have no horizontal overflow at ${width}px`,async({page})=>{
     await page.setViewportSize({width,height:900});
     await page.goto("/");
     await expect(page.getByRole("heading",{name:/Spend less time/})).toBeVisible();
     const publicDimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
     expect(publicDimensions.document).toBeLessThanOrEqual(publicDimensions.viewport);
+    if(width===390)await page.screenshot({path:"test-results/invoqly-public-mobile-390.png",fullPage:true});
+    if(width===1440)await page.screenshot({path:"test-results/invoqly-public-desktop-1440.png",fullPage:true});
     await page.goto("/sign-in");
     await expect(page.locator(".auth-shell")).toBeVisible();
     const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
