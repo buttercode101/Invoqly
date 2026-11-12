@@ -93,7 +93,7 @@ test("live AI co-pilot prepares an editable quotation and saves the user's appro
 
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole("button", { name: "Edit details" }).click();
-  await expect(page.getByRole("heading", { name: "Edit quotation draft" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review quotation draft" })).toBeVisible();
   await expect(page.getByLabel("Customer or business name")).toHaveValue(customer);
   await expect(page.getByLabel("Scope of work / description")).toHaveValue("Website maintenance");
   await expect(page.getByLabel("Quantity")).toHaveValue("1");
