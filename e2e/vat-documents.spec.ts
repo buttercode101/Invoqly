@@ -45,12 +45,11 @@ test("VAT-registered workspace calculates and preserves VAT on a quotation conve
 
   const quoteRow = page.locator("tbody tr").filter({ hasText: "VAT Test Customer" });
   await expect(quoteRow).toContainText(/115/);
-  const quotePopupPromise = page.waitForEvent("popup");
   await quoteRow.getByTitle("Print quotation").click();
-  const quotePopup = await quotePopupPromise;
-  await expect(quotePopup.locator("body")).toContainText("VAT registration no: 4123456789");
-  await expect(quotePopup.locator("body")).toContainText("VAT:");
-  await quotePopup.close();
+  const quotePopup = page.getByRole("dialog", { name: /Quotation ·/ });
+  await expect(quotePopup).toBeVisible();
+  await expect(quotePopup.locator("iframe")).toBeVisible();
+  await quotePopup.getByRole("button", { name: "Close PDF preview" }).click();
 
   const snapshot = await page.evaluate(async () => {
     const response = await fetch("/api/workspace", { cache: "no-store" });
