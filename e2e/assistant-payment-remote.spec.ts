@@ -6,8 +6,12 @@ test("AI invoice draft is reviewed, issued and paid", async ({ page }) => {
   await page.getByLabel("Your name").fill("AI Payment QA");
   await page.getByLabel("Email address").fill("ai-payment-" + Date.now() + "@example.com");
   await page.locator('input[type="password"]').first().fill("Invoqly-Preview-QA-2026!");
+  const signupPromise = page.waitForResponse(response => response.url().includes("/api/auth/sign-up/email") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\/app$/);
+  const signup = await signupPromise;
+  const signupData = await signup.json() as { error?: string };
+  expect(signup.status(), signupData.error ?? "signup request must succeed").toBe(200);
+  await expect(page).toHaveURL(/\/app$/, { timeout: 20_000 });
   await page.locator(".sidebar .nav-item").filter({ hasText: "AI Co-pilot" }).first().click();
   await page.getByRole("button", { name: "I understand — enable AI" }).click();
   await page.getByLabel("Ask your business co-pilot").fill("Prepare an invoice for customer Invoqly AI Payment QA. One line: One-off consulting, quantity 1, unit price ZAR 250.00, due 2026-12-12. Prepare the draft.");
