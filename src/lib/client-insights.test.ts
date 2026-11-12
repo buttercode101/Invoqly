@@ -84,4 +84,31 @@ describe("client payment profiles", () => {
     expect(() => buildClientPaymentProfiles({ ...base, payments: [{ invoiceId: "i1", date: "2026-10-10", amountMinor: Number.MAX_SAFE_INTEGER + 1, currency: "ZAR", method: "Cash" }] })).toThrow(/positive safe integers/);
     expect(() => buildClientPaymentProfiles({ ...base, asOfDate: "2026-02-30" })).toThrow(/valid calendar date/);
   });
+  it("keeps a partially paid invoice outstanding until the full balance is settled", () => {
+    const result = buildClientPaymentProfiles({
+      ...base,
+      invoices: [{ id: "partial", clientId: "c1", issueDate: "2026-10-01", dueDate: "2026-10-15", quantity: 1, unitPriceMinor: 10_000, currency: "ZAR", status: "Overdue" }],
+      payments: [{ invoiceId: "partial", date: "2026-10-20", amountMinor: 4_000, currency: "ZAR", method: "Cash" }]
+    })[0];
+    expect(result?.paidInvoiceCount).toBe(0);
+    expect(result?.lateInvoiceCount).toBe(1);
+    expect(result?.overdueBalanceMinor).toBe(6_000);
+    expect(result?.onTimeRatePercent).toBe(0);
+  });
+
+  it("uses the final instalment date to classify an invoice paid after its due date", () => {
+    const result = buildClientPaymentProfiles({
+      ...base,
+      invoices: [{ id: "instalments", clientId: "c1", issueDate: "2026-10-01", dueDate: "2026-10-15", quantity: 1, unitPriceMinor: 10_000, currency: "ZAR", status: "Paid" }],
+      payments: [
+        { invoiceId: "instalments", date: "2026-10-10", amountMinor: 5_000, currency: "ZAR", method: "Bank transfer" },
+        { invoiceId: "instalments", date: "2026-10-20", amountMinor: 5_000, currency: "ZAR", method: "Cash" }
+      ]
+    })[0];
+    expect(result?.paidInvoiceCount).toBe(1);
+    expect(result?.onTimeInvoiceCount).toBe(0);
+    expect(result?.lateInvoiceCount).toBe(1);
+    expect(result?.overdueBalanceMinor).toBe(0);
+    expect(result?.averageDaysToPay).toBe(19);
+  });
 });
