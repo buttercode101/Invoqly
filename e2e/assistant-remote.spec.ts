@@ -11,7 +11,7 @@ test("live AI co-pilot prepares an editable quotation and saves the user's appro
   await page.goto("/sign-up");
   await page.getByLabel("Your name").fill("AI Preview QA");
   await page.getByLabel("Email address").fill(email);
-  await page.getByLabel("Password").fill("Invoqly-Preview-QA-2026!");
+  await page.locator('input[type="password"]').first().fill("Invoqly-Preview-QA-2026!");
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/app$/);
   await expect(page.getByRole("heading", { name: "Good morning." })).toBeVisible();
