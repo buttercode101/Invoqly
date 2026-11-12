@@ -345,6 +345,7 @@ html[data-theme="dark"] .assistant-line-item>strong{color:#e8efe9}
 html[data-theme="dark"] .assistant-draft-actions .assistant-edit{background:#1d2a21;color:#dce8df;border-color:#35483a}
 
 
-/* Keep the final action in normal flow. Sticky positioning covered the last
-   currency/date fields in both desktop and narrow mobile document dialogs. */
-.form-modal .form-submit{position:static;bottom:auto;box-shadow:none}
+/* Keep the action visible without covering the final document fields. */
+.form-modal form{padding-bottom:56px}
+.form-modal .form-submit{position:sticky;bottom:0;z-index:4;box-shadow:0 -12px 18px rgba(255,255,255,.96)}
+html[data-theme="dark"] .form-modal .form-submit{box-shadow:0 -12px 18px rgba(23,31,25,.96)}
