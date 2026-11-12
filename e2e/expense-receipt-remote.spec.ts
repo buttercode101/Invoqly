@@ -41,6 +41,6 @@ test("expense receipt photo uploads and remains available after reload", async (
   await page.getByLabel("Currency").selectOption("ZAR");
   await page.getByLabel("Category").selectOption("Office");
   await page.getByRole("button", { name: "Save expense" }).click();
-  await expect(page.getByText("Manual entry QA supplier")).toBeVisible();
+  await expect(page.locator("tbody").getByText("Manual entry QA supplier", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: /View (?:receipt )?photo/ })).toHaveCount(1);
 });
