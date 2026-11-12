@@ -39,9 +39,13 @@ test("live AI co-pilot prepares an editable quotation and saves the user's appro
   await page.getByLabel("Ask your business co-pilot").fill(
     `Prepare a quotation for customer "${customer}". Create exactly one line item: "Website maintenance", quantity 1, unit price ZAR 100.00. The quotation is valid until 2026-12-12. Use ZAR. All details are supplied; prepare the editable quotation draft now.`
   );
+  const aiResponsePromise = page.waitForResponse(response => response.url().endsWith("/api/assistant") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Send message" }).click();
-
-  await expect(page.getByRole("heading", { name: "Quotation draft" })).toBeVisible({ timeout: 75_000 });
+  const aiResponse = await aiResponsePromise;
+  const aiPayload = await aiResponse.json() as { reply?: string; draft?: unknown; error?: string };
+  expect(aiResponse.status()).toBe(200);
+  expect(aiPayload.draft, aiPayload.reply ?? "AI quotation draft expected").toBeTruthy();
+  await expect(page.getByRole("heading", { name: "Quotation draft" })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText("Website maintenance", { exact: true })).toBeVisible();
   await expect(page.getByText("Net amount", { exact: true })).toBeVisible();
   await expect(page.getByText("VAT", { exact: true })).toBeVisible();
