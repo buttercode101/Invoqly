@@ -111,6 +111,7 @@ test("signed-in workspace creates, converts and reloads a multi-line quotation",
   await page.getByRole("button", { name: "Record payment" }).click();
   await page.getByLabel("Amount received").fill("1400.00");
   await page.getByRole("button", { name: "Save payment" }).click();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
   await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
   const fullyPaid = page.locator("tbody tr").filter({ hasText: "Cloud Multi Quote" });
   await expect(fullyPaid).toContainText("Paid");
