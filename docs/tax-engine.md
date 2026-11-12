@@ -12,10 +12,12 @@ The tax engine is deliberately separate from AI. AI may extract or suggest trans
 - Foreign-currency transactions are not silently converted into ZAR. A documented exchange rate and converted amount must be supplied before VAT201 inclusion.
 - The tax-invoice checklist applies the SARS R50 and R5,000 consideration thresholds. Zero-rated supplies require a full tax invoice even below the ordinary abridged-invoice threshold; zero-rated exports may also qualify for the foreign-currency exception.
 
-## Boundaries still required before production tax use
+## Current integration and boundaries
 
-- Persist supplier VAT status, VAT number, business address, tax basis and tax period settings.
-- Persist tax treatment and tax amount per document line and expense.
+- Authenticated workspaces can store VAT registration status, the 10-digit VAT number and supplier business address.
+- New invoice and quotation lines persist their tax treatment, inclusive/exclusive price mode and date-specific tax rate. Existing documents are not retroactively taxed.
+- The app displays net, VAT and gross totals in document previews and PDFs. This is a VAT calculation feature, not yet a guarantee that every document meets all statutory tax-invoice particulars.
+- Expense input-tax capture, supporting-document verification, supplier tax details, apportionment and capital-goods classification are not yet integrated.
 - Separate exports from other zero-rated supplies and map all VAT201 fields and adjustments.
 - Support credit/debit notes, bad-debt adjustments, imported services, capital-goods classifications and special time-of-supply rules.
 - Have a South African tax practitioner review the completed VAT201 mapping and tax-invoice output before describing it as SARS-compliant.
