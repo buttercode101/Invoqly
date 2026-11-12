@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test.skip(!process.env.PLAYWRIGHT_BASE_URL, "Requires the deployed Cloudflare Workers AI preview.");
 test.setTimeout(120_000);
 
-test("real Workers AI prepares a priced invoice draft that is reviewed before saving", async ({ page }) => {
+test("real Workers AI prepares, reviews, issues and pays a priced invoice", async ({ page }) => {
   const suffix = Date.now() + "-" + Math.random().toString(36).slice(2, 7);
   await page.goto("/sign-up");
   await page.getByLabel("Your name").fill("Remote AI QA");
@@ -34,4 +34,20 @@ test("real Workers AI prepares a priced invoice draft that is reviewed before sa
   const invoice = page.locator("tbody tr").filter({ hasText: "Remote AI Draft Customer" });
   await expect(invoice).toContainText(/2.500/);
   await expect(invoice).toContainText("Draft");
+
+  // Verify the approved AI draft remains an ordinary invoice through issue and payment.
+  await invoice.getByTitle("Issue invoice").click();
+  await expect(invoice).toContainText("Sent");
+  await page.locator(".nav-item").filter({ hasText: "Payments" }).first().click();
+  await page.getByRole("button", { name: "Record payment" }).click();
+  await page.getByLabel("Invoice").selectOption({ index: 0 });
+  await page.getByLabel("Amount received").fill("2500.00");
+  const receivedDate = await page.evaluate(() => {
+    const date = new Date();
+    return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+  });
+  await page.getByLabel("Date received").fill(receivedDate);
+  await page.getByRole("button", { name: "Save payment" }).click();
+  await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
+  await expect(page.locator("tbody tr").filter({ hasText: "Remote AI Draft Customer" })).toContainText("Paid");
 });
