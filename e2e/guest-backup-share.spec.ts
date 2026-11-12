@@ -15,7 +15,7 @@ test("guest can create, share a PDF, back up and restore an invoice without an a
   await page.getByRole("button", { name: "Create invoice" }).click();
   await expect(page.getByText(/Backup Share QA/).first()).toBeVisible();
 
-  await page.getByRole("button", { name: "Share PDF" }).first().click();
+  await page.getByRole("button", { name: "Preview PDF" }).first().click();
   const preview = page.getByRole("dialog", { name: "Invoice · INV-0001" });
   await expect(preview).toBeVisible();
   await expect(preview.getByTitle("Final PDF document preview")).toBeVisible();
@@ -23,7 +23,7 @@ test("guest can create, share a PDF, back up and restore an invoice without an a
   await preview.getByRole("button", { name: "Share PDF" }).click();
   const shareDownload = await shareDownloadPromise;
   expect(shareDownload.suggestedFilename()).toBe("INV-0001.pdf");
-  await expect(page.getByRole("alert")).toContainText("This browser cannot share PDF attachments directly");
+  await expect(page.locator("p[role='alert']")).toContainText("This browser cannot share PDF attachments directly");
   await preview.getByRole("button", { name: "Close PDF preview" }).click();
 
   const backupPromise = page.waitForEvent("download");
