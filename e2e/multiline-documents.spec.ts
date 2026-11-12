@@ -24,7 +24,7 @@ test("guest can create and print multi-line invoices and quotations without an a
   await page.locator('input[name="extraQuantity"]').fill("1");
   await page.locator('input[name="extraPrice"]').fill("2400.00");
   await page.getByRole("button", { name: "Create invoice" }).click();
-  const invoiceRow = page.locator(".row").filter({ hasText: "Guest Multi Customer" });
+  const invoiceRow = page.getByText("Guest Multi Customer").locator("xpath=../..");
   await expect(invoiceRow).toContainText("Labour +1 more line");
   await expect(invoiceRow).toContainText(/2[\s\u00a0,]?900/);
   const invoicePopupPromise = page.waitForEvent("popup");
@@ -44,7 +44,7 @@ test("guest can create and print multi-line invoices and quotations without an a
   await page.locator('input[name="extraQuantity"]').fill("1");
   await page.locator('input[name="extraPrice"]').fill("2400.00");
   await page.getByRole("button", { name: "Create quotation" }).click();
-  const quoteRow = page.locator(".row").filter({ hasText: "Guest Multi Quote" });
+  const quoteRow = page.getByText("Guest Multi Quote").locator("xpath=../..");
   await expect(quoteRow).toContainText("R");
   const quotePopupPromise = page.waitForEvent("popup");
   await quoteRow.getByRole("button", { name: "Print / PDF" }).click();
@@ -56,7 +56,7 @@ test("guest can create and print multi-line invoices and quotations without an a
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("invoqly.guest.workspace.v1") || "{}"));
   expect(stored.invoices[0].lineItems).toHaveLength(2);
   expect(stored.quotes[0].lineItems).toHaveLength(2);
-  await expect(page.getByText("You're using Invoqly for free, without signing up.")).toBeVisible();
+  await expect(page.getByText("NO ACCOUNT REQUIRED")).toBeVisible();
 });
 
 test("signed-in workspace creates, converts and reloads a multi-line quotation", async ({ page }) => {
