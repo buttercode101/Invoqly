@@ -68,7 +68,7 @@ test("guest can work without signup, then import their local records after creat
   await page.locator("nav").getByRole("button",{name:"Invoices"}).click();
   await expect(page.getByText(/Guest One-off Customer/)).toBeVisible();
   await page.locator("nav").getByRole("button",{name:"Expenses"}).click();
-  await expect(page.getByText("Guest cloud hosting")).toBeVisible();
+  await expect(page.getByText("Guest cloud hosting").first()).toBeVisible();
   await expect(page.getByRole("link",{name:"Sign in"})).toBeVisible();
   const savedGuestBackup=await page.evaluate(()=>{
     const key="invoqly.guest.workspace.v1";
