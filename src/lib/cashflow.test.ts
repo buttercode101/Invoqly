@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateCashflow, rankReceivablesToChase, totalChaseImpactMinor, type CashflowInput } from "./cashflow";
+import { calculateCashflow, cashflowInvoiceFromDocument, rankReceivablesToChase, totalChaseImpactMinor, type CashflowInput } from "./cashflow";
 
 const base: CashflowInput = {
   asOfDate: "2026-11-11",
@@ -73,6 +73,26 @@ describe("deterministic cash-flow engine", () => {
   it("rejects implicit FX mixing and unsafe arithmetic", () => {
     expect(() => calculateCashflow({ ...base, invoices: [...base.invoices, { id: "usd", number: "USD-1", customerName: "Global", dueDate: "2026-11-15", amountMinor: 100, status: "Sent", currency: "USD" }] })).toThrow(/forecast currency/);
     expect(() => calculateCashflow({ ...base, openingBalanceMinor: Number.MAX_SAFE_INTEGER })).toThrow(/safe integer range/);
+  });
+
+
+  it("forecasts the full multi-line VAT-inclusive invoice total less recorded payments", () => {
+    const invoice = cashflowInvoiceFromDocument({
+      id: "multi", number: "INV-MULTI", customerName: "Multi-line client",
+      dueDate: "2026-11-13", description: "Labour", quantity: 1, unitPriceMinor: 10_000,
+      lineItems: [
+        { description: "Labour", quantity: 1, unitPriceMinor: 10_000, taxTreatment: "standard", priceMode: "exclusive", taxRateBasisPoints: 1500 },
+        { description: "Materials", quantity: 1, unitPriceMinor: 5_000, taxTreatment: "zero_rated", priceMode: "exclusive", taxRateBasisPoints: 0 }
+      ],
+      paidMinor: 3_000, status: "Partially paid", currency: "ZAR"
+    });
+    expect(invoice.amountMinor).toBe(16_500);
+    const result = calculateCashflow({
+      asOfDate: "2026-11-12", currency: "ZAR", openingBalanceMinor: null,
+      invoices: [invoice]
+    });
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0]?.amountMinor).toBe(13_500);
   });
 
   it("ranks the largest open receivables and sums their actual recoverable impact", () => {
