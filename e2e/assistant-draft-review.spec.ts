@@ -1,5 +1,20 @@
 import { expect, test } from "@playwright/test";
 
+function contrastRatio(foreground: string, background: string) {
+  const luminance = (value: string) => {
+    const channels = value.match(/[\\d.]+/g)?.slice(0, 3).map(Number);
+    if (!channels || channels.length !== 3) throw new Error("Unexpected computed colour: " + value);
+    const [r, g, b] = channels.map(channel => {
+      const normalized = channel / 255;
+      return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+  };
+  const a = luminance(foreground);
+  const b = luminance(background);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
 test("AI invoice draft can be edited, saved, issued and paid without bypassing review", async ({ page }) => {
   const suffix = Date.now() + "-" + Math.random().toString(36).slice(2, 7);
   await page.goto("/sign-up");
@@ -53,6 +68,31 @@ test("AI invoice draft can be edited, saved, issued and paid without bypassing r
   await page.screenshot({ path: "test-results/ai-draft-review-desktop.png", fullPage: true });
   await page.getByRole("button", { name: "Switch to dark mode" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme","dark");
+  const darkDraft = await page.evaluate(() => {
+    const draft = document.querySelector(".assistant-draft");
+    const read = (selector: string) => {
+      const element = draft?.querySelector(selector);
+      return element ? { color: getComputedStyle(element).color, background: getComputedStyle(element).backgroundColor } : null;
+    };
+    return {
+      background: draft ? getComputedStyle(draft).backgroundColor : "",
+      heading: read("h2"),
+      label: read(".assistant-card-label"),
+      lineHeading: read(".assistant-draft-lines-heading"),
+      fieldLabel: read(".assistant-draft-editor > label"),
+      lineLabel: read(".assistant-draft-line-description"),
+      totalLabel: read(".assistant-draft-total span"),
+      total: read(".assistant-draft-total strong"),
+      footnote: read(".assistant-footnote"),
+      input: read(".assistant-draft-editor input")
+    };
+  });
+  expect(darkDraft.background).toBe("rgb(28, 38, 32)");
+  for (const [name, value] of Object.entries(darkDraft)) {
+    if (name === "background" || !value) continue;
+    const threshold = name === "heading" || name === "total" || name === "input" ? 7 : 4.5;
+    expect(contrastRatio(value.color, value.background === "rgba(0, 0, 0, 0)" ? darkDraft.background : value.background), `${name} contrast`).toBeGreaterThanOrEqual(threshold);
+  }
   await page.screenshot({ path: "test-results/ai-draft-review-dark.png", fullPage: true });
   await page.getByRole("button", { name: "Switch to light mode" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme","light");
