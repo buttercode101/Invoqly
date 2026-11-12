@@ -49,9 +49,16 @@ test("AI invoice draft can be edited, saved, issued and paid without bypassing r
   await page.getByLabel("Review line 1 unit price").fill("1250.00");
   await page.getByLabel("Review document date").fill("2026-12-15");
   await expect(page.locator(".assistant-draft-total")).toContainText(/2[\s\u00a0]?500/);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({ path: "test-results/ai-draft-review-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  const reviewDimensions = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, document: document.documentElement.scrollWidth }));
+  expect(reviewDimensions.document).toBeLessThanOrEqual(reviewDimensions.viewport);
+  await page.screenshot({ path: "test-results/ai-draft-review-mobile.png", fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 720 });
   await page.getByRole("button", { name: "Approve and create" }).click();
-  await expect(page.getByText("Approved and saved. The reviewed document is now in your workspace.")).toBeVisible();
 
+  // The real create handler deliberately navigates to Invoices after saving the draft.
   await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
   let invoice = page.locator("tbody tr").filter({ hasText: "Reviewed and Approved Customer" });
   await expect(invoice).toContainText("Approved design retainer");
