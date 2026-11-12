@@ -58,4 +58,13 @@ describe("VAT-aware document totals", () => {
       expect(calculateDocumentTotal(lines)).toBe(11_500);
     }
   });
+
+  it("supports mixed tax treatments on different lines of one document", () => {
+    const lines = applyDocumentTaxProfile([
+      line,
+      { description: "Qualifying zero-rated supply", quantity: 1, unitPriceMinor: 5_000, taxTreatment: "zero_rated" }
+    ], { vatRegistered: true, taxDate: "2026-11-12", priceMode: "inclusive" });
+    expect(calculateDocumentTax(lines)).toMatchObject({ netMinor: 15_000, taxMinor: 1_500, grossMinor: 16_500 });
+    expect(lines.map(item => item.taxTreatment)).toEqual(["standard", "zero_rated"]);
+  });
 });
