@@ -17,7 +17,7 @@ type Reminder = { invoiceNumber: string; customerName: string; dueDate: string; 
 type AssistantResult = {
   reply: string;
   draft?: { type: "create_quote" | "create_invoice"; data: QuoteData | InvoiceData; sourceDocumentNumber?: string | null; totalMinor: number; currency: string } | null;
-  scenario?: { currency: string; baselineNetMinor: number; scenarioNetMinor: number; differenceMinor: number; safeToSpendMinor: number | null; invoiceDelayDays: number; supplierDelayDays: number; weeks: Array<{ startDate: string; endDate: string; netMinor: number; inflowsMinor: number; outflowsMinor: number }>; months: Array<{ startDate: string; endDate: string; netMinor: number; inflowsMinor: number; outflowsMinor: number }>; lowestProjectedBalanceMinor: number | null; lowestProjectedBalanceDate: string | null; safeToSpendMinor: number | null } | null;
+  scenario?: { currency: string; baselineNetMinor: number; scenarioNetMinor: number; differenceMinor: number; safeToSpendMinor: number | null; invoiceDelayDays: number; supplierDelayDays: number; weeks: Array<{ startDate: string; endDate: string; netMinor: number; inflowsMinor: number; outflowsMinor: number }>; months: Array<{ startDate: string; endDate: string; netMinor: number; inflowsMinor: number; outflowsMinor: number }> } | null;
   reminders?: Reminder[];
   priorities?: Array<{ invoiceId: string; number: string; customerName: string; openAmountMinor: number; daysOverdue: number; currency: string }>;
   totalImpactMinor?: number;
