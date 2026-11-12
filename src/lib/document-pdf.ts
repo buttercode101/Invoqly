@@ -41,7 +41,7 @@ export function createDocumentPdf(input: DocumentPdfInput): Blob {
   let commands: string[] = [];
   const newPage = () => {
     if (commands.length) pages.push(commands);
-    commands = ["BT", "/F2 9 Tf", "48 800 Td", "14 TL"];
+    commands = [];
   };
   let y = 790;
   const textAt = (x: number, yy: number, value: string, size = 9, bold = false, color = "0.16 0.20 0.17") =>
