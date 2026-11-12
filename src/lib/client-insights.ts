@@ -115,7 +115,7 @@ export function buildClientPaymentProfiles(input: {
       .sort((a, b) => b[1].count - a[1].count || b[1].latestDate.localeCompare(a[1].latestDate) || a[0].localeCompare(b[0]))[0]?.[0] ?? null;
     const onTimeRatePercent = dueInvoices.length ? Math.round(onTimeInvoiceCount / dueInvoices.length * 100) : null;
     const averageDaysToPay = paymentDays.length ? Math.round(paymentDays.reduce((sum, days) => sum + days, 0) / paymentDays.length) : null;
-    const confidence = dueInvoices.length >= 5 ? "high" : dueInvoices.length >= 3 ? "medium" : dueInvoices.length > 0 ? "low" : "none";
+    const confidence: ClientPaymentProfile["confidence"] = dueInvoices.length >= 5 ? "high" : dueInvoices.length >= 3 ? "medium" : dueInvoices.length > 0 ? "low" : "none";
 
     return {
       clientId: client.id,
