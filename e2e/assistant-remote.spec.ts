@@ -44,6 +44,11 @@ test("live AI co-pilot prepares an editable quotation and saves the user's appro
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.screenshot({ path: "test-results/invoqly-ai-draft-desktop-1440.png", fullPage: true });
 
+  await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
+  await expect(page.getByRole("heading", { name: "Invoices" })).toBeVisible();
+  await page.locator(".nav-item").filter({ hasText: "AI Co-pilot" }).first().click();
+  await expect(page.getByRole("heading", { name: "Quotation draft" })).toBeVisible();
+
   await page.getByRole("button", { name: "Edit details" }).click();
   await expect(page.getByRole("heading", { name: "Edit quotation draft" })).toBeVisible();
   await expect(page.getByLabel("Customer or business name")).toHaveValue(customer);
@@ -53,6 +58,7 @@ test("live AI co-pilot prepares an editable quotation and saves the user's appro
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: "test-results/invoqly-ai-edit-form-mobile-390.png", fullPage: true });
+  await expect(page.getByRole("button", { name: "Create quotation" })).toBeInViewport();
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByLabel("Unit price").fill("125.00");
   await page.getByRole("button", { name: "Create quotation" }).click();
