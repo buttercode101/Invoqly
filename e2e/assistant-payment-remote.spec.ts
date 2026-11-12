@@ -31,3 +31,65 @@ test("AI invoice draft is reviewed, issued and paid", async ({ page }) => {
   await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
   await expect(page.locator("tbody tr").filter({ hasText: "Invoqly AI Payment QA" })).toContainText("Paid");
 });
+
+test("execution mode requires explicit approval and records exactly one full settlement", async ({ page }) => {
+  test.setTimeout(120_000);
+  const customer = "Execution QA " + Date.now();
+  await page.goto("/sign-up");
+  await page.getByLabel("Your name").fill("Execution QA");
+  await page.getByLabel("Email address").fill("execution-qa-" + Date.now() + "@example.com");
+  await page.locator('input[type="password"]').first().fill("Invoqly-Execution-QA-2026!");
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/\\/app$/);
+
+  await page.locator(".nav-item").filter({ hasText: "Invoices" }).first().click();
+  await page.getByRole("button", { name: "New invoice" }).click();
+  await page.getByLabel("Bill to").selectOption({ label: "One-off customer / enter details" });
+  await page.getByLabel("Customer name").fill(customer);
+  await page.getByLabel("Description").fill("Execution mode acceptance");
+  await page.getByLabel("Quantity").fill("1");
+  await page.getByLabel("Unit price").fill("325.00");
+  await page.getByRole("button", { name: "Create invoice" }).click();
+  const invoice = page.locator("tbody tr").filter({ hasText: customer });
+  await expect(invoice).toContainText("Draft");
+  const invoiceNumber = (await invoice.locator("td").first().innerText()).trim().split(/\\s+/)[0]!;
+  await invoice.getByTitle("Issue invoice").click();
+  await expect(invoice).toContainText("Sent");
+
+  await page.locator(".nav-item").filter({ hasText: "AI Co-pilot" }).first().click();
+  await page.getByRole("button", { name: "I understand — enable AI" }).click();
+  await page.getByRole("button", { name: "Execution mode · Off" }).click();
+  const ask = page.getByLabel("Ask your business co-pilot");
+  await ask.fill(`Mark invoice ${invoiceNumber} paid in full and record the payment.`);
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("heading", { name: "Record payment" })).toBeVisible({ timeout: 75_000 });
+  await expect(page.getByText(invoiceNumber, { exact: true })).toBeVisible();
+  await expect(page.getByText(customer, { exact: true })).toBeVisible();
+  await expect(page.getByText("R 325,00")).toBeVisible();
+
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByText("Execution cancelled. No payment was recorded.")).toBeVisible();
+  let workspace = await page.request.get("/api/workspace");
+  let data = await workspace.json() as { workspace: { invoices: Array<{ number: string; status: string }>; payments: Array<{ invoiceId: string }> } };
+  const cancelledInvoice = data.workspace.invoices.find(item => item.number === invoiceNumber);
+  expect(cancelledInvoice?.status).toBe("Sent");
+  expect(data.workspace.payments).toHaveLength(0);
+
+  await ask.fill(`Mark invoice ${invoiceNumber} paid in full and record the payment.`);
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("heading", { name: "Record payment" })).toBeVisible({ timeout: 75_000 });
+  await page.getByRole("button", { name: "Confirm and record payment" }).click();
+  await expect(page.getByText("Approved. The full payment has been recorded in your workspace.")).toBeVisible();
+  workspace = await page.request.get("/api/workspace");
+  data = await workspace.json();
+  const paidInvoice = data.workspace.invoices.find(item => item.number === invoiceNumber);
+  expect(paidInvoice?.status).toBe("Paid");
+  expect(data.workspace.payments).toHaveLength(1);
+
+  await ask.fill(`Mark invoice ${invoiceNumber} paid in full and record the payment again.`);
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByText(/no outstanding balance to record/i)).toBeVisible({ timeout: 75_000 });
+  workspace = await page.request.get("/api/workspace");
+  data = await workspace.json();
+  expect(data.workspace.payments).toHaveLength(1);
+});
