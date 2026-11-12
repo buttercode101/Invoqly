@@ -1,5 +1,20 @@
 import { expect, test } from "@playwright/test";
 
+function contrastRatio(foreground: string, background: string) {
+  const luminance = (value: string) => {
+    const channels = value.match(/[\\d.]+/g)?.slice(0, 3).map(Number);
+    if (!channels || channels.length !== 3) throw new Error("Unexpected computed colour: " + value);
+    const [r, g, b] = channels.map(channel => {
+      const normalized = channel / 255;
+      return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+  };
+  const a = luminance(foreground);
+  const b = luminance(background);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
 test.skip(process.env.RUN_REMOTE_AI_E2E !== "1", "Requires the deployed preview Worker and its real AI binding.");
 
 test("live AI co-pilot prepares an editable quotation and saves the user's approved changes", async ({ page }) => {
@@ -33,17 +48,50 @@ test("live AI co-pilot prepares an editable quotation and saves the user's appro
   await expect(page.getByText("Gross total", { exact: true })).toBeVisible();
   await expect(page.getByText("Out of scope · no VAT added", { exact: true })).toBeVisible();
 
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({ path: "test-results/invoqly-ai-draft-desktop-1440.png", fullPage: true });
+  await page.getByRole("button", { name: "Switch to dark mode" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  const darkDraft = await page.evaluate(() => {
+    const draft = document.querySelector(".assistant-draft");
+    const title = draft?.querySelector("h2");
+    const label = draft?.querySelector(".assistant-draft-row span");
+    const value = draft?.querySelector(".assistant-draft-row b");
+    const total = draft?.querySelector(".assistant-draft-total strong");
+    const lineItem = draft?.querySelector(".assistant-line-item");
+    const lineItemTitle = lineItem?.querySelector("b");
+    const lineItemDetail = lineItem?.querySelector("span");
+    return {
+      background: draft ? getComputedStyle(draft).backgroundColor : "",
+      title: title ? getComputedStyle(title).color : "",
+      label: label ? getComputedStyle(label).color : "",
+      value: value ? getComputedStyle(value).color : "",
+      total: total ? getComputedStyle(total).color : "",
+      lineItemTitle: lineItemTitle ? getComputedStyle(lineItemTitle).color : "",
+      lineItemDetail: lineItemDetail ? getComputedStyle(lineItemDetail).color : ""
+    };
+  });
+  expect(darkDraft.background).toBe("rgb(24, 34, 27)");
+  expect(contrastRatio(darkDraft.title, darkDraft.background)).toBeGreaterThanOrEqual(7);
+  expect(contrastRatio(darkDraft.label, darkDraft.background)).toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio(darkDraft.value, darkDraft.background)).toBeGreaterThanOrEqual(7);
+  expect(contrastRatio(darkDraft.total, darkDraft.background)).toBeGreaterThanOrEqual(7);
+  expect(contrastRatio(darkDraft.lineItemTitle, darkDraft.background)).toBeGreaterThanOrEqual(7);
+  expect(contrastRatio(darkDraft.lineItemDetail, darkDraft.background)).toBeGreaterThanOrEqual(4.5);
+  await page.screenshot({ path: "test-results/invoqly-ai-draft-dark-1440.png", fullPage: true });
+
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileDimensions = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
     document: document.documentElement.scrollWidth
   }));
   expect(mobileDimensions.document).toBeLessThanOrEqual(mobileDimensions.viewport);
+  await page.screenshot({ path: "test-results/invoqly-ai-draft-dark-mobile-390.png", fullPage: true });
+  await page.getByRole("button", { name: "Switch to light mode" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.screenshot({ path: "test-results/invoqly-ai-draft-mobile-390.png", fullPage: true });
 
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.screenshot({ path: "test-results/invoqly-ai-draft-desktop-1440.png", fullPage: true });
-
   await page.getByRole("button", { name: "Edit details" }).click();
   await expect(page.getByRole("heading", { name: "Edit quotation draft" })).toBeVisible();
   await expect(page.getByLabel("Customer or business name")).toHaveValue(customer);
