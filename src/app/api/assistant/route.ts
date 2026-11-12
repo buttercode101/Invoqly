@@ -244,7 +244,7 @@ ${JSON.stringify(modelContext)}`;
       const explicitDate = explicitDocumentDate(message);
       const dueDate = explicitDate ?? dateAfterDays(14);
       // Saved client data is trusted; otherwise only use contact details the user explicitly supplied.
-      const contact = resolveAssistantCustomerContact({ message, proposedCompany: fields.data.customerCompany, savedClient: matchedClient });
+      const contact = resolveAssistantCustomerContact({ message, proposedCompany: fields.data.customerCompany, savedClient: matchedClient ?? source });
       const customerEmail = contact.email;
       const customerCompany = contact.company;
       const documentData = {
