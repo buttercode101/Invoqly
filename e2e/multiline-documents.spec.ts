@@ -1,4 +1,26 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+
+async function expectPdfPreview(frame: Locator) {
+  await expect.poll(() => frame.getAttribute("src")).toMatch(/^blob:/);
+  const pdf = await frame.evaluate(async iframe => {
+    const source = iframe.getAttribute("src");
+    if (!source) return null;
+    const response = await fetch(source);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    return {
+      status: response.status,
+      contentType: response.headers.get("content-type"),
+      signature: new TextDecoder().decode(bytes.slice(0, 8)),
+      size: bytes.byteLength
+    };
+  });
+  expect(pdf).not.toBeNull();
+  expect(pdf!.status).toBe(200);
+  expect(pdf!.contentType).toContain("application/pdf");
+  expect(pdf!.signature).toBe("%PDF-1.4");
+  expect(pdf!.size).toBeGreaterThan(500);
+}
 
 async function createAccount(page: Page) {
   const suffix = Date.now() + "-" + Math.random().toString(36).slice(2, 7);
@@ -31,6 +53,7 @@ test("guest can create and print multi-line invoices and quotations without an a
   const invoicePreview = page.getByRole("dialog", { name: /Invoice ·/ });
   await expect(invoicePreview).toBeVisible();
   await expect(invoicePreview.locator("iframe")).toBeVisible();
+  await expectPdfPreview(invoicePreview.locator("iframe"));
   await expect(invoicePreview.getByLabel("Document style")).toHaveValue("modern");
   await invoicePreview.getByRole("button", { name: "Close PDF preview" }).click();
 
@@ -50,6 +73,7 @@ test("guest can create and print multi-line invoices and quotations without an a
   const quotePreview = page.getByRole("dialog", { name: /Quotation ·/ });
   await expect(quotePreview).toBeVisible();
   await expect(quotePreview.locator("iframe")).toBeVisible();
+  await expectPdfPreview(quotePreview.locator("iframe"));
   await quotePreview.getByLabel("Document style").selectOption("classic");
   await expect(quotePreview.getByLabel("Document style")).toHaveValue("classic");
   await quotePreview.getByRole("button", { name: "Close PDF preview" }).click();
