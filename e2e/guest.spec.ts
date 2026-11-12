@@ -97,7 +97,9 @@ test("guest can work without signup, then import their local records after creat
   await page.locator(".nav-item").filter({hasText:"Invoices"}).click();
   await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Guest project");
   await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Guest project +1 more line");
+  await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("995");
   await expect(page.locator("tbody tr").filter({hasText:"Guest Quote Customer"})).toContainText("Brand identity package +1 more line");
+  await expect(page.locator("tbody tr").filter({hasText:"Guest Quote Customer"})).toContainText(/3[\\s\\u00a0,]?450/);
   await expect(page.locator("tbody tr").filter({hasText:"Guest One-off Customer"})).toContainText("Paid");
   await expect(page.locator("tbody tr").filter({hasText:"Guest Second Customer"})).toContainText("Draft");
   await page.locator(".nav-item").filter({hasText:"Expenses"}).click();
