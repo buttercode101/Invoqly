@@ -138,7 +138,7 @@ export function createDocumentPdf(input: DocumentPdfInput): Blob {
   commands.push(textAt(totalX,y-60,"TOTAL",11,true,accent));
   commands.push(textAt(480,y-60,money(breakdown.grossMinor,input.currency),11,true,accent));
   if(signature){
-    if(y<145){newPage();y=790;}
+    if(y<225){newPage();y=790;}
     commands.push(textAt(48,y-105,"CLIENT APPROVAL",8,true,accent));
     const scale=Math.min(150/signature.width,42/signature.height);
     const width=signature.width*scale,height=signature.height*scale;
