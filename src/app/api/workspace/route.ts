@@ -70,7 +70,7 @@ export async function POST(request:Request) {
     const input = parsed.data;
     const currentDate=today();
     if(input.action==="create-invoice"&&input.dueDate<currentDate)return fail("Choose an invoice due date that is today or later.",422);
-    if(input.action==="create-quote"&&input.validUntil<currentDate)return fail("Choose a quotation validity date that is today or later.",422);
+    if((input.action==="create-quote"||input.action==="update-draft-quote")&&input.validUntil<currentDate)return fail("Choose a quotation validity date that is today or later.",422);
     if(input.action==="update-draft-invoice"&&input.dueDate<currentDate)return fail("Choose an invoice due date that is today or later.",422);
     if(input.action==="create-payment"&&input.date>currentDate)return fail("Payment date cannot be in the future.",422);
     const workspace = await getOrCreateWorkspace(db,user.id);

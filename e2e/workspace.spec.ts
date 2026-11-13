@@ -70,7 +70,12 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await page.getByLabel("Business name").fill("Walk-in Client Ltd");
   await page.getByRole("button",{name:"Save client"}).click();
   await expect(page.getByRole("heading",{name:"Walk-in Client"})).toBeVisible();
-  await expect(page.locator(".client-card").filter({hasText:"Walk-in Client"})).toContainText("No email added");
+  const walkInCard=page.locator(".client-card").filter({hasText:"Walk-in Client"});
+  await expect(walkInCard).toContainText("No email added");
+  await walkInCard.getByRole("button",{name:"Edit client"}).click();
+  await page.getByLabel("Email address").fill("billing@walkin.example");
+  await page.getByRole("button",{name:"Save client changes"}).click();
+  await expect(walkInCard).toContainText("billing@walkin.example");
   await goTo(page,"Invoices");
   let invoiceRow=page.locator("tbody tr").filter({hasText:"Acme Services"});
   await expect(invoiceRow).toContainText("Draft");
@@ -135,7 +140,8 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await expect(quoteRow).toContainText("Sent");
   await quoteRow.getByTitle("Accept quotation").click();
   await expect(quoteRow).toContainText("Accepted");
-  const quoteId=await page.evaluate(async()=>{const response=await fetch("/api/workspace");const payload=await response.json();return payload.workspace.quotes.find((quote:any)=>quote.customerName==="Quote Customer")?.id});
+  const quoteId=await page.evaluate(async()=>{const response=await fetch("/api/workspace");const payload=await response.json() as {workspace:{quotes:Array<{id:string;customerName:string}>}};return payload.workspace.quotes.find(quote=>quote.customerName==="Quote Customer")?.id});
+  if(!quoteId)throw new Error("The test quotation could not be found.");
   const invalidTransition=await page.evaluate(async(id)=>{const response=await fetch("/api/workspace",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"update-quote-status",quoteId:id,status:"Declined"})});return response.status},quoteId);
   expect(invalidTransition).toBe(409);
   await quoteRow.getByTitle("Convert to invoice").click();
@@ -154,7 +160,8 @@ test("real account, client, invoice, partial payments, expense and reload",async
   expect(convertedTransition).toBe(409);
 
   await goTo(page,"Payments");
-  const acmeInvoiceId=await page.evaluate(async()=>{const response=await fetch("/api/workspace");const payload=await response.json();return payload.workspace.invoices.find((invoice:any)=>invoice.customerName==="Acme Services")?.id});
+  const acmeInvoiceId=await page.evaluate(async()=>{const response=await fetch("/api/workspace");const payload=await response.json() as {workspace:{invoices:Array<{id:string;customerName:string}>}};return payload.workspace.invoices.find(invoice=>invoice.customerName==="Acme Services")?.id});
+  if(!acmeInvoiceId)throw new Error("The test invoice could not be found.");
   const futurePaymentStatus=await page.evaluate(async(id)=>{const response=await fetch("/api/workspace",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"create-payment",invoiceId:id,date:"2099-01-01",amountMinor:100,currency:"ZAR",method:"Bank transfer",reference:"future-date-test",notes:""})});return response.status},acmeInvoiceId);
   expect(futurePaymentStatus).toBe(422);
   await page.getByRole("button",{name:"Record payment"}).click();
@@ -186,9 +193,16 @@ test("real account, client, invoice, partial payments, expense and reload",async
   await page.getByLabel("Amount").fill("350.75");
   await page.getByLabel("Currency").selectOption("ZAR");
   await page.getByLabel("Category").selectOption("Software");
-  await page.getByLabel("Notes").fill("Recurring hosting fee");
+  await page.getByLabel("Notes").fill("Updated recurring hosting fee");
   await page.getByRole("button",{name:"Save expense"}).click();
-  await expect(page.locator(".expense-table-desktop").getByText("Cloud hosting")).toBeVisible();
+  const hostingExpenseRow=page.locator(".expense-table-desktop tbody tr").filter({hasText:"Cloud hosting"});
+  await expect(hostingExpenseRow).toBeVisible();
+  await hostingExpenseRow.getByTitle("Edit expense").click();
+  await expect(page.getByRole("heading",{name:"Edit expense"})).toBeVisible();
+  await page.getByLabel("Amount").fill("400.75");
+  await page.getByLabel("Notes").fill("Updated recurring hosting fee");
+  await page.getByRole("button",{name:"Save expense changes"}).click();
+  await expect(page.locator(".expense-table-desktop tbody tr").filter({hasText:"Cloud hosting"})).toContainText("400,75");
 
   await page.reload();
   await goTo(page,"Clients");

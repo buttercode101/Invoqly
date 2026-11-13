@@ -41,6 +41,20 @@ test("expense receipt photo uploads and remains available after reload", async (
   await expect.poll(() => popup.evaluate(() => document.contentType)).toBe("image/png");
   await popup.close();
 
+  const receiptCard=page.locator(".expense-card-list .register-card").filter({hasText:"Receipt photo test supplier"});
+  await receiptCard.getByTitle("Edit expense").click();
+  await expect(page.getByRole("heading",{name:"Edit expense"})).toBeVisible();
+  await expect(page.getByText(/Current receipt attached/)).toBeVisible();
+  await page.getByLabel("Notes").fill("Receipt retained after editing the expense.");
+  await page.getByRole("button",{name:"Save expense changes"}).click();
+  await expect(receiptCard.getByRole("link",{name:/View receipt photo/})).toBeVisible();
+  await receiptCard.getByTitle("Edit expense").click();
+  await page.getByRole("button",{name:"Remove receipt"}).click();
+  await page.getByRole("button",{name:"Save expense changes"}).click();
+  await expect(receiptCard.getByRole("link",{name:/View receipt photo/})).toHaveCount(0);
+  const removedReceiptResponse=await page.request.get(new URL(href,page.url()).toString());
+  expect(removedReceiptResponse.status()).toBe(404);
+
   await page.getByRole("button", { name: "Record expense" }).click();
   await page.getByLabel("Vendor or supplier").fill("Manual entry QA supplier");
   await page.getByLabel("Amount").fill("30.00");
