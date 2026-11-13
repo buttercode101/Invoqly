@@ -105,7 +105,7 @@ jobs:
           RUN_REMOTE_AI_E2E: "1"
           RUN_REMOTE_RECEIPT_E2E: "1"
           CI: "true"
-        run: npx playwright test e2e/guest-remote.spec.ts e2e/vat-documents.spec.ts e2e/assistant-remote.spec.ts e2e/assistant-payment-remote.spec.ts e2e/expense-receipt-remote.spec.ts e2e/offline.spec.ts e2e/theme.spec.ts e2e/guest-backup-share.spec.ts --workers=1
+        run: npx playwright test --workers=1
       - name: Upload remote browser acceptance diagnostics
         if: always() && steps.credentials.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
@@ -116,16 +116,7 @@ jobs:
             playwright-report/
           if-no-files-found: warn
           retention-days: 7
-      - name: Ensure Playwright Chromium is present for signed-in workspace acceptance
-        if: always() && steps.credentials.outputs.ready == 'true'
-        run: npx playwright install chromium --with-deps
-      - name: Verify signed-in workspace API and full account workflow
-        if: always() && steps.credentials.outputs.ready == 'true'
-        env:
-          PLAYWRIGHT_BASE_URL: https://invoqly-preview.buttercoder-dev.workers.dev
-          CI: "true"
-        run: npx playwright test e2e/workspace.spec.ts --grep "real account, client" --workers=1
-      - name: Upload browser acceptance diagnostics
+
         if: always() && steps.credentials.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
