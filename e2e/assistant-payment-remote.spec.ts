@@ -3,10 +3,16 @@ test.skip(process.env.RUN_REMOTE_AI_E2E !== "1", "Requires the live preview AI b
 test("AI invoice draft is reviewed, issued and paid", async ({ page }) => {
   test.setTimeout(150_000);
   await page.goto("/sign-up");
-  await page.getByLabel("Your name").fill("AI Payment QA");
-  await page.getByLabel("Email address").fill("ai-payment-" + Date.now() + "@example.com");
+  const nameField = page.locator('input[autocomplete="name"]');
+  await expect(nameField).toBeVisible();
+  await nameField.fill("AI Payment QA");
+  await expect(nameField).toHaveValue("AI Payment QA");
+  const emailField = page.locator('input[autocomplete="email"]');
+  await emailField.fill("ai-payment-" + Date.now() + "@example.com");
+  await expect(emailField).toHaveValue(/ai-payment-.*@example\\.com/);
   await page.locator('input[type="password"]').first().fill("Invoqly-Preview-QA-2026!");
   const signupPromise = page.waitForResponse(response => response.url().includes("/api/auth/sign-up/email") && response.request().method() === "POST");
+  await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
   await page.getByRole("button", { name: "Create account" }).click();
   const signup = await signupPromise;
   expect(signup.status(), "account signup must succeed").toBe(200);
@@ -44,8 +50,12 @@ test("execution mode requires explicit approval and records exactly one full set
   test.setTimeout(120_000);
   const customer = "Execution QA " + Date.now();
   await page.goto("/sign-up");
-  await page.getByLabel("Your name").fill("Execution QA");
-  await page.getByLabel("Email address").fill("execution-qa-" + Date.now() + "@example.com");
+  const executionName = page.locator('input[autocomplete="name"]');
+  await executionName.fill("Execution QA");
+  await expect(executionName).toHaveValue("Execution QA");
+  const executionEmail = page.locator('input[autocomplete="email"]');
+  await executionEmail.fill("execution-qa-" + Date.now() + "@example.com");
+  await expect(executionEmail).toHaveValue(/execution-qa-.*@example\\.com/);
   await page.locator('input[type="password"]').first().fill("Invoqly-Execution-QA-2026!");
   const signupPromise = page.waitForResponse(response => response.url().includes("/api/auth/sign-up/email") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Create account" }).click();
