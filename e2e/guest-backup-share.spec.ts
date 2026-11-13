@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 test("guest can create, share a PDF, back up and restore an invoice without an account", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -6,6 +7,15 @@ test("guest can create, share a PDF, back up and restore an invoice without an a
     Object.defineProperty(navigator, "share", { configurable: true, value: undefined });
   });
   await page.goto("/guest");
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByLabel("Brand name on documents").fill("Backup Brand Studio");
+  await page.getByLabel("Brand colour").fill("#3a6b52");
+  await page.locator(".templateGrid button").filter({ hasText: "Editorial" }).click();
+  const logoPng = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
+  await page.locator('.settingsForm input[accept="image/jpeg,image/png,image/webp"]').setInputFiles({ name: "backup-logo.png", mimeType: "image/png", buffer: Buffer.from(logoPng, "base64") });
+  await expect(page.locator(".logoPreview img")).toBeVisible();
+  await page.getByRole("button", { name: "Save document branding" }).click();
+  await page.getByRole("button", { name: "Invoices" }).click();
   await page.getByRole("button", { name: "Invoices" }).click();
   await page.getByRole("button", { name: "New invoice" }).click();
   await page.getByLabel("Customer name").fill("Backup Share QA");
@@ -30,6 +40,12 @@ test("guest can create, share a PDF, back up and restore an invoice without an a
   await page.getByRole("button", { name: /Export backup/ }).click();
   const backup = await backupPromise;
   expect(backup.suggestedFilename()).toBe("invoqly-guest-backup.json");
+  const backupJson = JSON.parse(await readFile(backupPath!, "utf8"));
+  expect(backupJson.documentSettings.brandName).toBe("Backup Brand Studio");
+  expect(backupJson.documentSettings.templateId).toBe("editorial");
+  expect(backupJson.documentSettings.logoDataUrl).toMatch(/^data:image\\/jpeg;base64,/);
+  expect(backupJson.invoices[0].documentDesign.brandName).toBe("Backup Brand Studio");
+  expect(backupJson.invoices[0].documentDesign.templateId).toBe("editorial");
   const backupPath = await backup.path();
   expect(backupPath).toBeTruthy();
 
@@ -41,6 +57,9 @@ test("guest can create, share a PDF, back up and restore an invoice without an a
   page.once("dialog", dialog => dialog.accept());
   await page.getByLabel("Restore backup").setInputFiles(backupPath!);
   await expect(page.getByRole("status")).toContainText("Backup restored");
+  await expect(page.getByLabel("Brand name on documents")).toHaveValue("Backup Brand Studio");
+  await expect(page.locator(".templateSelected")).toContainText("Editorial");
+  await expect(page.locator(".logoPreview img")).toBeVisible();
   await page.getByRole("button", { name: "Invoices" }).click();
   await expect(page.getByText(/Backup Share QA/)).toBeVisible();
   await expect(page.getByText(/INV-0001/)).toBeVisible();
