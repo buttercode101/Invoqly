@@ -61,7 +61,8 @@ export default function PublicQuoteClient({token}:{token:string}){
  if(loading)return <main className="public-quote-state"><div className="public-quote-loader"/>Loading your quotation…</main>;
  if(!data)return <main className="public-quote-state"><div className="public-quote-error"><FileText size={22}/><h1>Quotation unavailable</h1><p>{error||"This link may have expired or been withdrawn."}</p></div></main>;
  const q=data.quote,settings=resolveDocumentSettings(q.documentDesign),total=calculateDocumentTotal(q.lineItems),tax=calculateDocumentTax(q.lineItems);
- const decided=q.decisionStatus!=="Pending"||Boolean(decision);
+ const publicDecision=decision??(q.decisionStatus==="Accepted"?"Accepted":q.decisionStatus==="Declined"?"Declined":null);
+ const decided=Boolean(publicDecision);
  return <main className="public-quote-page">
   <header className="public-quote-top"><a href="/" className="public-quote-brand"><span>i.</span> invoqly</a><span>Secure quotation review</span></header>
   <div className="public-quote-layout">
