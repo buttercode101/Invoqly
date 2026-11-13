@@ -3,6 +3,7 @@ test.skip(process.env.RUN_REMOTE_AI_E2E !== "1", "Requires the live preview AI b
 test("AI invoice draft is reviewed, issued and paid", async ({ page }) => {
   test.setTimeout(150_000);
   await page.goto("/sign-up");
+  await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
   const nameField = page.locator('input[autocomplete="name"]');
   await expect(nameField).toBeVisible();
   await nameField.fill("AI Payment QA");
