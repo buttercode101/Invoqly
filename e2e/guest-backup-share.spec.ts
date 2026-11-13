@@ -16,7 +16,6 @@ test("guest can create, share a PDF, back up and restore an invoice without an a
   await expect(page.getByAltText("Business logo")).toBeVisible();
   await page.getByRole("button", { name: "Save document branding" }).click();
   await page.getByRole("button", { name: "Invoices" }).click();
-  await page.getByRole("button", { name: "Invoices" }).click();
   await page.getByRole("button", { name: "New invoice" }).click();
   await page.getByLabel("Customer name").fill("Backup Share QA");
   await page.getByLabel("Description").fill("Monthly support");
@@ -40,13 +39,13 @@ test("guest can create, share a PDF, back up and restore an invoice without an a
   await page.getByRole("button", { name: /Export backup/ }).click();
   const backup = await backupPromise;
   expect(backup.suggestedFilename()).toBe("invoqly-guest-backup.json");
+  const backupPath = await backup.path();
   const backupJson = JSON.parse(await readFile(backupPath!, "utf8"));
   expect(backupJson.documentSettings.brandName).toBe("Backup Brand Studio");
   expect(backupJson.documentSettings.templateId).toBe("editorial");
-  expect(backupJson.documentSettings.logoDataUrl).toMatch(/^data:image\\/jpeg;base64,/);
+  expect(backupJson.documentSettings.logoDataUrl).toMatch(/^data:image\/jpeg;base64,/);
   expect(backupJson.invoices[0].documentDesign.brandName).toBe("Backup Brand Studio");
   expect(backupJson.invoices[0].documentDesign.templateId).toBe("editorial");
-  const backupPath = await backup.path();
   expect(backupPath).toBeTruthy();
 
   await page.evaluate(() => localStorage.removeItem("invoqly.guest.workspace.v1"));
@@ -59,7 +58,7 @@ test("guest can create, share a PDF, back up and restore an invoice without an a
   await expect(page.getByRole("status")).toContainText("Backup restored");
   await expect(page.getByLabel("Brand name on documents")).toHaveValue("Backup Brand Studio");
   await expect(page.getByTestId("guest-template-editorial")).toHaveAttribute("aria-pressed","true");
-  await expect(page.locator(".logoPreview img")).toBeVisible();
+  await expect(page.getByAltText("Business logo")).toBeVisible();
   await page.getByRole("button", { name: "Invoices" }).click();
   await expect(page.getByText(/Backup Share QA/)).toBeVisible();
   await expect(page.getByText(/INV-0001/)).toBeVisible();
