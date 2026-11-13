@@ -18,7 +18,7 @@ const decisionSchema=z.object({
  rejectionReason:z.string().trim().max(500).optional().default(""),
 });
 function fail(message:string,status=400){return NextResponse.json({error:message},{status,headers:{"Cache-Control":"no-store"}});}
-function isExpired(link:{revokedAt:Date|null;expiresAt:Date}){return Boolean(link.revokedAt||link.expiresAt.getTime()<=Date.now());}
+function localBusinessDate(){return new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Johannesburg"}).format(new Date())}\nfunction isExpired(link:{revokedAt:Date|null;expiresAt:Date}){return Boolean(link.revokedAt||link.expiresAt.getTime()<=Date.now());}
 
 export async function GET(_request:Request,context:Context){
  const {token}=await context.params;
@@ -31,12 +31,12 @@ export async function GET(_request:Request,context:Context){
   const [quote]=await db.select().from(quotes).where(and(eq(quotes.id,link.quoteId),eq(quotes.workspaceId,link.workspaceId))).limit(1);
   if(!quote)return fail("This quotation is no longer available.",404);
   if(link.decisionStatus==="Pending"&&quote.status!=="Sent")return fail("This quotation is no longer open for a decision.",409);
-  if(link.decisionStatus==="Pending"&&quote.validUntil<new Date().toISOString().slice(0,10))return fail("This quotation has expired. Ask the sender for an updated quotation.",410);
+  if(link.decisionStatus==="Pending"&&quote.validUntil<localBusinessDate())return fail("This quotation has expired. Ask the sender for an updated quotation.",410);
   const [workspace]=await db.select({businessName:workspaces.businessName,businessAddress:workspaces.businessAddress,vatNumber:workspaces.vatNumber,documentSettings:workspaces.documentSettings}).from(workspaces).where(eq(workspaces.id,link.workspaceId)).limit(1);
   await db.update(quotePublicLinks).set({lastViewedAt:new Date()}).where(eq(quotePublicLinks.id,link.id));
   const lineItems=resolveDocumentLineItems(quote.lineItems,{description:quote.description,quantity:quote.quantity,unitPriceMinor:quote.unitPriceMinor});
   return NextResponse.json({
-   quote:{id:quote.id,number:quote.number,customerName:quote.customerName,customerEmail:quote.customerEmail,customerCompany:quote.customerCompany,issueDate:quote.issueDate,validUntil:quote.validUntil,currency:quote.currency,status:quote.status,lineItems,documentDesign:quote.documentDesign??workspace?.documentSettings??null,decisionStatus:link.decisionStatus,signerName:link.signerName,signerEmail:link.signerEmail,signatureDataUrl:link.signatureDataUrl,decisionAt:link.decisionAt?.toISOString()??null,rejectionReason:link.rejectionReason},
+   quote:{id:quote.id,number:quote.number,customerName:quote.customerName,customerEmail:quote.customerEmail,customerCompany:quote.customerCompany,issueDate:quote.issueDate,validUntil:quote.validUntil,currency:quote.currency,status:quote.status,lineItems,documentDesign:quote.documentDesign??workspace?.documentSettings??null,decisionStatus:link.decisionStatus,signerName:link.signerName,signerEmail:link.signerEmail,signatureDataUrl:link.signatureDataUrl,agreementAt:link.agreedAt?.toISOString()??null,decisionAt:link.decisionAt?.toISOString()??null,rejectionReason:link.rejectionReason},
    business:{name:workspace?.businessName??"Your business",address:workspace?.businessAddress??"",vatNumber:workspace?.vatNumber??""},
    linkExpiresAt:link.expiresAt.toISOString()
   },{headers:{"Cache-Control":"private, no-store"}});
@@ -62,9 +62,9 @@ export async function POST(request:Request,context:Context){
     const [quote]=await tx.select().from(quotes).where(and(eq(quotes.id,link.quoteId),eq(quotes.workspaceId,link.workspaceId))).for("update").limit(1);
     if(!quote)return {error:"not-found" as const};
     if(quote.status!=="Sent")return {error:"closed" as const};
-    if(quote.validUntil<new Date().toISOString().slice(0,10))return {error:"expired" as const};
+    if(quote.validUntil<localBusinessDate())return {error:"expired" as const};
     const now=new Date();
-    await tx.update(quotePublicLinks).set({decisionStatus:input.decision,signerName:input.signerName,signerEmail:input.signerEmail||null,signatureDataUrl:input.decision==="Accepted"?input.signatureDataUrl:null,rejectionReason:input.decision==="Declined"?input.rejectionReason:null,decisionAt:now}).where(eq(quotePublicLinks.id,link.id));
+    await tx.update(quotePublicLinks).set({decisionStatus:input.decision,signerName:input.signerName,signerEmail:input.signerEmail||null,signatureDataUrl:input.decision==="Accepted"?input.signatureDataUrl:null,agreedAt:input.decision==="Accepted"?now:null,rejectionReason:input.decision==="Declined"?input.rejectionReason:null,decisionAt:now}).where(eq(quotePublicLinks.id,link.id));
     await tx.update(quotes).set({status:input.decision,updatedAt:now}).where(and(eq(quotes.id,quote.id),eq(quotes.workspaceId,quote.workspaceId)));
     return {decision:input.decision,decisionAt:now.toISOString()};
    });
