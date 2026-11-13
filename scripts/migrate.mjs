@@ -27,6 +27,9 @@ try {
   const receiptPhotoMigration=await sql`SELECT "id" FROM "_invoqly_migrations" WHERE "id"='0005_expense_receipt_photo'`;
   if(!receiptPhotoMigration.length){const source=await readFile(new URL("../drizzle/0005_expense_receipt_photo.sql",import.meta.url),"utf8");const statements=source.split(";").map(s=>s.trim()).filter(Boolean);await sql.begin(async tx=>{for(const statement of statements)await tx.unsafe(statement);await tx`INSERT INTO "_invoqly_migrations" ("id") VALUES ('0005_expense_receipt_photo')`});process.stdout.write("Applied migration 0005_expense_receipt_photo.\n");} else {process.stdout.write("Migration 0005_expense_receipt_photo already applied.\n");}
 
+  const brandedDocumentsMigration=await sql`SELECT "id" FROM "_invoqly_migrations" WHERE "id"='0006_branded_documents_and_quote_links'`;
+  if(!brandedDocumentsMigration.length){const source=await readFile(new URL("../drizzle/0006_branded_documents_and_quote_links.sql",import.meta.url),"utf8");const statements=source.split(";").map(s=>s.trim()).filter(Boolean);await sql.begin(async tx=>{for(const statement of statements)await tx.unsafe(statement);await tx`INSERT INTO "_invoqly_migrations" ("id") VALUES ('0006_branded_documents_and_quote_links')`});process.stdout.write("Applied migration 0006_branded_documents_and_quote_links.\\n");} else {process.stdout.write("Migration 0006_branded_documents_and_quote_links already applied.\\n");}
+
 } finally {
   await sql.end({timeout:5});
 }
