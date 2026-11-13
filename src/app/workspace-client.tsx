@@ -124,8 +124,8 @@ export default function WorkspaceClient({user}:{user:{id:string;name:string;emai
 
  const downloadPdf=()=>{if(!pdfTarget)return;const blob=createDocumentPdf({...pdfTarget.input,template:pdfTemplate});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=pdfTarget.fileName;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
  const sharePdf=async()=>{if(!pdfTarget)return;const blob=createDocumentPdf({...pdfTarget.input,template:pdfTemplate});const file=new File([blob],pdfTarget.fileName,{type:"application/pdf"});try{if(navigator.share&&navigator.canShare?.({files:[file]})){await navigator.share({title:pdfTarget.input.number,files:[file]});return;}downloadPdf();setActionError("This browser cannot share PDF attachments directly, so the PDF was downloaded. Attach that file to your message.");}catch(error){if(error instanceof DOMException&&error.name==="AbortError")return;setActionError(error instanceof Error?error.message:"The PDF could not be shared.");}};
- const shareInvoice=(invoice:Invoice)=>openInvoicePdf(invoice);
- const shareQuote=(quote:Quote)=>openQuotePdf(quote);
+ const shareInvoice=(invoice:Invoice)=>shareDocumentFile(invoicePdfInput(invoice),invoice.number+".pdf");
+ const shareQuote=(quote:Quote)=>shareDocumentFile(quotePdfInput(quote),quote.number+".pdf");
  const printInvoice=(invoice:Invoice)=>openInvoicePdf(invoice);
  const printQuote=(quote:Quote)=>openQuotePdf(quote);
  const refreshWorkspace=async()=>{const response=await fetch("/api/workspace",{cache:"no-store"});const result=await response.json() as {error?:string;workspace:Store};if(!response.ok)throw new Error(result.error||"Workspace could not be refreshed.");setStore(result.workspace)};
