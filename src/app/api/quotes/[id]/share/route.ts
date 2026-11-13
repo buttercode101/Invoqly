@@ -10,8 +10,7 @@ export const dynamic="force-dynamic";
 function fail(message:string,status=400){return NextResponse.json({error:message},{status,headers:{"Cache-Control":"no-store"}});}
 
 export async function POST(request:Request,context:{params:Promise<{id:string}>}){
- const origin=request.headers.get("origin");
- if(!origin||origin!==new URL(request.url).origin)return fail("A same-origin request is required.",403);
+ if(!isSameOriginRequest(request))return fail("A same-origin request is required.",403);
  const {id}=await context.params;
  if(!/^[0-9a-f-]{36}$/i.test(id))return fail("Quotation not found.",404);
  try{return await withDb(async db=>{
