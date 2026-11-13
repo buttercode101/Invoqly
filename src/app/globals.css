@@ -455,3 +455,13 @@ html[data-theme="dark"] .client-cell b,
 html[data-theme="dark"] .amount-cell{color:#e8efe9}
 html[data-theme="dark"] .client-cell small,
 html[data-theme="dark"] .amount-cell small{color:#a2ada5}
+
+html[data-theme="dark"] .auth-shell{background:#111813;color:#e8efe9}
+html[data-theme="dark"] .auth-main{background:#111813}
+html[data-theme="dark"] .auth-kicker{color:#a9d3b5}
+html[data-theme="dark"] .auth-switch{color:#b7c3ba}
+html[data-theme="dark"] .auth-switch a{color:#a9d3b5}
+html[data-theme="dark"] .auth-legal{border-color:#2c3a30;color:#9eaca2}
+html[data-theme="dark"] .auth-brand-foot{color:#b7d1c0}
+html[data-theme="dark"] .workspace-loading{background:#111813;color:#e8efe9}
+html[data-theme="dark"] .workspace-loading p{color:#b7c3ba}
