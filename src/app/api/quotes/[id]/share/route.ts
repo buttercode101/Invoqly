@@ -23,7 +23,7 @@ export async function POST(request:Request,context:{params:Promise<{id:string}>}
    const [quote]=await tx.select().from(quotes).where(and(eq(quotes.id,id),eq(quotes.workspaceId,workspace.id))).for("update").limit(1);
    if(!quote)return {error:"not-found" as const};
    if(["Accepted","Declined","Converted"].includes(quote.status))return {error:"closed" as const};
-   const validUntil=new Date(quote.validUntil+"T23:59:59.999Z").getTime();
+   const validUntil=new Date(quote.validUntil+"T23:59:59.999+02:00").getTime();
    if(!Number.isFinite(validUntil)||validUntil<=Date.now())return {error:"expired" as const};
    const expiresAt=new Date(Math.min(Date.now()+30*24*60*60*1000,validUntil));
    await tx.update(quotePublicLinks).set({revokedAt:new Date()}).where(and(eq(quotePublicLinks.workspaceId,workspace.id),eq(quotePublicLinks.quoteId,quote.id),eq(quotePublicLinks.decisionStatus,"Pending")));
