@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { withDb } from "@/lib/db";
 import { auditEvents, quotePublicLinks, quotes } from "@/lib/db/schema";
 import { getCurrentUser, getOrCreateWorkspace } from "@/lib/workspace";
-import { createQuoteToken, hashQuoteToken } from "@/lib/quote-share";
+import { createQuoteToken, hashQuoteToken, isSameOriginRequest } from "@/lib/quote-share";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
