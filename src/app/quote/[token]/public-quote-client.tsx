@@ -20,7 +20,7 @@ export default function PublicQuoteClient({token}:{token:string}){
  const [signature,setSignature]=useState(""),[hasInk,setHasInk]=useState(false),[submitting,setSubmitting]=useState(false),[decision,setDecision]=useState<"Accepted"|"Declined"|null>(null);
  const canvasRef=useRef<HTMLCanvasElement|null>(null),drawing=useRef(false);
 
- useEffect(()=>{let active=true;fetch("/api/public/quotes/"+token,{cache:"no-store"}).then(async response=>{const body=await response.json();if(!response.ok)throw new Error(body.error||"This quotation is not available.");if(active)setData(body as PublicData)}).catch(e=>{if(active)setError(e instanceof Error?e.message:"This quotation could not be loaded.")}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[token]);
+ useEffect(()=>{let active=true;fetch("/api/public/quotes/"+token,{cache:"no-store"}).then(async response=>{const body=await response.json() as PublicData & {error?:string};if(!response.ok)throw new Error(body.error||"This quotation is not available.");if(active)setData(body as PublicData)}).catch(e=>{if(active)setError(e instanceof Error?e.message:"This quotation could not be loaded.")}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[token]);
 
  useEffect(()=>{
   const resize=()=>{const canvas=canvasRef.current;if(!canvas)return;const rect=canvas.getBoundingClientRect();if(!rect.width)return;
@@ -45,7 +45,7 @@ export default function PublicQuoteClient({token}:{token:string}){
   setSubmitting(true);setError("");
   try{
    const response=await fetch("/api/public/quotes/"+token,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({decision:next,signerName:name.trim(),signerEmail:email.trim(),agreed:agreed||next==="Declined",signatureDataUrl:next==="Accepted"?signature:undefined,rejectionReason:next==="Declined"?reason.trim():""})});
-   const body=await response.json();if(!response.ok)throw new Error(body.error||"Your decision could not be recorded.");
+   const body=await response.json() as {error?:string;decisionAt?:string};if(!response.ok)throw new Error(body.error||"Your decision could not be recorded.");
    setDecision(next);setData(current=>current?{...current,quote:{...current.quote,status:next,decisionStatus:next,signerName:name.trim(),signerEmail:email.trim(),signatureDataUrl:next==="Accepted"?signature:null,decisionAt:body.decisionAt,rejectionReason:next==="Declined"?reason.trim():null}}:current);
   }catch(e){setError(e instanceof Error?e.message:"Your decision could not be recorded.")}finally{setSubmitting(false)}
  };
