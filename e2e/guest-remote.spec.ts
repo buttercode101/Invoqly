@@ -11,7 +11,7 @@ test("remote preview supports real guest invoicing without creating an account o
   await page.getByRole("button",{name:"Settings"}).click();
   await page.getByLabel("Business or trading name").fill("Preview Guest Studio");
   await page.getByLabel("Brand name on documents").fill("Preview Guest Brand");
-  await expect(page.locator(".templateGrid button")).toHaveCount(6);
+  await expect(page.getByTestId("guest-template-grid").getByRole("button")).toHaveCount(6);
   await page.locator(".templateGrid button").filter({hasText:"Editorial"}).click();
   await page.getByRole("button",{name:"Save document branding"}).click();
   for(const width of [320,375,768,1120]){
