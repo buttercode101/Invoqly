@@ -18,7 +18,7 @@ export type DocumentPdfProps = {
   status?: string;
   lineItems: PdfLine[];
   settings: DocumentSettings;
-  notes?: string;
+  notes?: string;\n  signatureDataUrl?: string | null;\n  signerName?: string | null;\n  decisionAt?: string | null;
 };
 
 const money = (minor: number, currency: string) => {
@@ -58,7 +58,7 @@ export function DocumentPdf(props: DocumentPdfProps) {
     totalRow: { width: 220, flexDirection: "row", justifyContent: "space-between", paddingVertical: 5 },
     grand: { width: 220, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1.5, borderTopColor: accent, paddingTop: 11, marginTop: 6, fontSize: 15, fontWeight: "bold", color: accent },
     notes: { marginTop: 28, padding: 14, backgroundColor: "#f5f7f4", borderLeftWidth: 3, borderLeftColor: accent, lineHeight: 1.55, color: "#536158" },
-    footer: { position: "absolute", bottom: 28, left: 46, right: 46, borderTopWidth: 1, borderTopColor: "#e8ece8", paddingTop: 9, color: "#929b94", fontSize: 8, textAlign: "center" },
+    signature: { marginTop: 26, paddingTop: 14, borderTopWidth: 1, borderTopColor: "#e8ece8" },\n    signatureImage: { width: 150, height: 54, objectFit: "contain", marginTop: 7 },\n    footer: { position: "absolute", bottom: 28, left: 46, right: 46, borderTopWidth: 1, borderTopColor: "#e8ece8", paddingTop: 9, color: "#929b94", fontSize: 8, textAlign: "center" },
   });
   const totalMinor = props.lineItems.reduce((sum, item) => sum + item.quantity * item.unitPriceMinor, 0);
   const brand = settings.brandName.trim() || props.businessName;
