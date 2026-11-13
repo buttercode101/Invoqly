@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { withDb } from "@/lib/db";
 import { quotePublicLinks, quotes, workspaces } from "@/lib/db/schema";
-import { hashQuoteToken } from "@/lib/quote-share";
+import { hashQuoteToken, isSameOriginRequest, isValidQuoteToken } from "@/lib/quote-share";
 import { resolveDocumentLineItems } from "@/lib/documents";
 
 export const runtime="nodejs";
@@ -23,7 +23,7 @@ function isExpired(link:{revokedAt:Date|null;expiresAt:Date}){return Boolean(lin
 
 export async function GET(_request:Request,context:Context){
  const {token}=await context.params;
- if(!/^[a-f0-9]{64}$/.test(token))return fail("This quotation link is not valid.",404);
+ if(!isValidQuoteToken(token))return fail("This quotation link is not valid.",404);
  try{return await withDb(async db=>{
   const tokenHash=await hashQuoteToken(token);
   const [link]=await db.select().from(quotePublicLinks).where(eq(quotePublicLinks.tokenHash,tokenHash)).limit(1);
