@@ -85,6 +85,7 @@ test("client accepts and e-signs a branded quotation without an account; status 
   expect((await settingsResponse).status()).toBe(200);
 
   const quote=await createQuote(page,"Approval Client");
+  const row=page.locator(".quote-table-desktop tbody tr").filter({hasText:"Approval Client"});
   const link=await shareApprovalLink(page,quote.id,"Approval Client");
   await expect(row).toContainText("Sent");
 
