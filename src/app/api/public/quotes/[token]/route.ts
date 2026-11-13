@@ -31,10 +31,10 @@ export async function GET(_request:Request,context:Context){
   if(isExpired(link))return fail("This quotation link has expired or been revoked.",410);
   const [quote]=await db.select().from(quotes).where(and(eq(quotes.id,link.quoteId),eq(quotes.workspaceId,link.workspaceId))).limit(1);
   if(!quote)return fail("This quotation is no longer available.",404);
-  if(link.decisionStatus==="Pending"&&quote.status!=="Sent")return fail("This quotation is no longer open for a decision.",409);
+  if(link.decisionStatus==="Pending"&&quote.status!=="Sent"&&quote.status!=="Viewed")return fail("This quotation is no longer open for a decision.",409);
   if(link.decisionStatus==="Pending"&&quote.validUntil<localBusinessDate())return fail("This quotation has expired. Ask the sender for an updated quotation.",410);
   const [workspace]=await db.select({businessName:workspaces.businessName,businessAddress:workspaces.businessAddress,vatNumber:workspaces.vatNumber,documentSettings:workspaces.documentSettings}).from(workspaces).where(eq(workspaces.id,link.workspaceId)).limit(1);
-  await db.update(quotePublicLinks).set({lastViewedAt:new Date()}).where(eq(quotePublicLinks.id,link.id));
+  const viewedAt=new Date();await db.update(quotePublicLinks).set({lastViewedAt:viewedAt}).where(eq(quotePublicLinks.id,link.id));if(link.decisionStatus==="Pending"&&quote.status==="Sent")await db.update(quotes).set({status:"Viewed",updatedAt:viewedAt}).where(and(eq(quotes.id,quote.id),eq(quotes.workspaceId,quote.workspaceId),eq(quotes.status,"Sent")));
   const lineItems=resolveDocumentLineItems(quote.lineItems,{description:quote.description,quantity:quote.quantity,unitPriceMinor:quote.unitPriceMinor});
   return NextResponse.json({
    quote:{id:quote.id,number:quote.number,customerName:quote.customerName,customerEmail:quote.customerEmail,customerCompany:quote.customerCompany,issueDate:quote.issueDate,validUntil:quote.validUntil,currency:quote.currency,status:quote.status,lineItems,documentDesign:quote.documentDesign??workspace?.documentSettings??null,decisionStatus:link.decisionStatus,signerName:link.signerName,signerEmail:link.signerEmail,signatureDataUrl:link.signatureDataUrl,agreementAt:link.agreedAt?.toISOString()??null,decisionAt:link.decisionAt?.toISOString()??null,rejectionReason:link.rejectionReason},
@@ -62,7 +62,7 @@ export async function POST(request:Request,context:Context){
     if(link.decisionStatus!=="Pending")return {error:"decided" as const};
     const [quote]=await tx.select().from(quotes).where(and(eq(quotes.id,link.quoteId),eq(quotes.workspaceId,link.workspaceId))).for("update").limit(1);
     if(!quote)return {error:"not-found" as const};
-    if(quote.status!=="Sent")return {error:"closed" as const};
+    if(quote.status!=="Sent"&&quote.status!=="Viewed")return {error:"closed" as const};
     if(quote.validUntil<localBusinessDate())return {error:"expired" as const};
     const now=new Date();
     await tx.update(quotePublicLinks).set({decisionStatus:input.decision,signerName:input.signerName,signerEmail:input.signerEmail||null,signatureDataUrl:input.decision==="Accepted"?input.signatureDataUrl:null,agreedAt:input.decision==="Accepted"?now:null,rejectionReason:input.decision==="Declined"?input.rejectionReason:null,decisionAt:now}).where(eq(quotePublicLinks.id,link.id));
