@@ -1,5 +1,7 @@
 import { deleteReceiptObject, getReceiptObject, putReceiptObject } from "@/lib/receipts";
 import { NextResponse } from "next/server";
+import { and, eq } from "drizzle-orm";
+import { expenses } from "@/lib/db/schema";
 import { withDb } from "@/lib/db";
 import { getCurrentUser, getOrCreateWorkspace } from "@/lib/workspace";
 
@@ -87,6 +89,13 @@ export async function DELETE(request: Request) {
     if (!workspace) return new Response("Sign in required", { status: 401 });
     const key = new URL(request.url).searchParams.get("key") ?? "";
     if (!key.startsWith(workspace + "/expenses/") || key.includes("..")) return new Response(null, { status: 404 });
+    const stillAttached = await withDb(async db => {
+      const [expense] = await db.select({ id: expenses.id }).from(expenses).where(
+        and(eq(expenses.workspaceId, workspace), eq(expenses.receiptObjectKey, key))
+      ).limit(1);
+      return Boolean(expense);
+    });
+    if (stillAttached) return new Response("Remove this receipt from its expense before deleting the stored image.", { status: 409 });
     await deleteReceiptObject(key);
     return new Response(null, { status: 204 });
   } catch {
