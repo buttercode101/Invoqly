@@ -88,7 +88,25 @@ test("signed-in workspace keeps every section usable in both themes and on mobil
       await page.locator(".sidebar .nav-item").filter({ hasText: section }).first().click();
       await expect(page.locator(".breadcrumb b")).toHaveText(section);
       await expect(page.locator(".page-content > :not(.page-footer)").first()).toBeVisible();
-      if (section === "Cash flow") await expect(page.getByRole("heading", { name: "Cash flow." })).toBeVisible();
+      if (section === "Cash flow") {
+        await expect(page.getByRole("heading", { name: "Cash flow." })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "13-week cash movement" })).toBeVisible();
+        await expect(page.getByText("Cash position settings")).toBeVisible();
+        if (theme === "dark") {
+          const amounts = page.locator(".cashflow-money-input input");
+          await amounts.nth(0).fill("12500.00");
+          await amounts.nth(1).fill("2500.00");
+          const saveResponse = page.waitForResponse(response => response.url().includes("/api/workspace") && response.request().method() === "POST");
+          await page.getByRole("button", { name: "Save cash settings" }).click();
+          expect((await saveResponse).status()).toBe(200);
+          await expect(amounts.nth(0)).toHaveValue("12500.00");
+          await page.getByLabel("Delay receipts").check();
+          await expect(page.getByText("Safe to spend after delay")).toBeVisible();
+          await page.screenshot({ path: "test-results/invoqly-cashflow-dark-desktop.png", fullPage: true });
+        } else {
+          await page.screenshot({ path: "test-results/invoqly-cashflow-light-desktop.png", fullPage: true });
+        }
+      }
       expect((await page.locator(".page-content").innerText()).trim().length, section + " should render useful content").toBeGreaterThan(20);
       const dimensions = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth }));
       expect(dimensions.scrollWidth, section + " horizontal overflow in " + theme).toBeLessThanOrEqual(dimensions.width);
