@@ -17,11 +17,14 @@ const lineItem = z.object({description:z.string().trim().min(1).max(500),quantit
 const payload = z.discriminatedUnion("action", [
   z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20), vatRegistered:z.boolean().optional(), vatNumber:z.string().trim().max(10).optional(), businessAddress:z.string().trim().max(250).optional(), openingCashBalanceMinor:z.number().int().min(-Number.MAX_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER).nullable().optional(), cashReserveMinor:z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).optional() }),
   z.object({ action:z.literal("create-client"), name:z.string().trim().min(1).max(120), email:z.union([z.string().trim().email().max(254).toLowerCase(),z.literal("")]).default(""), company:z.string().max(120).default(""), currency }),
+  z.object({ action:z.literal("update-client"), clientId:z.string().uuid(), name:z.string().trim().min(1).max(120), email:z.union([z.string().trim().email().max(254).toLowerCase(),z.literal("")]).default(""), company:z.string().max(120).default(""), currency }),
   z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid().optional(), customerName:z.string().trim().min(1).max(120).optional(), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), saveContact:z.boolean().default(false), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), currency, dueDate:date }),
   z.object({ action:z.literal("create-quote"), customerName:z.string().trim().min(1).max(120), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), currency, validUntil:date }),
+  z.object({ action:z.literal("update-draft-quote"), quoteId:z.string().uuid(), customerName:z.string().trim().min(1).max(120), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50), currency, validUntil:date }),
   z.object({ action:z.literal("convert-quote"), quoteId:z.string().uuid(), dueDate:date }),
   z.object({ action:z.literal("update-quote-status"), quoteId:z.string().uuid(), status:z.enum(["Sent","Accepted","Declined"]) }),
   z.object({ action:z.literal("create-expense"), vendor:z.string().trim().min(1).max(160), category:z.string().trim().min(1).max(80), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, notes:z.string().max(500).default(""), receiptObjectKey:z.string().max(300).optional() }),
+  z.object({ action:z.literal("update-expense"), expenseId:z.string().uuid(), vendor:z.string().trim().min(1).max(160), category:z.string().trim().min(1).max(80), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, notes:z.string().max(500).default(""), receiptObjectKey:z.string().max(300).nullable().optional() }),
   z.object({ action:z.literal("create-payment"), invoiceId:z.string().uuid(), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, method:z.string().min(1).max(40), reference:z.string().max(100).default(""), notes:z.string().max(500).default("") }),
   z.object({ action:z.literal("send-invoice"), invoiceId:z.string().uuid() }),
   z.object({ action:z.literal("update-draft-invoice"), invoiceId:z.string().uuid(), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50), currency, dueDate:date }),
@@ -149,6 +152,17 @@ export async function POST(request:Request) {
       });
     }
 
+    if (input.action === "update-client") {
+      const updated=await db.transaction(async tx=>{
+        const [existing]=await tx.select().from(clients).where(and(eq(clients.id,input.clientId),eq(clients.workspaceId,workspace.id),eq(clients.isOneOff,false))).for("update").limit(1);
+        if(!existing)return null;
+        const [saved]=await tx.update(clients).set({name:input.name,email:input.email,company:input.company,currency:input.currency,updatedAt:new Date()}).where(and(eq(clients.id,existing.id),eq(clients.workspaceId,workspace.id))).returning();
+        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"client.updated",entityType:"client",entityId:existing.id,metadata:{previous:{name:existing.name,email:existing.email,company:existing.company,currency:existing.currency},next:{name:input.name,email:input.email,company:input.company,currency:input.currency}}});
+        return saved;
+      });
+      if(!updated)return fail("Client not found.",404);
+    }
+
     if (input.action === "create-invoice") {
       let lineItems: DocumentLineItem[];
       let documentTotal: number;
@@ -210,6 +224,26 @@ export async function POST(request:Request) {
       if (!Number.isSafeInteger(documentTotal)) return fail("The quotation total exceeds the supported amount range.",422);
       await db.transaction(async tx=>{const [counter]=await tx.insert(quoteCounters).values({workspaceId:workspace.id,nextNumber:1}).onConflictDoUpdate({target:quoteCounters.workspaceId,set:{nextNumber:sql`${quoteCounters.nextNumber} + 1`}}).returning({nextNumber:quoteCounters.nextNumber});const number="QUO-"+String(counter.nextNumber).padStart(4,"0");const [created]=await tx.insert(quotes).values({workspaceId:workspace.id,number,customerName:input.customerName,customerEmail:input.customerEmail||"",customerCompany:input.customerCompany,issueDate:today(),validUntil:input.validUntil,description:lineItems[0]!.description,quantity:lineItems[0]!.quantity,unitPriceMinor:lineItems[0]!.unitPriceMinor,lineItems,currency:input.currency,status:"Draft"}).returning();await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"quote.created",entityType:"quote",entityId:created.id,metadata:{number,currency:input.currency}})});
     }
+    if (input.action === "update-draft-quote") {
+      let lineItems:DocumentLineItem[];
+      let total:number;
+      try {
+        lineItems=applyDocumentTaxProfile(resolveDocumentLineItems(input.lineItems,{description:input.description,quantity:input.quantity,unitPriceMinor:input.unitPriceMinor}),{vatRegistered:workspace.vatRegistered,taxDate:today(),priceMode:"inclusive"});
+        total=calculateDocumentTotal(lineItems);
+      } catch(error) { return fail(error instanceof Error?error.message:"Quotation line items are invalid.",422); }
+      if(!Number.isSafeInteger(total))return fail("The quotation total exceeds the supported amount range.",422);
+      const result=await db.transaction(async tx=>{
+        const [existing]=await tx.select().from(quotes).where(and(eq(quotes.id,input.quoteId),eq(quotes.workspaceId,workspace.id))).for("update").limit(1);
+        if(!existing)return "not-found" as const;
+        if(existing.status!=="Draft")return "not-draft" as const;
+        await tx.update(quotes).set({customerName:input.customerName,customerEmail:input.customerEmail??"",customerCompany:input.customerCompany,description:lineItems[0]!.description,quantity:lineItems[0]!.quantity,unitPriceMinor:lineItems[0]!.unitPriceMinor,lineItems,currency:input.currency,validUntil:input.validUntil,updatedAt:new Date()}).where(and(eq(quotes.id,existing.id),eq(quotes.workspaceId,workspace.id),eq(quotes.status,"Draft")));
+        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"quote.draft_updated",entityType:"quote",entityId:existing.id,metadata:{currency:input.currency,validUntil:input.validUntil,lineCount:lineItems.length}});
+        return "ok" as const;
+      });
+      if(result==="not-found")return fail("Quotation not found.",404);
+      if(result==="not-draft")return fail("Only draft quotations can be edited. Sent or decided quotations are retained as records.",409);
+    }
+
     if (input.action === "update-quote-status") {
       const result=await db.transaction(async tx=>{
         const [quote]=await tx.select().from(quotes).where(and(eq(quotes.id,input.quoteId),eq(quotes.workspaceId,workspace.id))).for("update").limit(1);
@@ -238,6 +272,19 @@ export async function POST(request:Request) {
         const [created] = await tx.insert(expenses).values({workspaceId:workspace.id,vendor:input.vendor,category:input.category,date:input.date,amountMinor:input.amountMinor,currency:input.currency,notes:input.notes,receiptObjectKey:input.receiptObjectKey??null}).returning();
         await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"expense.created",entityType:"expense",entityId:created.id,metadata:{amountMinor:created.amountMinor,currency:created.currency,receiptAttached:Boolean(created.receiptObjectKey)}});
       });
+    }
+
+    if (input.action === "update-expense") {
+      if(input.receiptObjectKey){const prefix=workspace.id+"/expenses/";if(!input.receiptObjectKey.startsWith(prefix)||input.receiptObjectKey.includes(".."))throw new Error("The receipt attachment does not belong to this workspace.");if(!(await headReceiptObject(input.receiptObjectKey)))throw new Error("The receipt upload could not be found. Upload it again before saving the expense.");}
+      const updated=await db.transaction(async tx=>{
+        const [existing]=await tx.select().from(expenses).where(and(eq(expenses.id,input.expenseId),eq(expenses.workspaceId,workspace.id))).for("update").limit(1);
+        if(!existing)return null;
+        const nextReceiptKey=input.receiptObjectKey===undefined?existing.receiptObjectKey:input.receiptObjectKey;
+        const [saved]=await tx.update(expenses).set({vendor:input.vendor,category:input.category,date:input.date,amountMinor:input.amountMinor,currency:input.currency,notes:input.notes,receiptObjectKey:nextReceiptKey}).where(and(eq(expenses.id,existing.id),eq(expenses.workspaceId,workspace.id))).returning();
+        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"expense.updated",entityType:"expense",entityId:existing.id,metadata:{before:{vendor:existing.vendor,category:existing.category,date:existing.date,amountMinor:existing.amountMinor,currency:existing.currency,receiptAttached:Boolean(existing.receiptObjectKey)},after:{vendor:saved.vendor,category:saved.category,date:saved.date,amountMinor:saved.amountMinor,currency:saved.currency,receiptAttached:Boolean(saved.receiptObjectKey)}}});
+        return saved;
+      });
+      if(!updated)return fail("Expense not found.",404);
     }
 
     if (input.action === "create-payment") {
