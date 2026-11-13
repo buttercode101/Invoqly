@@ -89,8 +89,8 @@ export function createDocumentPdf(input: DocumentPdfInput): Blob {
   const logo=readJpeg(input.logoDataUrl);
   const signature=readJpeg(input.signatureDataUrl);
   if(darkHeader)commands.push("0.10 0.16 0.13 rg 0 754 595 88 re f");
-  else if(template!=="minimal")commands.push(`${accent} rg 48 752 499 ${template==="classic"?2:3} re f`);
-  const brandX=logo?112:48;
+  else if(template==="custom")commands.push(`${accent} rg 48 752 5 90 re f`);\n  else if(template!=="minimal")commands.push(`${accent} rg 48 752 499 ${template==="classic"?2:3} re f`);
+  const brandX=logo?112:(template==="custom"?62:48);
   if(logo){
     const scale=Math.min(52/logo.width,38/logo.height);
     const width=logo.width*scale,height=logo.height*scale;
