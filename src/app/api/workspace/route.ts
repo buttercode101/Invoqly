@@ -118,7 +118,12 @@ export async function POST(request:Request) {
       });
     }
 
-    if (input.action === "update-document-settings") { await db.update(workspaces).set({documentSettings:input.documentSettings,updatedAt:new Date()}).where(eq(workspaces.id,workspace.id)); await txAudit(db,workspace.id,user.id,"workspace.document_settings_updated","workspace",workspace.id,{templateId:input.documentSettings.templateId}); }\n\n    if (input.action === "update-settings") {
+    if (input.action === "update-document-settings") {
+      await db.update(workspaces).set({documentSettings:input.documentSettings,updatedAt:new Date()}).where(eq(workspaces.id,workspace.id));
+      await db.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"workspace.document_settings_updated",entityType:"workspace",entityId:workspace.id,metadata:{templateId:input.documentSettings.templateId}});
+    }
+
+    if (input.action === "update-settings") {
       if (input.vatRegistered ?? workspace.vatRegistered) {
         if (!/^\d{10}$/.test(input.vatNumber ?? workspace.vatNumber ?? "")) {
           return fail("Enter the 10-digit SARS VAT registration number before enabling VAT invoicing.", 422);
