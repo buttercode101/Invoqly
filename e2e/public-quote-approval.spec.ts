@@ -85,7 +85,6 @@ test("client accepts and e-signs a branded quotation without an account; status 
   expect((await settingsResponse).status()).toBe(200);
 
   const quote=await createQuote(page,"Approval Client");
-  const row=page.locator(".quote-table-desktop tbody tr").filter({hasText:"Approval Client"});
   const link=await shareApprovalLink(page,quote.id,"Approval Client");
   await expect(row).toContainText("Sent");
 
@@ -176,7 +175,6 @@ test("client decline is recorded and owner revocation invalidates an open link",
   });
   await createAccount(page,"Decision Owner");
   const declineQuote=await createQuote(page,"Decline Client");
-  const declineRow=page.locator(".quote-table-desktop tbody tr").filter({hasText:"Decline Client"});
   const declineLink=await shareApprovalLink(page,declineQuote.id,"Decline Client");
 
   const clientContext=await browser.newContext();
@@ -195,7 +193,6 @@ test("client decline is recorded and owner revocation invalidates an open link",
     expect(declined.rejectionReason).toContain("delivery date");
 
     const revokeQuote=await createQuote(page,"Revoke Client");
-    const revokeRow=page.locator(".quote-table-desktop tbody tr").filter({hasText:"Revoke Client"});
     const revokeLink=await shareApprovalLink(page,revokeQuote.id,"Revoke Client");
     await clientPage.goto(revokeLink);
     await expect(clientPage.getByRole("heading",{name:"Review and respond"})).toBeVisible();
