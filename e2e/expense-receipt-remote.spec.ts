@@ -42,6 +42,11 @@ test("expense receipt photo uploads and remains available after reload", async (
   await expect.poll(() => popup.evaluate(() => document.contentType)).toBe("image/png");
   await popup.close();
 
+  const attachedDeleteResponse = await page.request.delete(new URL(href, page.url()).toString());
+  expect(attachedDeleteResponse.status()).toBe(409);
+  const attachedReceiptResponse = await page.request.get(new URL(href, page.url()).toString());
+  expect(attachedReceiptResponse.status()).toBe(200);
+
   const receiptCard=page.locator(".expense-card-list .register-card").filter({hasText:"Receipt photo test supplier"});
   await receiptCard.getByTitle("Edit expense").click();
   await expect(page.getByRole("heading",{name:"Edit expense"})).toBeVisible();
