@@ -257,7 +257,8 @@ export async function POST(request:Request) {
         if(!quote)return "not-found" as const;
         const allowed:Record<string,string[]>={Draft:["Sent"],Sent:["Accepted","Declined"]};
         if(!(allowed[quote.status]??[]).includes(input.status))return "invalid-transition" as const;
-        await tx.update(quotes).set({status:input.status,updatedAt:new Date()}).where(and(eq(quotes.id,quote.id),eq(quotes.workspaceId,workspace.id)));\n        if(input.status==="Accepted"||input.status==="Declined")await tx.update(quotePublicLinks).set({revokedAt:new Date()}).where(and(eq(quotePublicLinks.workspaceId,workspace.id),eq(quotePublicLinks.quoteId,quote.id),eq(quotePublicLinks.decisionStatus,"Pending")));
+        await tx.update(quotes).set({status:input.status,updatedAt:new Date()}).where(and(eq(quotes.id,quote.id),eq(quotes.workspaceId,workspace.id)));
+        if(input.status==="Accepted"||input.status==="Declined") await tx.update(quotePublicLinks).set({revokedAt:new Date()}).where(and(eq(quotePublicLinks.workspaceId,workspace.id),eq(quotePublicLinks.quoteId,quote.id),eq(quotePublicLinks.decisionStatus,"Pending")));
         await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"quote.status_changed",entityType:"quote",entityId:quote.id,metadata:{previousStatus:quote.status,status:input.status}});
         return "ok" as const;
       });
