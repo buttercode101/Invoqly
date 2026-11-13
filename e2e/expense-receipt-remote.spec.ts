@@ -42,10 +42,11 @@ test("expense receipt photo uploads and remains available after reload", async (
   await expect.poll(() => popup.evaluate(() => document.contentType)).toBe("image/png");
   await popup.close();
 
-  const attachedDeleteResponse = await page.request.delete(new URL(href, page.url()).toString());
-  expect(attachedDeleteResponse.status()).toBe(409);
-  const attachedReceiptResponse = await page.request.get(new URL(href, page.url()).toString());
-  expect(attachedReceiptResponse.status()).toBe(200);
+  const receiptUrl = new URL(href, page.url()).toString();
+  const attachedDeleteStatus = await page.evaluate(async url => (await fetch(url, { method: "DELETE" })).status, receiptUrl);
+  expect(attachedDeleteStatus).toBe(409);
+  const attachedReceiptStatus = await page.evaluate(async url => (await fetch(url)).status, receiptUrl);
+  expect(attachedReceiptStatus).toBe(200);
 
   const receiptCard=page.locator(".expense-card-list .register-card").filter({hasText:"Receipt photo test supplier"});
   await receiptCard.getByTitle("Edit expense").click();
@@ -58,8 +59,8 @@ test("expense receipt photo uploads and remains available after reload", async (
   await page.getByRole("button",{name:"Remove receipt"}).click();
   await page.getByRole("button",{name:"Save expense changes"}).click();
   await expect(receiptCard.getByRole("link",{name:/View receipt photo/})).toHaveCount(0);
-  const removedReceiptResponse=await page.request.get(new URL(href,page.url()).toString());
-  expect(removedReceiptResponse.status()).toBe(404);
+  const removedReceiptStatus=await page.evaluate(async url=>(await fetch(url)).status,receiptUrl);
+  expect(removedReceiptStatus).toBe(404);
 
   await page.getByRole("button", { name: "Record expense" }).click();
   await page.getByLabel("Vendor or supplier").fill("Manual entry QA supplier");
