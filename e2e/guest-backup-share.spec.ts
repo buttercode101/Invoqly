@@ -10,10 +10,10 @@ test("guest can create, share a PDF, back up and restore an invoice without an a
   await page.getByRole("button", { name: "Settings" }).click();
   await page.getByLabel("Brand name on documents").fill("Backup Brand Studio");
   await page.getByLabel("Brand colour").fill("#3a6b52");
-  await page.locator(".templateGrid button").filter({ hasText: "Editorial" }).click();
+  await page.getByTestId("guest-template-grid").getByRole("button").filter({ hasText: "Editorial" }).click();
   const logoPng = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
-  await page.locator('.settingsForm input[accept="image/jpeg,image/png,image/webp"]').setInputFiles({ name: "backup-logo.png", mimeType: "image/png", buffer: Buffer.from(logoPng, "base64") });
-  await expect(page.locator(".logoPreview img")).toBeVisible();
+  await page.locator('input[type="file"][accept="image/jpeg,image/png,image/webp"]').setInputFiles({ name: "backup-logo.png", mimeType: "image/png", buffer: Buffer.from(logoPng, "base64") });
+  await expect(page.getByAltText("Business logo")).toBeVisible();
   await page.getByRole("button", { name: "Save document branding" }).click();
   await page.getByRole("button", { name: "Invoices" }).click();
   await page.getByRole("button", { name: "Invoices" }).click();
@@ -58,7 +58,7 @@ test("guest can create, share a PDF, back up and restore an invoice without an a
   await page.getByLabel("Restore backup").setInputFiles(backupPath!);
   await expect(page.getByRole("status")).toContainText("Backup restored");
   await expect(page.getByLabel("Brand name on documents")).toHaveValue("Backup Brand Studio");
-  await expect(page.locator(".templateSelected")).toContainText("Editorial");
+  await expect(page.getByTestId("guest-template-editorial")).toHaveAttribute("aria-pressed","true");
   await expect(page.locator(".logoPreview img")).toBeVisible();
   await page.getByRole("button", { name: "Invoices" }).click();
   await expect(page.getByText(/Backup Share QA/)).toBeVisible();
