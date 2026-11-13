@@ -18,7 +18,8 @@ const decisionSchema=z.object({
  rejectionReason:z.string().trim().max(500).optional().default(""),
 });
 function fail(message:string,status=400){return NextResponse.json({error:message},{status,headers:{"Cache-Control":"no-store"}});}
-function localBusinessDate(){return new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Johannesburg"}).format(new Date())}\nfunction isExpired(link:{revokedAt:Date|null;expiresAt:Date}){return Boolean(link.revokedAt||link.expiresAt.getTime()<=Date.now());}
+function localBusinessDate(){return new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Johannesburg"}).format(new Date())}
+function isExpired(link:{revokedAt:Date|null;expiresAt:Date}){return Boolean(link.revokedAt||link.expiresAt.getTime()<=Date.now());}
 
 export async function GET(_request:Request,context:Context){
  const {token}=await context.params;
