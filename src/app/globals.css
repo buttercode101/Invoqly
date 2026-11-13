@@ -522,3 +522,6 @@ html[data-theme="dark"] .cashflow-event-out{background:#3a3323;color:#ead4a2}
 html[data-theme="dark"] .cashflow-bars{border-color:#35483a}
 @media(max-width:1050px){.cashflow-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cashflow-layout{grid-template-columns:1fr}}
 @media(max-width:600px){.cashflow-panel{padding:16px}.cashflow-settings{grid-template-columns:1fr}.cashflow-settings>.btn{grid-column:auto}.cashflow-chart{gap:3px;height:150px}.cashflow-bars{height:115px}.cashflow-week small{font-size:8px}.cashflow-horizon{display:none}.cashflow-event{grid-template-columns:30px minmax(0,1fr) auto;gap:8px}.cashflow-event strong{font-size:11px}}
+
+/* Tablet registers use compact cards so every action remains visible without horizontal scrolling. */
+@media(max-width:820px){.invoice-table-desktop,.payment-table-desktop,.quote-table-desktop,.expense-table-desktop{display:none}.invoice-card-list,.payment-card-list,.quote-card-list,.expense-card-list{display:grid;gap:10px}.register-card-actions button{min-height:44px}}
