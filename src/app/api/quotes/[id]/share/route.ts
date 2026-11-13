@@ -59,3 +59,36 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     return fail("The client approval link could not be created. Please try again.", 500);
   }
 }
+
+
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  const origin = request.headers.get("origin");
+  if (!origin || origin !== new URL(request.url).origin) return fail("A same-origin request is required.", 403);
+  const { id } = await context.params;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return fail("Quotation not found.", 404);
+  try {
+    return await withDb(async (db) => {
+      const user = await getCurrentUser(db);
+      if (!user) return fail("Sign in to revoke a client approval link.", 401);
+      const workspace = await getOrCreateWorkspace(db, user.id);
+      const result = await db.transaction(async (tx) => {
+        const [quote] = await tx.select().from(quotes).where(and(eq(quotes.id, id), eq(quotes.workspaceId, workspace.id))).for("update").limit(1);
+        if (!quote) return { error: "not-found" as const };
+        if (quote.status !== "Sent") return { error: "not-open" as const };
+        const now = new Date();
+        const revoked = await tx.update(quotePublicLinks).set({ revokedAt: now })
+          .where(and(eq(quotePublicLinks.workspaceId, workspace.id), eq(quotePublicLinks.quoteId, quote.id), eq(quotePublicLinks.decisionStatus, "Pending")))
+          .returning({ id: quotePublicLinks.id });
+        if (!revoked.length) return { error: "no-link" as const };
+        await tx.update(quotes).set({ status: "Draft", updatedAt: now }).where(and(eq(quotes.id, quote.id), eq(quotes.workspaceId, workspace.id)));
+        await tx.insert(auditEvents).values({ workspaceId: workspace.id, actorUserId: user.id, action: "quote.share_link_revoked", entityType: "quote", entityId: quote.id, metadata: { revokedLinks: revoked.length } });
+        return { ok: true as const };
+      });
+      if ("error" in result) return result.error === "not-found" ? fail("Quotation not found.", 404) : fail("There is no open client approval link to revoke.", 409);
+      return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
+    });
+  } catch (error) {
+    console.error("quote.revoke_share_link", error);
+    return fail("The client approval link could not be revoked. Please try again.", 500);
+  }
+}
