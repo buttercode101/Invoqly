@@ -38,7 +38,10 @@ export async function loadWorkspace(db: Database, workspaceId: string) {
     db.select().from(expenses).where(eq(expenses.workspaceId, workspaceId)).orderBy(desc(expenses.date), desc(expenses.createdAt)),
     db.select().from(quotes).where(eq(quotes.workspaceId, workspaceId)).orderBy(desc(quotes.createdAt)),
     db.select().from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1),
+    db.select().from(quotePublicLinks).where(eq(quotePublicLinks.workspaceId, workspaceId)).orderBy(desc(quotePublicLinks.createdAt)),
   ]);
+  const latestQuoteLinks = new Map<string, typeof quoteLinkRows[number]>();
+  for (const link of quoteLinkRows) if (!latestQuoteLinks.has(link.quoteId)) latestQuoteLinks.set(link.quoteId, link);
   const workspace = workspaceRows[0];
   return {
     businessName: workspace?.businessName ?? "Your business",
