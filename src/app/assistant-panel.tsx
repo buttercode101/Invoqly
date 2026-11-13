@@ -254,7 +254,7 @@ export default function AssistantPanel({ workspace, onCreateQuote, onCreateInvoi
               </div>
               {draftReview.lineItems.length > 1 && <button type="button" className="assistant-draft-remove" onClick={() => setDraftReview(current => current ? { ...current, lineItems: current.lineItems.filter((_, i) => i !== index) } : current)}>Remove line</button>}
             </div>)}
-            <button type="button" className="assistant-draft-add" disabled={draftReview.lineItems.length >= 50} onClick={() => setDraftReview(current => current ? { ...current, lineItems: [...current.lineItems, { description: "", quantity: "1", unitPrice: "" }] } : current)}>＋ Add line item</button>
+            <button type="button" className="assistant-draft-add" disabled={draftReview.lineItems.length >= 50} onClick={() => setDraftReview(current => current ? { ...current, lineItems: [...current.lineItems, { description: "", quantity: "1", unitPrice: "" }] } : current)}>+ Add line item</button>
           </div>
           <div className="assistant-draft-total"><span>Recalculated total</span><strong>{draftPreview ? fmt(draftPreview.totalMinor, result.draft.currency) : "Check line items"}</strong></div>
           <div className="assistant-draft-actions">
