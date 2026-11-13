@@ -80,6 +80,10 @@ test("real account, client, invoice, partial payments, expense and reload",async
   let invoiceRow=page.locator("tbody tr").filter({hasText:"Acme Services"});
   await expect(invoiceRow).toContainText("Draft");
   await expect(invoiceRow).toContainText("Acme Services");
+  await invoiceRow.getByTitle("Share actual invoice PDF file").click();
+  const directInvoiceFiles=await page.evaluate(()=> (window as Window & {__sharedPdfFiles?:Array<{name:string;type:string;size:number}>}).__sharedPdfFiles??[]);
+  expect(directInvoiceFiles).toHaveLength(1);
+  expect(directInvoiceFiles[0]).toMatchObject({name:"INV-0001.pdf",type:"application/pdf"});
   await invoiceRow.getByTitle("Edit invoice").click();
   await expect(page.getByRole("heading", { name: "Edit invoice" })).toBeVisible();
   await page.getByLabel("Unit price").fill("1300.50");
