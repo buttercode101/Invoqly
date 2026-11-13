@@ -23,15 +23,17 @@ export default function PublicQuoteClient({token}:{token:string}){
  useEffect(()=>{let active=true;fetch("/api/public/quotes/"+token,{cache:"no-store"}).then(async response=>{const body=await response.json();if(!response.ok)throw new Error(body.error||"This quotation is not available.");if(active)setData(body as PublicData)}).catch(e=>{if(active)setError(e instanceof Error?e.message:"This quotation could not be loaded.")}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[token]);
 
  useEffect(()=>{
-  const canvas=canvasRef.current;if(!canvas)return;const rect=canvas.getBoundingClientRect();if(!rect.width)return;
-  const ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(rect.width*ratio);canvas.height=Math.round(150*ratio);
-  const context=canvas.getContext("2d");if(!context)return;context.scale(ratio,ratio);context.fillStyle="#fff";context.fillRect(0,0,rect.width,150);
-  context.lineCap="round";context.lineJoin="round";context.lineWidth=2.4;context.strokeStyle="#17251d";
-  if(signature){const image=new Image();image.onload=()=>context.drawImage(image,0,0,rect.width,150);image.src=signature}
+  const resize=()=>{const canvas=canvasRef.current;if(!canvas)return;const rect=canvas.getBoundingClientRect();if(!rect.width)return;
+   const ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(rect.width*ratio);canvas.height=Math.round(150*ratio);
+   const context=canvas.getContext("2d");if(!context)return;context.scale(ratio,ratio);context.fillStyle="#fff";context.fillRect(0,0,rect.width,150);
+   context.lineCap="round";context.lineJoin="round";context.lineWidth=2.4;context.strokeStyle="#17251d";
+   if(signature){const image=new Image();image.onload=()=>context.drawImage(image,0,0,rect.width,150);image.src=signature}
+  };
+  resize();window.addEventListener("resize",resize);return()=>window.removeEventListener("resize",resize);
  },[data,signature]);
 
  const point=(event:React.PointerEvent<HTMLCanvasElement>)=>{const rect=event.currentTarget.getBoundingClientRect();return{x:event.clientX-rect.left,y:event.clientY-rect.top}};
- const start=(event:React.PointerEvent<HTMLCanvasElement>)=>{const context=event.currentTarget.getContext("2d");if(!context)return;event.currentTarget.setPointerCapture(event.pointerId);drawing.current=true;const p=point(event);context.beginPath();context.moveTo(p.x,p.y)};
+ const start=(event:React.PointerEvent<HTMLCanvasElement>)=>{const context=event.currentTarget.getContext("2d");if(!context)return;event.currentTarget.setPointerCapture(event.pointerId);drawing.current=true;setHasInk(true);const p=point(event);context.beginPath();context.moveTo(p.x,p.y)};
  const draw=(event:React.PointerEvent<HTMLCanvasElement>)=>{if(!drawing.current)return;const context=event.currentTarget.getContext("2d");if(!context)return;const p=point(event);context.lineTo(p.x,p.y);context.stroke();setHasInk(true)};
  const stop=()=>{if(!drawing.current||!canvasRef.current)return;drawing.current=false;setSignature(canvasRef.current.toDataURL("image/jpeg",0.84))};
  const clear=()=>{const canvas=canvasRef.current,context=canvas?.getContext("2d");if(!canvas||!context)return;context.clearRect(0,0,canvas.width,canvas.height);context.fillStyle="#fff";context.fillRect(0,0,canvas.width,canvas.height);setSignature("");setHasInk(false)};
