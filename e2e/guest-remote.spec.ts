@@ -9,7 +9,7 @@ test("remote preview supports real guest invoicing without creating an account o
   await expect(page.getByRole("heading",{name:"Your business, in good order."})).toBeVisible();
 
   await page.getByRole("button",{name:"Settings"}).click();
-  await page.getByLabel("Business or trading name").fill("Preview Guest Studio");
+  await page.getByLabel("Business or trading name").fill("Preview Guest Studio");\n  await page.getByLabel("Brand name on documents").fill("Preview Guest Brand");\n  await expect(page.locator(".templateGrid button")).toHaveCount(6);\n  await page.locator(".templateGrid button").filter({hasText:"Editorial"}).click();\n  await page.getByRole("button",{name:"Save document branding"}).click();
   for(const width of [320,375,768,1120]){
     await page.setViewportSize({width,height:900});
     const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
@@ -68,6 +68,6 @@ test("remote preview supports real guest invoicing without creating an account o
   const guestData=await page.evaluate(()=>localStorage.getItem("invoqly.guest.workspace.v1"));
   expect(guestData).not.toBeNull();
   const parsed=JSON.parse(guestData!);
-  expect(parsed.clients).toHaveLength(0);
+  expect(parsed.clients).toHaveLength(0);\n  expect(parsed.documentSettings.brandName).toBe("Preview Guest Brand");\n  expect(parsed.documentSettings.templateId).toBe("editorial");\n  expect(parsed.invoices[0].documentDesign.brandName).toBe("Preview Guest Brand");\n  expect(parsed.invoices[0].documentDesign.templateId).toBe("editorial");\n  expect(parsed.quotes[0].documentDesign.brandName).toBe("Preview Guest Brand");
   expect(workspaceApiRequests).toBe(0);
 });
