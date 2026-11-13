@@ -53,7 +53,7 @@ export async function DELETE(request:Request,context:{params:Promise<{id:string}
   const result=await db.transaction(async tx=>{
    const [quote]=await tx.select().from(quotes).where(and(eq(quotes.id,id),eq(quotes.workspaceId,workspace.id))).for("update").limit(1);
    if(!quote)return {error:"not-found" as const};
-   if(quote.status!=="Sent")return {error:"not-open" as const};
+   if(quote.status!=="Sent"&&quote.status!=="Viewed")return {error:"not-open" as const};
    const now=new Date();
    const revoked=await tx.update(quotePublicLinks).set({revokedAt:now}).where(and(eq(quotePublicLinks.workspaceId,workspace.id),eq(quotePublicLinks.quoteId,quote.id),eq(quotePublicLinks.decisionStatus,"Pending"))).returning({id:quotePublicLinks.id});
    if(!revoked.length)return {error:"no-link" as const};
