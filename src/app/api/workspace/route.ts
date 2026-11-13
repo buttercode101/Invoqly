@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { withDb } from "@/lib/db";
-import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, quoteCounters, quotePublicLinks, quotes, workspaces } from "@/lib/db/schema";
+import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, quoteCounters, quotes, workspaces } from "@/lib/db/schema";
 import { getCurrentUser, getOrCreateWorkspace, loadWorkspace } from "@/lib/workspace";
 import { deriveInvoiceStatus, outstandingBalanceMinor } from "@/lib/billing";
 import { calculateDocumentTotal, resolveDocumentLineItems, type DocumentLineItem } from "@/lib/documents";
@@ -12,9 +12,11 @@ export const dynamic = "force-dynamic";
 
 const currency = z.string().regex(/^[A-Z]{3}$/).refine(value=>{try{new Intl.NumberFormat("en",{style:"currency",currency:value}).format(0);return true}catch{return false}},"Choose a supported ISO currency code.");
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>{const [year,month,day]=value.split("-").map(Number);const parsed=new Date(Date.UTC(year,month-1,day));return parsed.getUTCFullYear()===year&&parsed.getUTCMonth()===month-1&&parsed.getUTCDate()===day},"Enter a real calendar date.");
-const lineItem = z.object({description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER)});\nconst documentSettings = z.object({templateId:z.enum(["classic","modern","minimal","bold","editorial","custom"]),accentColor:z.string().regex(/^#[0-9a-fA-F]{6}$/),logoDataUrl:z.string().max(250000).regex(/^data:image\\/(?:jpeg|png|webp);base64,[A-Za-z0-9+\\/]+={0,2}$/).nullable(),brandName:z.string().max(120)});
+const lineItem = z.object({description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER)});
+const documentSettings = z.object({templateId:z.enum(["classic","modern","minimal","bold","editorial","custom"]),accentColor:z.string().regex(/^#[0-9a-fA-F]{6}$/),logoDataUrl:z.string().max(250000).regex(/^data:image\\/(?:jpeg|png|webp);base64,[A-Za-z0-9+\\/]+={0,2}$/).nullable(),brandName:z.string().max(120)});
 const payload = z.discriminatedUnion("action", [
-  z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20) }),\n  z.object({ action:z.literal("update-document-settings"), documentSettings }),
+  z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20) }),
+  z.object({ action:z.literal("update-document-settings"), documentSettings }),
   z.object({ action:z.literal("create-client"), name:z.string().trim().min(1).max(120), email:z.string().trim().email().max(254).toLowerCase(), company:z.string().max(120).default(""), currency }),
   z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid().optional(), customerName:z.string().trim().min(1).max(120).optional(), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), saveContact:z.boolean().default(false), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), documentDesign:documentSettings.optional(), currency, dueDate:date }),
   z.object({ action:z.literal("create-quote"), customerName:z.string().trim().min(1).max(120), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), documentDesign:documentSettings.optional(), currency, validUntil:date }),
