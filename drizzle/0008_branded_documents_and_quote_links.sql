@@ -3,7 +3,7 @@ ALTER TABLE "workspaces"
   ADD COLUMN IF NOT EXISTS "document_settings" jsonb NOT NULL
   DEFAULT '{"templateId":"modern","accentColor":"#245b49","logoDataUrl":null,"brandName":""}'::jsonb;
 ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "document_design" jsonb;
-ALTER TABLE "quotes" ADD COLUMN IF NOT EXISTS "document_design" jsonb;
+ALTER TABLE "quotes" ADD COLUMN IF NOT EXISTS "document_design" jsonb;\n\n-- Snapshot the existing workspace brand for legacy documents before users customize it.\nUPDATE "invoices" AS invoice SET "document_design" = workspace."document_settings" FROM "workspaces" AS workspace WHERE invoice."workspace_id" = workspace."id" AND invoice."document_design" IS NULL;\nUPDATE "quotes" AS quote SET "document_design" = workspace."document_settings" FROM "workspaces" AS workspace WHERE quote."workspace_id" = workspace."id" AND quote."document_design" IS NULL;
 CREATE TABLE IF NOT EXISTS "quote_public_links" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   "workspace_id" uuid NOT NULL REFERENCES "workspaces"("id") ON DELETE CASCADE,
