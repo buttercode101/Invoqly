@@ -146,7 +146,7 @@ export default function PublicQuoteClient({ token }: { token: string }) {
         kind: "Quotation", number: q.number, businessName: data.business.name, customerName: q.customerName,
         customerCompany: q.customerCompany, customerEmail: q.customerEmail, currency: q.currency,
         issueDate: q.issueDate, dueLabel: "Valid until " + q.validUntil, status: q.status,
-        lineItems: q.lineItems, settings,
+        lineItems: q.lineItems, settings, signatureDataUrl:q.signatureDataUrl, signerName:q.signerName, decisionAt:q.decisionAt,
       });
     } catch {
       setError("The quotation PDF could not be generated. Please try again.");
