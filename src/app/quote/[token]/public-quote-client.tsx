@@ -71,7 +71,7 @@ export default function PublicQuoteClient({token}:{token:string}){
     </div>
     <div className="public-quote-recipient"><div><small>PREPARED FOR</small><b>{q.customerName}</b>{q.customerCompany&&<span>{q.customerCompany}</span>}{q.customerEmail&&<span>{q.customerEmail}</span>}</div><div><small>ISSUED</small><b>{q.issueDate}</b></div></div>
     <div className="public-quote-lines"><div className="public-quote-line public-quote-line-head"><span>Description</span><span>Qty</span><span>Unit price</span><span>Amount</span></div>
-     {tax.lines.map((line,index)=><div className="public-quote-line" key={index}><span>{line.description}</span><span>{line.quantity}</span><span>{money(line.unitPriceMinor,q.currency)}</span><b>{money(line.lineTotalMinor,q.currency)}</b></div>)}
+     {tax.lines.map((line,index)=><div className="public-quote-line" key={index}><span>{line.description}</span><span>{line.quantity}</span><span>{money(line.unitPriceMinor,q.currency)}</span><b>{money(line.grossMinor,q.currency)}</b></div>)}
     </div>
     <div className="public-quote-total"><span>Total</span><b style={{color:settings.accentColor}}>{money(total,q.currency)}</b></div>
     {tax.taxMinor>0&&<p className="public-quote-tax">Includes VAT of {money(tax.taxMinor,q.currency)} where applicable.</p>}
