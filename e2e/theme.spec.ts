@@ -63,3 +63,50 @@ test("light and dark themes toggle, persist and remain legible at phone and desk
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe("light");
   await expect(page.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
 });
+
+
+test("signed-in workspace keeps every section usable in both themes and on mobile", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/sign-up");
+  await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
+  await page.getByLabel("Your name").fill("Theme QA");
+  await page.getByLabel("Email address").fill("theme-qa-" + Date.now() + "@example.com");
+  await page.locator('input[type="password"]').fill("InvoqlyThemeQA-2026!");
+  const signupPromise = page.waitForResponse(response => response.url().includes("/api/auth/sign-up/email") && response.request().method() === "POST");
+  await page.getByRole("button", { name: "Create account" }).click();
+  expect((await signupPromise).status()).toBe(200);
+  await expect(page).toHaveURL(/\/app$/);
+  await expect(page.locator("main.shell")).toBeVisible();
+
+  const sections = ["Overview", "AI Co-pilot", "Invoices", "Quotes", "Clients", "Expenses", "Payments", "Reports", "Cash flow", "Settings"];
+  for (const theme of ["dark", "light"] as const) {
+    const toggleName = theme === "dark" ? "Switch to dark mode" : "Switch to light mode";
+    if (await page.getByRole("button", { name: toggleName }).isVisible()) await page.getByRole("button", { name: toggleName }).click();
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
+    for (const section of sections) {
+      await page.locator(".sidebar .nav-item").filter({ hasText: section }).first().click();
+      await expect(page.locator(".breadcrumb b")).toHaveText(section);
+      await expect(page.locator(".page-content h1").first()).toBeVisible();
+      const dimensions = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth }));
+      expect(dimensions.scrollWidth, section + " horizontal overflow in " + theme).toBeLessThanOrEqual(dimensions.width);
+    }
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const theme of ["light", "dark"] as const) {
+    const current = await page.evaluate(() => document.documentElement.dataset.theme);
+    if (current !== theme) await page.getByRole("button", { name: theme === "dark" ? "Switch to dark mode" : "Switch to light mode" }).click();
+    for (const section of ["Overview", "Invoices", "Quotes", "Clients", "Expenses"]) {
+      await page.locator(".sidebar .nav-item").filter({ hasText: section }).first().click();
+      await expect(page.locator(".breadcrumb b")).toHaveText(section);
+    }
+    for (const section of ["AI Co-pilot", "Payments", "Reports", "Cash flow", "Settings"]) {
+      await page.getByRole("button", { name: "More workspace sections" }).click();
+      await page.getByRole("menuitem", { name: section }).click();
+      await expect(page.locator(".breadcrumb b")).toHaveText(section);
+    }
+    const dimensions = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth }));
+    expect(dimensions.scrollWidth, "mobile horizontal overflow in " + theme).toBeLessThanOrEqual(dimensions.width);
+  }
+});
