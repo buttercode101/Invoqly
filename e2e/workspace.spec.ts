@@ -40,7 +40,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
   const account=identity("Owner");
   await createAccount(page,account);
   await page.keyboard.press("Control+k");
-  await expect(page.getByLabel("Search workspace")).toBeFocused();
+  await expect(page.locator(".search-box input[aria-label=\"Search workspace\"]")).toBeFocused();
   await page.getByRole("button",{name:"Open workspace settings"}).click();
   await expect(page.locator(".breadcrumb b")).toHaveText("Settings");
   await goTo(page,"Overview");
