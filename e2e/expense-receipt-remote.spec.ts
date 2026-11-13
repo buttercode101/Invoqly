@@ -5,9 +5,14 @@ test.skip(process.env.RUN_REMOTE_RECEIPT_E2E !== "1", "Requires Cloudflare previ
 test("expense receipt photo uploads and remains available after reload", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/sign-up");
-  await page.getByLabel("Your name").fill("Receipt QA");
-  await page.getByLabel("Email address").fill("receipt-qa-" + Date.now() + "@example.com");
+  const nameField = page.locator('input[autocomplete="name"]');
+  await nameField.fill("Receipt QA");
+  await expect(nameField).toHaveValue("Receipt QA");
+  const emailField = page.locator('input[autocomplete="email"]');
+  await emailField.fill("receipt-qa-" + Date.now() + "@example.com");
+  await expect(emailField).toHaveValue(/receipt-qa-.*@example\\.com/);
   await page.locator('input[type="password"]').first().fill("Invoqly-Receipt-QA-2026!");
+  await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/app$/);
   await page.locator(".sidebar .nav-item").filter({ hasText: "Expenses" }).first().click();
