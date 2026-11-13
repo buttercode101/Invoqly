@@ -35,6 +35,7 @@ test("expense receipt photo uploads and remains available after reload", async (
   const receiptLink = page.getByRole("link", { name: /View (?:receipt )?photo/ }).first();
   await expect(receiptLink).toBeVisible();
   const href = await receiptLink.getAttribute("href");
+  if(!href)throw new Error("The receipt link URL was missing.");
   expect(href).toContain("/api/expenses/receipt?key=");
   const [popup] = await Promise.all([page.waitForEvent("popup"), receiptLink.click()]);
   await popup.waitForLoadState();
