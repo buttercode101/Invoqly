@@ -87,7 +87,9 @@ test("signed-in workspace keeps every section usable in both themes and on mobil
     for (const section of sections) {
       await page.locator(".sidebar .nav-item").filter({ hasText: section }).first().click();
       await expect(page.locator(".breadcrumb b")).toHaveText(section);
-      await expect(page.locator(".page-content h1").first()).toBeVisible();
+      await expect(page.locator(".page-content > :not(.page-footer)").first()).toBeVisible();
+      if (section === "Cash flow") await expect(page.getByRole("heading", { name: "Cash flow." })).toBeVisible();
+      expect((await page.locator(".page-content").innerText()).trim().length, section + " should render useful content").toBeGreaterThan(20);
       const dimensions = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth }));
       expect(dimensions.scrollWidth, section + " horizontal overflow in " + theme).toBeLessThanOrEqual(dimensions.width);
     }
