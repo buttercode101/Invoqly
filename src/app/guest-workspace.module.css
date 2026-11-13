@@ -50,3 +50,21 @@
 :global(html[data-theme="dark"]) .success{background:#1d2b21;border-color:#344b39;color:#bfe0c6}
 :global(html[data-theme="dark"]) .error{color:#ffb4a9}
 :global(html[data-theme="dark"]) .shell :is(a,button,input,select):focus-visible{outline-color:#a5d0b1}
+
+
+.templateGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:16px 0}
+.templateChoice,.templateSelected{display:grid;gap:7px;min-width:0;padding:10px;border:1px solid #e2e8e1;border-radius:8px;background:#fff;color:#26372c;text-align:left;cursor:pointer}
+.templateSelected{border-color:#245b49;box-shadow:0 0 0 2px #245b4918}
+.templateChoice b,.templateSelected b{font-size:11px}
+.templateChoice small,.templateSelected small{font-size:9px;line-height:1.45;color:#78847b}
+.templatePreview{height:65px;display:grid;align-content:start;gap:7px;padding:8px;border:1px solid #e7ece6;background:#fff}
+.templatePreview i{height:4px;width:60%;border-radius:2px;background:#e4e9e3}
+.templatePreview i:first-child{height:9px;width:48%;background:#245b49}
+.templatePreview i:nth-child(2){width:85%}
+.templatePreview i:nth-child(3){width:55%}
+.logoPreview{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.logoPreview img{max-width:150px;max-height:58px;object-fit:contain;padding:6px;border:1px solid #e2e8e1;border-radius:6px;background:#fff}
+.logoPreview button{border:0;background:transparent;color:#936157;font-size:10px}
+.quoteShareNote{margin:0 0 14px;padding:10px 12px;border:1px solid #e5ebe4;border-radius:7px;color:#647269;font-size:11px;line-height:1.55}
+@media(max-width:700px){.templateGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:380px){.templateGrid{grid-template-columns:1fr 1fr;gap:7px}.templateChoice,.templateSelected{padding:8px}.templateChoice small,.templateSelected small{font-size:8px}}
