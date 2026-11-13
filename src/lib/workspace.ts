@@ -3,7 +3,7 @@ import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { createAuth } from "@/lib/auth";
 import type { Database } from "@/lib/db";
-import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, quotes, workspaceMembers, workspaces } from "@/lib/db/schema";
+import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, quotePublicLinks, quotes, workspaceMembers, workspaces } from "@/lib/db/schema";
 
 export async function getCurrentUser(db: Database, requestHeaders?: Headers) {
   // Route handlers must use the headers from their own Request. In Worker
@@ -37,19 +37,23 @@ export async function loadWorkspace(db: Database, workspaceId: string) {
   const today = part("year") + "-" + part("month") + "-" + part("day");
   await db.update(invoices).set({ status: "Overdue", updatedAt: new Date() })
     .where(and(eq(invoices.workspaceId, workspaceId), lt(invoices.dueDate, today), inArray(invoices.status, ["Sent", "Partially paid"])));
-  const [clientRows, invoiceRows, paymentRows, expenseRows, quoteRows, workspaceRows] = await Promise.all([
+  const [clientRows, invoiceRows, paymentRows, expenseRows, quoteRows, workspaceRows, quoteLinkRows] = await Promise.all([
     db.select().from(clients).where(eq(clients.workspaceId, workspaceId)).orderBy(desc(clients.createdAt)),
     db.select().from(invoices).where(eq(invoices.workspaceId, workspaceId)).orderBy(desc(invoices.createdAt)),
     db.select().from(payments).where(eq(payments.workspaceId, workspaceId)).orderBy(desc(payments.date), desc(payments.createdAt)),
     db.select().from(expenses).where(eq(expenses.workspaceId, workspaceId)).orderBy(desc(expenses.date), desc(expenses.createdAt)),
     db.select().from(quotes).where(eq(quotes.workspaceId, workspaceId)).orderBy(desc(quotes.createdAt)),
     db.select().from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1),
+    db.select().from(quotePublicLinks).where(eq(quotePublicLinks.workspaceId, workspaceId)).orderBy(desc(quotePublicLinks.createdAt)),
   ]);
   const workspace = workspaceRows[0];
+  const latestQuoteLinks = new Map<string, typeof quoteLinkRows[number]>();
+  for (const link of quoteLinkRows) if (!latestQuoteLinks.has(link.quoteId)) latestQuoteLinks.set(link.quoteId, link);
   return {
     businessName: workspace?.businessName ?? "Your business",
     currency: workspace?.defaultCurrency ?? "ZAR",
     locale: workspace?.locale ?? "en-ZA",
+    documentSettings: workspace?.documentSettings ?? { templateId:"modern",accentColor:"#245b49",logoDataUrl:null,brandName:"" },
     vatRegistered: workspace?.vatRegistered ?? false,
     vatNumber: workspace?.vatNumber ?? "",
     businessAddress: workspace?.businessAddress ?? "",
@@ -58,7 +62,7 @@ export async function loadWorkspace(db: Database, workspaceId: string) {
     clients: clientRows.filter(c=>!c.isOneOff).map(c => ({ id:c.id, name:c.name, email:c.email, company:c.company, currency:c.currency, createdAt:c.createdAt.toISOString() })),
     invoices: invoiceRows.map(i => {const customer=clientRows.find(c=>c.id===i.clientId);return { id:i.id, clientId:i.clientId, customerName:customer?.name??"Customer", customerEmail:customer?.email??"", customerCompany:customer?.company??"", number:i.number, issueDate:i.issueDate, dueDate:i.dueDate, description:i.description, quantity:i.quantity, unitPriceMinor:i.unitPriceMinor, lineItems:i.lineItems?.length?i.lineItems:[{description:i.description,quantity:i.quantity,unitPriceMinor:i.unitPriceMinor}], currency:i.currency, status:i.status, createdAt:i.createdAt.toISOString() }}),
     payments: paymentRows.map(p => ({ id:p.id, invoiceId:p.invoiceId, clientId:p.clientId, date:p.date, amountMinor:p.amountMinor, currency:p.currency, method:p.method, reference:p.reference, notes:p.notes, createdAt:p.createdAt.toISOString() })),
-    quotes: quoteRows.map(q => ({id:q.id,number:q.number,customerName:q.customerName,customerEmail:q.customerEmail,customerCompany:q.customerCompany,issueDate:q.issueDate,validUntil:q.validUntil,description:q.description,quantity:q.quantity,unitPriceMinor:q.unitPriceMinor,lineItems:q.lineItems?.length?q.lineItems:[{description:q.description,quantity:q.quantity,unitPriceMinor:q.unitPriceMinor}],currency:q.currency,status:q.status,convertedInvoiceId:q.convertedInvoiceId,createdAt:q.createdAt.toISOString()})),
+    quotes: quoteRows.map(q => ({id:q.id,number:q.number,customerName:q.customerName,customerEmail:q.customerEmail,customerCompany:q.customerCompany,issueDate:q.issueDate,validUntil:q.validUntil,description:q.description,quantity:q.quantity,unitPriceMinor:q.unitPriceMinor,lineItems:q.lineItems?.length?q.lineItems:[{description:q.description,quantity:q.quantity,unitPriceMinor:q.unitPriceMinor}],documentDesign:q.documentDesign??null,shareLinkExpiresAt:latestQuoteLinks.get(q.id)?.expiresAt.toISOString()??null,shareLinkRevoked:Boolean(latestQuoteLinks.get(q.id)?.revokedAt),signerName:latestQuoteLinks.get(q.id)?.signerName??null,signerEmail:latestQuoteLinks.get(q.id)?.signerEmail??null,signatureDataUrl:latestQuoteLinks.get(q.id)?.signatureDataUrl??null,decisionAt:latestQuoteLinks.get(q.id)?.decisionAt?.toISOString()??null,rejectionReason:latestQuoteLinks.get(q.id)?.rejectionReason??null,currency:q.currency,status:q.status,convertedInvoiceId:q.convertedInvoiceId,createdAt:q.createdAt.toISOString()})),
     expenses: expenseRows.map(e => ({ id:e.id, vendor:e.vendor, category:e.category, date:e.date, amountMinor:e.amountMinor, currency:e.currency, notes:e.notes, receiptObjectKey:e.receiptObjectKey ?? null })),
   };
 }
