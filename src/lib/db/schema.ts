@@ -163,6 +163,7 @@ export const quotePublicLinks = pgTable("quote_public_links", {
   signerEmail: varchar("signer_email", { length: 254 }),
   signatureDataUrl: text("signature_data_url"),
   rejectionReason: varchar("rejection_reason", { length: 500 }),
+  agreedAt: timestamp("agreed_at", { withTimezone: true }),
   decisionAt: timestamp("decision_at", { withTimezone: true }),
   lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
