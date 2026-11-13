@@ -38,9 +38,11 @@ async function createQuote(page:Page,customerName:string) {
   await expect(row).toContainText("Draft");
   return quote;
 }
-async function shareApprovalLink(page:Page,quoteId:string) {
+async function shareApprovalLink(page:Page,quoteId:string,customerName:string) {
+  const row=page.locator(".quote-table-desktop tbody tr").filter({hasText:customerName});
+  await page.evaluate(()=>{delete (window as Window & {__sharedQuoteLink?:string}).__sharedQuoteLink});
   const responsePromise=page.waitForResponse(r=>r.url().includes("/api/quotes/"+quoteId+"/share")&&r.request().method()==="POST");
-  await page.getByRole("button",{name:"Create client approval link"}).click();
+  await row.getByRole("button",{name:"Create client approval link"}).click();
   const response=await responsePromise;
   expect(response.status()).toBe(200);
   const body=await response.json() as {url:string;expiresAt:string};
@@ -84,7 +86,7 @@ test("client accepts and e-signs a branded quotation without an account; status 
 
   const quote=await createQuote(page,"Approval Client");
   const row=page.locator(".quote-table-desktop tbody tr").filter({hasText:"Approval Client"});
-  const link=await shareApprovalLink(row,quote.id).catch(async()=>shareApprovalLink(page,quote.id));
+  const link=await shareApprovalLink(page,quote.id,"Approval Client");
   await expect(row).toContainText("Sent");
 
   const clientContext=await browser.newContext();
@@ -175,7 +177,7 @@ test("client decline is recorded and owner revocation invalidates an open link",
   await createAccount(page,"Decision Owner");
   const declineQuote=await createQuote(page,"Decline Client");
   const declineRow=page.locator(".quote-table-desktop tbody tr").filter({hasText:"Decline Client"});
-  const declineLink=await shareApprovalLink(declineRow,declineQuote.id);
+  const declineLink=await shareApprovalLink(page,declineQuote.id,"Decline Client");
 
   const clientContext=await browser.newContext();
   try {
@@ -194,7 +196,7 @@ test("client decline is recorded and owner revocation invalidates an open link",
 
     const revokeQuote=await createQuote(page,"Revoke Client");
     const revokeRow=page.locator(".quote-table-desktop tbody tr").filter({hasText:"Revoke Client"});
-    const revokeLink=await shareApprovalLink(revokeRow,revokeQuote.id);
+    const revokeLink=await shareApprovalLink(page,revokeQuote.id,"Revoke Client");
     await clientPage.goto(revokeLink);
     await expect(clientPage.getByRole("heading",{name:"Review and respond"})).toBeVisible();
     const viewed=await workspaceQuote(page,"Revoke Client");
