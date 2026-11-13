@@ -346,6 +346,46 @@ html[data-theme="dark"] .assistant-draft-actions .assistant-edit{background:#1d2
 
 
 /* Keep the action visible without covering the final document fields. */
-.form-modal form{padding-bottom:56px}
-.form-modal .form-submit{position:sticky;bottom:0;z-index:4;box-shadow:0 -12px 18px rgba(255,255,255,.96)}
-html[data-theme="dark"] .form-modal .form-submit{box-shadow:0 -12px 18px rgba(23,31,25,.96)}
+.form-modal form{padding-bottom:0}
+.form-modal .form-submit{position:static;bottom:auto;z-index:auto;box-shadow:none}
+html[data-theme="dark"] .form-modal .form-submit{box-shadow:none}
+
+
+/* Theme parity and contrast corrections across shared workspace surfaces. */
+html[data-theme="dark"] .upgrade-card{background:#1d2a21;border-color:#34473a;color:#e8efe9}
+html[data-theme="dark"] .upgrade-card p{color:#b7c3ba}
+html[data-theme="dark"] .upgrade-card button{color:#a9d3b5}
+html[data-theme="dark"] .upgrade-icon{background:#294632;color:#d6e9d8}
+html[data-theme="dark"] .assistant-message p{background:#1d2a21;color:#e8efe9;border:1px solid #34473a}
+html[data-theme="dark"] .assistant-message.user p{background:#294632;color:#f0f6f1;border-color:#3b5b43}
+html[data-theme="dark"] .assistant-message-icon{background:#294632;color:#d6e9d8}
+html[data-theme="dark"] .assistant-suggestions button{background:#1d2a21;color:#e8efe9;border-color:#34473a}
+html[data-theme="dark"] .assistant-suggestions button:hover{background:#24372a;border-color:#55765d}
+html[data-theme="dark"] .assistant-composer{border-color:#2c3a30}
+html[data-theme="dark"] .assistant-composer textarea{background:#121a15;color:#e8efe9;border-color:#35453a}
+html[data-theme="dark"] .assistant-orb{background:#1d2a21;border-color:#34473a;color:#a9d3b5}
+html[data-theme="dark"] .assistant-boundary{background:#18221b;color:#e8efe9;border-color:#2c3a30}
+html[data-theme="dark"] .assistant-boundary p{color:#b7c3ba}
+html[data-theme="dark"] .theme-toggle{background:#1d2a21;color:#dce8df;border-color:#35483a}
+html[data-theme="dark"] .theme-toggle:hover{background:#294632}
+html[data-theme="dark"] .mobile-more-menu{background:#18221b;border-color:#34473a}
+html[data-theme="dark"] .mobile-more-menu button{color:#e8efe9}
+html[data-theme="dark"] .mobile-more-menu button.active,html[data-theme="dark"] .mobile-more-menu button:hover{background:#294632;color:#e8efe9}
+html[data-theme="dark"] .mobile-search-overlay button{background:#1d2a21;color:#e8efe9;border-color:#35483a}
+html[data-theme="dark"] .mobile-search-overlay input{color:#e8efe9}
+html[data-theme="dark"] .form-modal .modal-top{background:#18221b}
+html[data-theme="dark"] .form-modal label,html[data-theme="dark"] .settings-form label{color:#c8d4cb}
+html[data-theme="dark"] .form-modal label small,html[data-theme="dark"] .settings-form label small{color:#a2ada5}
+html[data-theme="dark"] .settings-form{background:#18221b;border-color:#2c3a30}
+html[data-theme="dark"] .settings-note{background:#1d2a21;color:#c8d4cb;border-color:#34473a}
+html[data-theme="dark"] .document-preview{background:#1d2a21;border-color:#34473a}
+html[data-theme="dark"] .document-preview>summary{color:#b7d9bf}
+html[data-theme="dark"] .document-preview-parties small,html[data-theme="dark"] .document-preview-labels{color:#a2ada5}
+html[data-theme="dark"] .document-preview-parties span,html[data-theme="dark"] .document-preview-note{color:#b7c3ba}
+html[data-theme="dark"] .document-preview-totals .document-preview-grand{color:#e8efe9;border-color:#34473a}
+html[data-theme="dark"] .register-card-actions button{background:#1d2a21;color:#dce8df;border-color:#35483a}
+html[data-theme="dark"] .status{border:1px solid #35483a}
+html[data-theme="dark"] .status.paid{background:#203a29;color:#b8dfc1}
+html[data-theme="dark"] .status.awaiting-payment,html[data-theme="dark"] .status.sent,html[data-theme="dark"] .status.partially-paid{background:#3a3323;color:#ead4a2}
+html[data-theme="dark"] .status.overdue{background:#3b2926;color:#f0b8ad}
+html[data-theme="dark"] .status.draft{background:#29312b;color:#c7d0c9}
