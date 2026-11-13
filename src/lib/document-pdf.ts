@@ -23,7 +23,8 @@ export type DocumentPdfInput = {
   logoDataUrl?: string | null;
   signatureDataUrl?: string | null;
   signerName?: string | null;
-  decisionAt?: string | null;\n  agreementAt?: string | null;
+  decisionAt?: string | null;
+  agreementAt?: string | null;
 };
 
 type JpegImage = { width:number; height:number; hex:string };
@@ -142,7 +143,8 @@ export function createDocumentPdf(input: DocumentPdfInput): Blob {
     const width=signature.width*scale,height=signature.height*scale;
     commands.push(`q ${width.toFixed(2)} 0 0 ${height.toFixed(2)} 48 ${y-160} cm /ImSignature Do Q`);
     commands.push(textAt(48,y-174,"Signed by "+(input.signerName||"Client"),8));
-    if(input.decisionAt)commands.push(textAt(48,y-188,"Signed "+new Date(input.decisionAt).toLocaleString("en-ZA"),7,false,"0.45 0.48 0.46"));\n    if(input.agreementAt)commands.push(textAt(48,y-201,"Scope and terms accepted "+new Date(input.agreementAt).toLocaleString("en-ZA"),7,false,"0.45 0.48 0.46"));
+    if(input.decisionAt)commands.push(textAt(48,y-188,"Signed "+new Date(input.decisionAt).toLocaleString("en-ZA"),7,false,"0.45 0.48 0.46"));
+    if(input.agreementAt)commands.push(textAt(48,y-201,"Scope and terms accepted "+new Date(input.agreementAt).toLocaleString("en-ZA"),7,false,"0.45 0.48 0.46"));
   }
   commands.push(textAt(48,42,"Prepared with Invoqly",7,false,"0.48 0.52 0.49"));
   pages.push(commands);
