@@ -16,7 +16,7 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>{const [year,
 const lineItem = z.object({description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),taxTreatment:z.enum(["standard","zero_rated","exempt","out_of_scope"]).optional(),priceMode:z.enum(["inclusive","exclusive"]).optional()});
 const payload = z.discriminatedUnion("action", [
   z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20), vatRegistered:z.boolean().optional(), vatNumber:z.string().trim().max(10).optional(), businessAddress:z.string().trim().max(250).optional(), openingCashBalanceMinor:z.number().int().min(-Number.MAX_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER).nullable().optional(), cashReserveMinor:z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).optional() }),
-  z.object({ action:z.literal("create-client"), name:z.string().trim().min(1).max(120), email:z.string().trim().email().max(254).toLowerCase(), company:z.string().max(120).default(""), currency }),
+  z.object({ action:z.literal("create-client"), name:z.string().trim().min(1).max(120), email:z.union([z.string().trim().email().max(254).toLowerCase(),z.literal("")]).default(""), company:z.string().max(120).default(""), currency }),
   z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid().optional(), customerName:z.string().trim().min(1).max(120).optional(), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), saveContact:z.boolean().default(false), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), currency, dueDate:date }),
   z.object({ action:z.literal("create-quote"), customerName:z.string().trim().min(1).max(120), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), currency, validUntil:date }),
   z.object({ action:z.literal("convert-quote"), quoteId:z.string().uuid(), dueDate:date }),
@@ -65,6 +65,11 @@ export async function POST(request:Request) {
     const parsed = payload.safeParse(await request.json());
     if (!parsed.success) return fail("Check the submitted details and try again.",422);
     const input = parsed.data;
+    const currentDate=today();
+    if(input.action==="create-invoice"&&input.dueDate<currentDate)return fail("Choose an invoice due date that is today or later.",422);
+    if(input.action==="create-quote"&&input.validUntil<currentDate)return fail("Choose a quotation validity date that is today or later.",422);
+    if(input.action==="update-draft-invoice"&&input.dueDate<currentDate)return fail("Choose an invoice due date that is today or later.",422);
+    if(input.action==="create-payment"&&input.date>currentDate)return fail("Payment date cannot be in the future.",422);
     const workspace = await getOrCreateWorkspace(db,user.id);
 
     if (input.action === "import-guest-workspace") {
@@ -206,10 +211,17 @@ export async function POST(request:Request) {
       await db.transaction(async tx=>{const [counter]=await tx.insert(quoteCounters).values({workspaceId:workspace.id,nextNumber:1}).onConflictDoUpdate({target:quoteCounters.workspaceId,set:{nextNumber:sql`${quoteCounters.nextNumber} + 1`}}).returning({nextNumber:quoteCounters.nextNumber});const number="QUO-"+String(counter.nextNumber).padStart(4,"0");const [created]=await tx.insert(quotes).values({workspaceId:workspace.id,number,customerName:input.customerName,customerEmail:input.customerEmail||"",customerCompany:input.customerCompany,issueDate:today(),validUntil:input.validUntil,description:lineItems[0]!.description,quantity:lineItems[0]!.quantity,unitPriceMinor:lineItems[0]!.unitPriceMinor,lineItems,currency:input.currency,status:"Draft"}).returning();await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"quote.created",entityType:"quote",entityId:created.id,metadata:{number,currency:input.currency}})});
     }
     if (input.action === "update-quote-status") {
-      const [quote]=await db.select().from(quotes).where(and(eq(quotes.id,input.quoteId),eq(quotes.workspaceId,workspace.id))).limit(1);
-      if(!quote||quote.status==="Converted")return fail("This quotation can no longer be changed.",409);
-      await db.update(quotes).set({status:input.status,updatedAt:new Date()}).where(and(eq(quotes.id,quote.id),eq(quotes.workspaceId,workspace.id)));
-      await db.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"quote.status_changed",entityType:"quote",entityId:quote.id,metadata:{status:input.status}});
+      const result=await db.transaction(async tx=>{
+        const [quote]=await tx.select().from(quotes).where(and(eq(quotes.id,input.quoteId),eq(quotes.workspaceId,workspace.id))).for("update").limit(1);
+        if(!quote)return "not-found" as const;
+        const allowed:Record<string,string[]>={Draft:["Sent"],Sent:["Accepted","Declined"]};
+        if(!(allowed[quote.status]??[]).includes(input.status))return "invalid-transition" as const;
+        await tx.update(quotes).set({status:input.status,updatedAt:new Date()}).where(and(eq(quotes.id,quote.id),eq(quotes.workspaceId,workspace.id)));
+        await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"quote.status_changed",entityType:"quote",entityId:quote.id,metadata:{previousStatus:quote.status,status:input.status}});
+        return "ok" as const;
+      });
+      if(result==="not-found")return fail("Quotation not found.",404);
+      if(result==="invalid-transition")return fail("A draft quotation can only be sent; a sent quotation can only be accepted or declined.",409);
     }
     if (input.action === "convert-quote") {
       const converted=await db.transaction(async tx=>{const [quote]=await tx.select().from(quotes).where(and(eq(quotes.id,input.quoteId),eq(quotes.workspaceId,workspace.id))).for("update").limit(1);if(!quote)return {error:"not-found" as const};if(quote.status!=="Accepted")return {error:"not-accepted" as const};if(quote.convertedInvoiceId)return {error:"converted" as const};const [client]=await tx.insert(clients).values({workspaceId:workspace.id,name:quote.customerName,email:quote.customerEmail,company:quote.customerCompany,isOneOff:true,currency:quote.currency}).returning({id:clients.id});const [counter]=await tx.insert(invoiceCounters).values({workspaceId:workspace.id,nextNumber:1}).onConflictDoUpdate({target:invoiceCounters.workspaceId,set:{nextNumber:sql`${invoiceCounters.nextNumber} + 1`}}).returning({nextNumber:invoiceCounters.nextNumber});const number="INV-"+String(counter.nextNumber).padStart(4,"0");const [invoice]=await tx.insert(invoices).values({workspaceId:workspace.id,clientId:client.id,number,issueDate:today(),dueDate:input.dueDate,description:quote.lineItems?.[0]?.description??quote.description,quantity:quote.lineItems?.[0]?.quantity??quote.quantity,unitPriceMinor:quote.lineItems?.[0]?.unitPriceMinor??quote.unitPriceMinor,lineItems:resolveDocumentLineItems(quote.lineItems,{description:quote.description,quantity:quote.quantity,unitPriceMinor:quote.unitPriceMinor}),currency:quote.currency,status:"Draft"}).returning({id:invoices.id});await tx.update(quotes).set({status:"Converted",convertedInvoiceId:invoice.id,updatedAt:new Date()}).where(and(eq(quotes.id,quote.id),eq(quotes.workspaceId,workspace.id)));await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"quote.converted",entityType:"quote",entityId:quote.id,metadata:{invoiceId:invoice.id,number}});return {ok:true as const}});
