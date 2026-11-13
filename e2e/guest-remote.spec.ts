@@ -10,6 +10,10 @@ test("remote preview supports real guest invoicing without creating an account o
 
   await page.getByRole("button",{name:"Settings"}).click();
   await page.getByLabel("Business or trading name").fill("Preview Guest Studio");
+  await page.getByLabel("Brand name on documents").fill("Preview Guest Brand");
+  await expect(page.getByTestId("guest-template-grid").getByRole("button")).toHaveCount(6);
+  await page.getByTestId("guest-template-editorial").click();
+  await page.getByRole("button",{name:"Save document branding"}).click();
   for(const width of [320,375,768,1120]){
     await page.setViewportSize({width,height:900});
     const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
@@ -69,5 +73,10 @@ test("remote preview supports real guest invoicing without creating an account o
   expect(guestData).not.toBeNull();
   const parsed=JSON.parse(guestData!);
   expect(parsed.clients).toHaveLength(0);
+  expect(parsed.documentSettings.brandName).toBe("Preview Guest Brand");
+  expect(parsed.documentSettings.templateId).toBe("editorial");
+  expect(parsed.invoices[0].documentDesign.brandName).toBe("Preview Guest Brand");
+  expect(parsed.invoices[0].documentDesign.templateId).toBe("editorial");
+  expect(parsed.quotes[0].documentDesign.brandName).toBe("Preview Guest Brand");
   expect(workspaceApiRequests).toBe(0);
 });
