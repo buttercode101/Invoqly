@@ -20,7 +20,7 @@ test("guest can work without signup, then import their local records after creat
   }
   await page.setViewportSize({width:1280,height:900});
   await page.getByRole("button",{name:"Overview"}).click();
-  await page.getByRole("button",{name:"＋ Add a client"}).click();
+  await page.getByRole("button",{name:/Add a client/}).click();
   await page.getByLabel("Client name").fill("Guest Import Client");
   await page.getByLabel("Email address").fill("guest-import@example.com");
   await page.getByRole("button",{name:"Save client"}).click();
