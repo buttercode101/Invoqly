@@ -169,7 +169,7 @@ test("real account, client, invoice, partial payments, expense and reload",async
       const dimensions=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
       expect(dimensions.document,"workspace overflows at "+width+"px in "+section).toBeLessThanOrEqual(dimensions.viewport);
       await expect(page.locator("main.shell")).toBeVisible();
-      if(width<=560){
+      if(width<=820){
         if(section==="Overview"||section==="Invoices"){await expect(page.locator(".invoice-card-list")).toBeVisible();await expect(page.locator(".invoice-table-desktop")).toBeHidden();}
         if(section==="Quotes"){await expect(page.locator(".quote-card-list")).toBeVisible();await expect(page.locator(".quote-table-desktop")).toBeHidden();}
         if(section==="Expenses"){await expect(page.locator(".expense-card-list")).toBeVisible();await expect(page.locator(".expense-table-desktop")).toBeHidden();}
