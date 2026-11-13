@@ -11,7 +11,7 @@ test("expense receipt photo uploads and remains available after reload", async (
   await expect(nameField).toHaveValue("Receipt QA");
   const emailField = page.locator('input[autocomplete="email"]');
   await emailField.fill("receipt-qa-" + Date.now() + "@example.com");
-  await expect(emailField).toHaveValue(/receipt-qa-.*@example\\.com/);
+  await expect(emailField).toHaveValue(/receipt-qa-.*@example\.com/);
   await page.locator('input[type="password"]').first().fill("Invoqly-Receipt-QA-2026!");
   await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
   await page.getByRole("button", { name: "Create account" }).click();
