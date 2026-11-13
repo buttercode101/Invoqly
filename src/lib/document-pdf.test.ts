@@ -45,6 +45,7 @@ describe("shareable document PDF", () => {
     expect(source).toContain("/Subtype /Image");
     expect(source).toContain("/ImLogo Do");
     expect(source).toContain("/ImSignature Do");
-    expect(source).toContain("Signed by Jane Client");\n    expect(source).toContain("Scope and terms accepted");
+    expect(source).toContain("Signed by Jane Client");
+    expect(source).toContain("Scope and terms accepted");
   });
 });
