@@ -4,6 +4,7 @@ test("AI invoice draft is reviewed, issued and paid", async ({ page }) => {
   test.setTimeout(150_000);
   await page.goto("/sign-up");
   await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
   const nameField = page.locator('input[autocomplete="name"]');
   await expect(nameField).toBeVisible();
   await nameField.fill("AI Payment QA");
@@ -51,6 +52,7 @@ test("execution mode requires explicit approval and records exactly one full set
   test.setTimeout(120_000);
   const customer = "Execution QA " + Date.now();
   await page.goto("/sign-up");
+  await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
   const executionName = page.locator('input[autocomplete="name"]');
   await executionName.fill("Execution QA");
   await expect(executionName).toHaveValue("Execution QA");
