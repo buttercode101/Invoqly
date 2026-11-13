@@ -9,7 +9,7 @@ import { resolveDocumentSettings,type DocumentSettings } from "@/lib/document-de
 type PublicQuote={
  id:string;number:string;customerName:string;customerEmail:string;customerCompany:string;issueDate:string;validUntil:string;currency:string;status:string;
  lineItems:DocumentLineItem[];documentDesign:Partial<DocumentSettings>|null;decisionStatus:string;signerName?:string|null;signerEmail?:string|null;
- signatureDataUrl?:string|null;decisionAt?:string|null;rejectionReason?:string|null;
+ signatureDataUrl?:string|null;agreementAt?:string|null;decisionAt?:string|null;rejectionReason?:string|null;
 };
 type PublicData={quote:PublicQuote;business:{name:string;address:string;vatNumber:string};linkExpiresAt:string};
 const money=(minor:number,currency:string)=>new Intl.NumberFormat("en-ZA",{style:"currency",currency}).format(minor/100);
@@ -46,14 +46,14 @@ export default function PublicQuoteClient({token}:{token:string}){
   try{
    const response=await fetch("/api/public/quotes/"+token,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({decision:next,signerName:name.trim(),signerEmail:email.trim(),agreed:agreed||next==="Declined",signatureDataUrl:next==="Accepted"?signature:undefined,rejectionReason:next==="Declined"?reason.trim():""})});
    const body=await response.json() as {error?:string;decisionAt?:string};if(!response.ok)throw new Error(body.error||"Your decision could not be recorded.");
-   setDecision(next);setData(current=>current?{...current,quote:{...current.quote,status:next,decisionStatus:next,signerName:name.trim(),signerEmail:email.trim(),signatureDataUrl:next==="Accepted"?signature:null,decisionAt:body.decisionAt,rejectionReason:next==="Declined"?reason.trim():null}}:current);
+   setDecision(next);setData(current=>current?{...current,quote:{...current.quote,status:next,decisionStatus:next,signerName:name.trim(),signerEmail:email.trim(),signatureDataUrl:next==="Accepted"?signature:null,agreementAt:next==="Accepted"?body.decisionAt:null,decisionAt:body.decisionAt,rejectionReason:next==="Declined"?reason.trim():null}}:current);
   }catch(e){setError(e instanceof Error?e.message:"Your decision could not be recorded.")}finally{setSubmitting(false)}
  };
 
  const downloadPdf=()=>{
   if(!data)return;const q=data.quote,settings=resolveDocumentSettings(q.documentDesign);
   try{
-   const blob=createDocumentPdf({type:"quotation",number:q.number,businessName:data.business.name,businessAddress:data.business.address,vatNumber:data.business.vatNumber,brandName:settings.brandName,accentColor:settings.accentColor,logoDataUrl:settings.logoDataUrl,customerName:q.customerName,customerCompany:q.customerCompany,customerEmail:q.customerEmail,issueDate:q.issueDate,validUntil:q.validUntil,status:q.status,currency:q.currency,lineItems:q.lineItems,template:settings.templateId,signatureDataUrl:q.signatureDataUrl,signerName:q.signerName,decisionAt:q.decisionAt});
+   const blob=createDocumentPdf({type:"quotation",number:q.number,businessName:data.business.name,businessAddress:data.business.address,vatNumber:data.business.vatNumber,brandName:settings.brandName,accentColor:settings.accentColor,logoDataUrl:settings.logoDataUrl,customerName:q.customerName,customerCompany:q.customerCompany,customerEmail:q.customerEmail,issueDate:q.issueDate,validUntil:q.validUntil,status:q.status,currency:q.currency,lineItems:q.lineItems,template:settings.templateId,signatureDataUrl:q.signatureDataUrl,signerName:q.signerName,decisionAt:q.decisionAt,agreementAt:q.agreementAt});
    const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=q.number+".pdf";document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),30000);
   }catch{setError("The quotation PDF could not be generated. Please try again.")}
  };
