@@ -46,8 +46,7 @@ export async function GET(_request:Request,context:Context){
 
 export async function POST(request:Request,context:Context){
  const {token}=await context.params;
- const origin=request.headers.get("origin");
- if(!origin||origin!==new URL(request.url).origin)return fail("A same-origin request is required.",403);
+ if(!isSameOriginRequest(request))return fail("A same-origin request is required.",403);
  if(!/^[a-f0-9]{64}$/.test(token))return fail("This quotation link is not available.",404);
  if(!(request.headers.get("content-type")||"").toLowerCase().includes("application/json"))return fail("JSON content is required.",415);
  try{
