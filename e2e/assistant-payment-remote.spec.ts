@@ -11,7 +11,7 @@ test("AI invoice draft is reviewed, issued and paid", async ({ page }) => {
   await expect(nameField).toHaveValue("AI Payment QA");
   const emailField = page.locator('input[autocomplete="email"]');
   await emailField.fill("ai-payment-" + Date.now() + "@example.com");
-  await expect(emailField).toHaveValue(/ai-payment-.*@example\\.com/);
+  await expect(emailField).toHaveValue(/ai-payment-.*@example\.com/);
   await page.locator('input[type="password"]').first().fill("Invoqly-Preview-QA-2026!");
   const signupPromise = page.waitForResponse(response => response.url().includes("/api/auth/sign-up/email") && response.request().method() === "POST");
   await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
@@ -58,7 +58,7 @@ test("execution mode requires explicit approval and records exactly one full set
   await expect(executionName).toHaveValue("Execution QA");
   const executionEmail = page.locator('input[autocomplete="email"]');
   await executionEmail.fill("execution-qa-" + Date.now() + "@example.com");
-  await expect(executionEmail).toHaveValue(/execution-qa-.*@example\\.com/);
+  await expect(executionEmail).toHaveValue(/execution-qa-.*@example\.com/);
   await page.locator('input[type="password"]').first().fill("Invoqly-Execution-QA-2026!");
   const signupPromise = page.waitForResponse(response => response.url().includes("/api/auth/sign-up/email") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Create account" }).click();
