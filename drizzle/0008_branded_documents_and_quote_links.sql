@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS "quote_public_links" (
   "signer_email" varchar(254),
   "signature_data_url" text,
   "rejection_reason" varchar(500),
+  "agreed_at" timestamptz,
   "decision_at" timestamptz,
   "last_viewed_at" timestamptz,
   "created_at" timestamptz NOT NULL DEFAULT now()
