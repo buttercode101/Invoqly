@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { withDb } from "@/lib/db";
-import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, quoteCounters, quotes, workspaces } from "@/lib/db/schema";
+import { auditEvents, clients, expenses, invoiceCounters, invoices, payments, quoteCounters, quotePublicLinks, quotes, workspaces } from "@/lib/db/schema";
 import { getCurrentUser, getOrCreateWorkspace, loadWorkspace } from "@/lib/workspace";
 import { deriveInvoiceStatus, outstandingBalanceMinor } from "@/lib/billing";
 import { calculateDocumentTotal, resolveDocumentLineItems, type DocumentLineItem } from "@/lib/documents";
@@ -12,12 +12,12 @@ export const dynamic = "force-dynamic";
 
 const currency = z.string().regex(/^[A-Z]{3}$/).refine(value=>{try{new Intl.NumberFormat("en",{style:"currency",currency:value}).format(0);return true}catch{return false}},"Choose a supported ISO currency code.");
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>{const [year,month,day]=value.split("-").map(Number);const parsed=new Date(Date.UTC(year,month-1,day));return parsed.getUTCFullYear()===year&&parsed.getUTCMonth()===month-1&&parsed.getUTCDate()===day},"Enter a real calendar date.");
-const lineItem = z.object({description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER)});
+const lineItem = z.object({description:z.string().trim().min(1).max(500),quantity:z.number().int().min(1).max(1000000),unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER)});\nconst documentSettings = z.object({templateId:z.enum(["classic","modern","minimal","bold","editorial","custom"]),accentColor:z.string().regex(/^#[0-9a-fA-F]{6}$/),logoDataUrl:z.string().max(250000).regex(/^data:image\\/(?:jpeg|png|webp);base64,[A-Za-z0-9+\\/]+={0,2}$/).nullable(),brandName:z.string().max(120)});
 const payload = z.discriminatedUnion("action", [
-  z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20) }),
+  z.object({ action:z.literal("update-settings"), businessName:z.string().trim().min(1).max(120), currency, locale:z.string().min(2).max(20) }),\n  z.object({ action:z.literal("update-document-settings"), documentSettings }),
   z.object({ action:z.literal("create-client"), name:z.string().trim().min(1).max(120), email:z.string().trim().email().max(254).toLowerCase(), company:z.string().max(120).default(""), currency }),
-  z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid().optional(), customerName:z.string().trim().min(1).max(120).optional(), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), saveContact:z.boolean().default(false), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), currency, dueDate:date }),
-  z.object({ action:z.literal("create-quote"), customerName:z.string().trim().min(1).max(120), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), currency, validUntil:date }),
+  z.object({ action:z.literal("create-invoice"), clientId:z.string().uuid().optional(), customerName:z.string().trim().min(1).max(120).optional(), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), saveContact:z.boolean().default(false), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), documentDesign:documentSettings.optional(), currency, dueDate:date }),
+  z.object({ action:z.literal("create-quote"), customerName:z.string().trim().min(1).max(120), customerEmail:z.string().trim().email().max(254).optional().or(z.literal("")), customerCompany:z.string().max(120).default(""), description:z.string().trim().min(1).max(500), quantity:z.number().int().min(1).max(1000000), unitPriceMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), lineItems:z.array(lineItem).min(1).max(50).optional(), documentDesign:documentSettings.optional(), currency, validUntil:date }),
   z.object({ action:z.literal("convert-quote"), quoteId:z.string().uuid(), dueDate:date }),
   z.object({ action:z.literal("update-quote-status"), quoteId:z.string().uuid(), status:z.enum(["Sent","Accepted","Declined"]) }),
   z.object({ action:z.literal("create-expense"), vendor:z.string().trim().min(1).max(160), category:z.string().trim().min(1).max(80), date, amountMinor:z.number().int().positive().max(Number.MAX_SAFE_INTEGER), currency, notes:z.string().max(500).default(""), receiptImageData:z.string().max(700000).regex(/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+\/]+={0,2}$/).optional() }),
@@ -113,7 +113,7 @@ export async function POST(request:Request) {
       });
     }
 
-    if (input.action === "create-client") {
+    if (input.action === "update-document-settings") {\n      await db.update(workspaces).set({ documentSettings:input.documentSettings, updatedAt:new Date() }).where(eq(workspaces.id,workspace.id));\n      await db.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"workspace.document_settings_updated",entityType:"workspace",entityId:workspace.id,metadata:{templateId:input.documentSettings.templateId}});\n    }\n\n    if (input.action === "create-client") {
       await db.transaction(async tx=>{
         const [created] = await tx.insert(clients).values({workspaceId:workspace.id,name:input.name,email:input.email,company:input.company,currency:input.currency}).returning();
         await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"client.created",entityType:"client",entityId:created.id,metadata:{currency:created.currency}});
@@ -142,7 +142,7 @@ export async function POST(request:Request) {
           .onConflictDoUpdate({target:invoiceCounters.workspaceId,set:{nextNumber:sql`${invoiceCounters.nextNumber} + 1`}})
           .returning({nextNumber:invoiceCounters.nextNumber});
         const number = "INV-" + String(counter.nextNumber).padStart(4,"0");
-        const [created] = await tx.insert(invoices).values({workspaceId:workspace.id,clientId,number,issueDate:today(),dueDate:input.dueDate,description:lineItems[0]!.description,quantity:lineItems[0]!.quantity,unitPriceMinor:lineItems[0]!.unitPriceMinor,lineItems,currency:input.currency,status:"Draft"}).returning();
+        const [created] = await tx.insert(invoices).values({workspaceId:workspace.id,clientId,number,issueDate:today(),dueDate:input.dueDate,description:lineItems[0]!.description,quantity:lineItems[0]!.quantity,unitPriceMinor:lineItems[0]!.unitPriceMinor,lineItems,documentDesign:input.documentDesign ?? workspace.documentSettings,currency:input.currency,status:"Draft"}).returning();
         await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"invoice.created",entityType:"invoice",entityId:created.id,metadata:{number,currency:input.currency}});
         return created;
       });
@@ -157,7 +157,7 @@ export async function POST(request:Request) {
         documentTotal = calculateDocumentTotal(lineItems);
       } catch (error) { return fail(error instanceof Error ? error.message : "Quotation line items are invalid.",422); }
       if (!Number.isSafeInteger(documentTotal)) return fail("The quotation total exceeds the supported amount range.",422);
-      await db.transaction(async tx=>{const [counter]=await tx.insert(quoteCounters).values({workspaceId:workspace.id,nextNumber:1}).onConflictDoUpdate({target:quoteCounters.workspaceId,set:{nextNumber:sql`${quoteCounters.nextNumber} + 1`}}).returning({nextNumber:quoteCounters.nextNumber});const number="QUO-"+String(counter.nextNumber).padStart(4,"0");const [created]=await tx.insert(quotes).values({workspaceId:workspace.id,number,customerName:input.customerName,customerEmail:input.customerEmail||"",customerCompany:input.customerCompany,issueDate:today(),validUntil:input.validUntil,description:lineItems[0]!.description,quantity:lineItems[0]!.quantity,unitPriceMinor:lineItems[0]!.unitPriceMinor,lineItems,currency:input.currency,status:"Draft"}).returning();await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"quote.created",entityType:"quote",entityId:created.id,metadata:{number,currency:input.currency}})});
+      await db.transaction(async tx=>{const [counter]=await tx.insert(quoteCounters).values({workspaceId:workspace.id,nextNumber:1}).onConflictDoUpdate({target:quoteCounters.workspaceId,set:{nextNumber:sql`${quoteCounters.nextNumber} + 1`}}).returning({nextNumber:quoteCounters.nextNumber});const number="QUO-"+String(counter.nextNumber).padStart(4,"0");const [created]=await tx.insert(quotes).values({workspaceId:workspace.id,number,customerName:input.customerName,customerEmail:input.customerEmail||"",customerCompany:input.customerCompany,issueDate:today(),validUntil:input.validUntil,description:lineItems[0]!.description,quantity:lineItems[0]!.quantity,unitPriceMinor:lineItems[0]!.unitPriceMinor,lineItems,documentDesign:input.documentDesign ?? workspace.documentSettings,currency:input.currency,status:"Draft"}).returning();await tx.insert(auditEvents).values({workspaceId:workspace.id,actorUserId:user.id,action:"quote.created",entityType:"quote",entityId:created.id,metadata:{number,currency:input.currency}})});
     }
     if (input.action === "update-quote-status") {
       const [quote]=await db.select().from(quotes).where(and(eq(quotes.id,input.quoteId),eq(quotes.workspaceId,workspace.id))).limit(1);
