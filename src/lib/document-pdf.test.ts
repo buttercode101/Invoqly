@@ -41,10 +41,10 @@ describe("shareable document PDF", () => {
   });
   it("embeds uploaded logo and signed approval as JPEG PDF image objects", async () => {
     const pixelJpeg="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdAB//2Q==";
-    const source=await createDocumentPdf({...input,logoDataUrl:pixelJpeg,signatureDataUrl:pixelJpeg,signerName:"Jane Client",decisionAt:"2026-11-13T09:00:00.000Z"}).text();
+    const source=await createDocumentPdf({...input,logoDataUrl:pixelJpeg,signatureDataUrl:pixelJpeg,signerName:"Jane Client",decisionAt:"2026-11-13T09:00:00.000Z",agreementAt:"2026-11-13T08:59:00.000Z"}).text();
     expect(source).toContain("/Subtype /Image");
     expect(source).toContain("/ImLogo Do");
     expect(source).toContain("/ImSignature Do");
-    expect(source).toContain("Signed by Jane Client");
+    expect(source).toContain("Signed by Jane Client");\n    expect(source).toContain("Scope and terms accepted");
   });
 });
